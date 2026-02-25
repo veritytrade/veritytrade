@@ -1,4 +1,8 @@
 <section>
+    @php
+        $rawPhone = old('phone', (string) ($user->phone ?? ''));
+        $safePhone = preg_match('/^\+?[0-9]{6,20}$/', $rawPhone) ? $rawPhone : '';
+    @endphp
     <header>
         <h2 class="text-lg font-medium text-gray-900">
             {{ __('Profile Information') }}
@@ -25,7 +29,7 @@
 
         <div>
             <x-input-label for="email" :value="__('Email')" />
-            <x-text-input id="email" name="email" type="email" class="mt-1 block w-full" :value="old('email', $user->email)" required autocomplete="username" />
+            <x-text-input id="email" name="email" type="email" class="mt-1 block w-full" :value="old('email', $user->email)" required autocomplete="email" />
             <x-input-error class="mt-2" :messages="$errors->get('email')" />
 
             @if ($user instanceof \Illuminate\Contracts\Auth\MustVerifyEmail && ! $user->hasVerifiedEmail())
@@ -45,6 +49,39 @@
                     @endif
                 </div>
             @endif
+        </div>
+
+        <div>
+            <x-input-label for="phone" :value="__('Phone Number')" />
+            <x-text-input id="phone" name="phone" type="tel" class="mt-1 block w-full" :value="$safePhone" required autocomplete="tel" inputmode="tel" />
+            <x-input-error class="mt-2" :messages="$errors->get('phone')" />
+        </div>
+
+        @if(feature_enabled('enable_customer_address', false))
+            <div>
+                <x-input-label for="address" :value="__('Address')" />
+                <x-text-input id="address" name="address" type="text" class="mt-1 block w-full" :value="old('address', $user->address)" />
+                <x-input-error class="mt-2" :messages="$errors->get('address')" />
+            </div>
+        @endif
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+                <x-input-label for="state" :value="__('State')" />
+                <x-text-input id="state" name="state" type="text" class="mt-1 block w-full" :value="old('state', $user->state)" />
+                <x-input-error class="mt-2" :messages="$errors->get('state')" />
+            </div>
+            <div>
+                <x-input-label for="city" :value="__('City')" />
+                <x-text-input id="city" name="city" type="text" class="mt-1 block w-full" :value="old('city', $user->city)" />
+                <x-input-error class="mt-2" :messages="$errors->get('city')" />
+            </div>
+        </div>
+
+        <div>
+            <x-input-label for="current_password" :value="__('Current Password (Required to Save Changes)')" />
+            <x-text-input id="current_password" name="current_password" type="password" class="mt-1 block w-full" required autocomplete="current-password" />
+            <x-input-error class="mt-2" :messages="$errors->get('current_password')" />
         </div>
 
         <div class="flex items-center gap-4">

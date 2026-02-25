@@ -16,7 +16,11 @@ use App\Http\Controllers\Admin\ModelController;
 use App\Http\Controllers\LandingController;
 use App\Http\Controllers\Public\HomeController;
 use App\Http\Controllers\Public\PhoneController;
+use App\Http\Controllers\Public\CategoryRequestController;
+use App\Http\Controllers\Public\CategoryBrowseController;
+use App\Http\Controllers\Public\RequestHubController;
 use App\Http\Controllers\Customer\DashboardController as CustomerDashboardController;
+use App\Http\Controllers\Admin\SpecificationController;
 
 /*
 |--------------------------------------------------------------------------
@@ -26,7 +30,7 @@ use App\Http\Controllers\Customer\DashboardController as CustomerDashboardContro
 // ✅ FIXED: Single homepage route (removed duplicate)
 Route::get('/', [HomeController::class, 'index'])->name('home');
 
-Route::prefix('phones')->name('public.phones.')->middleware('feature:enable_phone_pricing')->group(function () {
+Route::prefix('phones')->name('public.phones.')->group(function () {
     Route::get('/', [PhoneController::class, 'index'])->name('brands');
     Route::get('/{brandUuid}', [PhoneController::class, 'brand'])->name('brand');
     Route::get('/{brandUuid}/device/{deviceUuid}', [PhoneController::class, 'device'])->name('device');
@@ -37,8 +41,16 @@ Route::prefix('phones')->name('public.phones.')->middleware('feature:enable_phon
 
 // WhatsApp redirect for Hot Deals
 Route::get('/deal/{deal:uuid}/whatsapp', [LandingController::class, 'whatsapp'])
-    ->middleware('feature:enable_hot_deals')
     ->name('deal.whatsapp');
+
+Route::get('/request', [RequestHubController::class, 'index'])->name('public.request-hub');
+
+Route::prefix('categories')->name('public.categories.')->group(function () {
+    Route::get('/{categorySlug}', [CategoryBrowseController::class, 'show'])->name('show');
+    Route::get('/{categorySlug}/brands/{brandUuid}', [CategoryBrowseController::class, 'brand'])->name('brand');
+    Route::get('/{categorySlug}/request', [CategoryRequestController::class, 'form'])->name('request.form');
+    Route::post('/{categorySlug}/request', [CategoryRequestController::class, 'submit'])->name('request.submit');
+});
 
 /*
 |--------------------------------------------------------------------------
@@ -128,6 +140,21 @@ Route::prefix('admin')
 
         Route::get('/categories/{category}/edit', [CategoryController::class, 'edit'])
             ->name('admin.categories.edit');
+
+        Route::get('/specs', [SpecificationController::class, 'index'])
+            ->name('admin.specs.index');
+
+        Route::post('/specs/groups', [SpecificationController::class, 'storeGroup'])
+            ->name('admin.specs.groups.store');
+
+        Route::post('/specs/groups/{group}/toggle', [SpecificationController::class, 'toggleGroup'])
+            ->name('admin.specs.groups.toggle');
+
+        Route::post('/specs/groups/{group}/specs', [SpecificationController::class, 'storeSpec'])
+            ->name('admin.specs.store');
+
+        Route::post('/specs/specs/{spec}/values', [SpecificationController::class, 'storeValue'])
+            ->name('admin.specs.values.store');
         });
 
         /*
@@ -186,6 +213,9 @@ Route::prefix('admin')
         |--------------------------------------------------------------------------
         */
         Route::middleware('permission:manage_models')->group(function () {
+        Route::get('/models', [ModelController::class, 'hub'])
+            ->name('admin.models.hub');
+
         Route::get('/series/{series}/models', [ModelController::class, 'index'])
             ->name('admin.models.index');
 
@@ -289,16 +319,25 @@ Route::prefix('admin')
         });
 
         Route::middleware('permission:approve_users')->group(function () {
-            Route::get('/users', [\App\Http\Controllers\Admin\UserManagementController::class, 'index'])
-                ->name('admin.users.index');
+            Route::get('/registered-users', [\App\Http\Controllers\Admin\UserManagementController::class, 'registeredUsers'])
+                ->name('admin.registered-users.index');
 
-            Route::post('/users/{user}/approve', [\App\Http\Controllers\Admin\UserManagementController::class, 'approve'])
-                ->name('admin.users.approve');
+            Route::post('/registered-users/{user}/approve', [\App\Http\Controllers\Admin\UserManagementController::class, 'approve'])
+                ->name('admin.registered-users.approve');
+
+            Route::delete('/registered-users/{user}', [\App\Http\Controllers\Admin\UserManagementController::class, 'destroy'])
+                ->name('admin.registered-users.destroy');
         });
 
         Route::middleware('permission:assign_roles')->group(function () {
-            Route::post('/users/{user}/role', [\App\Http\Controllers\Admin\UserManagementController::class, 'updateRole'])
-                ->name('admin.users.role.update');
+            Route::get('/staff', [\App\Http\Controllers\Admin\UserManagementController::class, 'staffIndex'])
+                ->name('admin.staff.index');
+
+            Route::post('/staff/assign-role', [\App\Http\Controllers\Admin\UserManagementController::class, 'assignRoleByEmail'])
+                ->name('admin.staff.assign-role');
+
+            Route::post('/staff/{user}/remove-role', [\App\Http\Controllers\Admin\UserManagementController::class, 'removeRole'])
+                ->name('admin.staff.remove-role');
         });
 
         Route::middleware('permission:manage_feature_flags')->group(function () {

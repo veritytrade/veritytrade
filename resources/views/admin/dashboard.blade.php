@@ -112,6 +112,29 @@
                     View All →
                 </a>
             </div>
+
+            @if(auth()->user() && auth()->user()->hasPermission('approve_users'))
+                {{-- Pending Approvals Card --}}
+                <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4 md:p-6 hover:shadow-md transition">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm text-gray-500 mb-1">Pending Customer Approvals</p>
+                            <p class="text-2xl md:text-3xl font-bold text-amber-700">
+                                {{ \App\Models\User::where('is_approved', false)->whereHas('role', fn ($q) => $q->where('name', 'customer'))->count() }}
+                            </p>
+                        </div>
+                        <div class="bg-amber-100 p-3 rounded-lg">
+                            <svg class="w-6 h-6 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 9a3 3 0 116 0v1a2 2 0 002 2H6a2 2 0 002-2V9zM9 17h6"></path>
+                            </svg>
+                        </div>
+                    </div>
+                    <a href="{{ route('admin.registered-users.index') }}"
+                       class="text-sm text-amber-700 hover:text-amber-900 font-medium mt-3 inline-block">
+                        Review Approvals
+                    </a>
+                </div>
+            @endif
         </div>
 
         {{-- Quick Actions Grid --}}

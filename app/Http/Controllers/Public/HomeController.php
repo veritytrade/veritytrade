@@ -33,7 +33,7 @@ class HomeController extends Controller
         }
 
         // Hot deals are optional and should never block category tabs.
-        if (Schema::hasTable('deals') && feature_enabled('enable_hot_deals', true)) {
+        if (Schema::hasTable('deals')) {
             try {
                 $deals = Deal::available()
                     ->with('images')
@@ -47,7 +47,7 @@ class HomeController extends Controller
         }
 
         // Phones module (category name can evolve; detect by name containing "phone").
-        if (Schema::hasTable('brands') && feature_enabled('enable_phone_pricing', true)) {
+        if (Schema::hasTable('brands')) {
             $phoneCategory = $categories->first(function ($category) {
                 return Str::contains(Str::lower((string) $category->name), 'phone');
             });

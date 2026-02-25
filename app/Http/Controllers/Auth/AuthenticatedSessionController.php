@@ -28,23 +28,32 @@ class AuthenticatedSessionController extends Controller
 
         $user = Auth::user();
 
-        if ($user && !$user->is_approved) {
-            Auth::logout();
-            $request->session()->invalidate();
-            $request->session()->regenerateToken();
+        $requireEmailVerification = feature_enabled('require_email_verification', true);
+        $requireAdminApproval = feature_enabled('require_admin_approval', false);
 
-            return back()->withErrors([
-                'email' => 'Your account is awaiting admin approval.',
-            ])->onlyInput('email');
+        $hasVerifiedEmail = (bool) ($user?->hasVerifiedEmail());
+        $hasAdminApproval = (bool) ($user?->is_approved);
+
+        // Policy:
+        // - if both are enabled, either verification OR approval is enough
+        // - if only one is enabled, that enabled condition is required
+        $isAllowedByPolicy = true;
+
+        if ($requireEmailVerification && $requireAdminApproval) {
+            $isAllowedByPolicy = $hasVerifiedEmail || $hasAdminApproval;
+        } elseif ($requireEmailVerification) {
+            $isAllowedByPolicy = $hasVerifiedEmail;
+        } elseif ($requireAdminApproval) {
+            $isAllowedByPolicy = $hasAdminApproval;
         }
 
-        if ($user && feature_enabled('require_email_verification', false) && !$user->hasVerifiedEmail()) {
+        if ($user && !$isAllowedByPolicy) {
             Auth::logout();
             $request->session()->invalidate();
             $request->session()->regenerateToken();
 
             return back()->withErrors([
-                'email' => 'Please verify your email before logging in.',
+                'email' => 'Complete email verification with your 6-digit code to continue. Check inbox and spam folder, then use Resend if needed.',
             ])->onlyInput('email');
         }
 

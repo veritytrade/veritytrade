@@ -1,4 +1,16 @@
 <x-guest-layout>
+    @if($errors->any())
+        <div class="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+            Please fix the highlighted fields and try again.
+        </div>
+    @endif
+
+    @if(session('verification_email'))
+        <script>
+            window.location.href = "{{ route('verification.code') }}?email={{ urlencode(session('verification_email')) }}";
+        </script>
+    @endif
+
     <form method="POST" action="{{ route('register') }}">
         @csrf
 
@@ -12,8 +24,25 @@
         <!-- Email Address -->
         <div class="mt-4">
             <x-input-label for="email" :value="__('Email')" />
-            <x-text-input id="email" class="block mt-1 w-full" type="email" name="email" :value="old('email')" required autocomplete="username" />
+            <x-text-input id="email" class="block mt-1 w-full" type="email" name="email" :value="old('email')" required autocomplete="email" />
             <x-input-error :messages="$errors->get('email')" class="mt-2" />
+            @if($errors->has('email'))
+                @php($emailError = strtolower((string) $errors->first('email')))
+                @if(str_contains($emailError, 'taken') || str_contains($emailError, 'already'))
+                    <p class="mt-2 text-xs text-amber-700">
+                        This email already has an account.
+                        <a href="{{ route('login') }}" class="underline font-semibold">Log in</a>
+                        or
+                        <a href="{{ route('password.request') }}" class="underline font-semibold">reset password with OTP</a>.
+                    </p>
+                @endif
+            @endif
+        </div>
+
+        <div class="mt-4">
+            <x-input-label for="phone" :value="__('Phone Number')" />
+            <x-text-input id="phone" class="block mt-1 w-full" type="tel" name="phone" :value="old('phone')" required autocomplete="tel" inputmode="tel" />
+            <x-input-error :messages="$errors->get('phone')" class="mt-2" />
         </div>
 
         <!-- Password -->

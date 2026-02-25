@@ -8,14 +8,26 @@
         <div class="bg-white sticky top-0 z-10 shadow-sm">
             <div class="overflow-x-auto scrollbar-hide">
                 <div class="flex min-w-max">
-                    <a href="#hot-deals" class="block flex-shrink-0 px-4 py-3 font-bold text-green-600 border-b-[3px] border-green-600 whitespace-nowrap">
+                    <button type="button"
+                        data-tab-target="hot-deals"
+                        class="tab-trigger block flex-shrink-0 px-4 py-3 font-bold text-green-600 border-b-[3px] border-green-600 whitespace-nowrap">
                         Hot Deals
-                    </a>
+                    </button>
 
                     @foreach($categories as $category)
-                        <a href="#{{ Str::slug($category->name) }}" class="block flex-shrink-0 px-4 py-3 text-gray-500 hover:text-gray-700 whitespace-nowrap">
-                            {{ $category->name }}
-                        </a>
+                        @php($isPhoneCategoryTab = $phoneCategory && $category->id === $phoneCategory->id)
+                        @if($isPhoneCategoryTab)
+                            <button type="button"
+                                data-tab-target="{{ Str::slug($category->name) }}"
+                                class="tab-trigger block flex-shrink-0 px-4 py-3 text-gray-500 hover:text-gray-700 whitespace-nowrap">
+                                {{ $category->name }}
+                            </button>
+                        @else
+                            <a href="{{ route('public.categories.show', ['categorySlug' => Str::slug($category->name)]) }}"
+                               class="block flex-shrink-0 px-4 py-3 text-gray-500 hover:text-gray-700 whitespace-nowrap">
+                                {{ $category->name }}
+                            </a>
+                        @endif
                     @endforeach
                 </div>
             </div>
@@ -60,7 +72,11 @@
                 <div id="{{ Str::slug($category->name) }}" class="max-w-7xl mx-auto px-4 py-6 hidden">
                     <div class="bg-white rounded-xl shadow-sm p-6 text-center text-gray-500 mx-2">
                         <h2 class="text-xl font-bold mb-2 text-gray-800">{{ $category->name }}</h2>
-                        <p>Products in this category will appear here.</p>
+                        <p>Browse available brands and request specific products.</p>
+                        <a href="{{ route('public.categories.show', ['categorySlug' => Str::slug($category->name)]) }}"
+                           class="mt-4 inline-flex min-h-11 items-center justify-center rounded-lg border border-blue-200 px-4 text-blue-700 font-semibold">
+                            Browse {{ $category->name }}
+                        </a>
                     </div>
                 </div>
             @endif
@@ -81,9 +97,9 @@
 
         <script>
             document.addEventListener('DOMContentLoaded', function() {
-                const tabs = document.querySelectorAll('a[href^="#"]');
+                const tabs = document.querySelectorAll('[data-tab-target]');
                 const sections = Array.from(tabs)
-                    .map((tab) => tab.getAttribute('href').substring(1))
+                    .map((tab) => tab.dataset.tabTarget)
                     .map((id) => document.getElementById(id))
                     .filter(Boolean);
 
@@ -94,7 +110,7 @@
                     target.classList.remove('hidden');
 
                     tabs.forEach((tab) => {
-                        const isActive = tab.getAttribute('href') === `#${target.id}`;
+                        const isActive = tab.dataset.tabTarget === target.id;
                         tab.classList.toggle('text-green-600', isActive);
                         tab.classList.toggle('border-b-[3px]', isActive);
                         tab.classList.toggle('border-green-600', isActive);
@@ -105,8 +121,7 @@
 
                 tabs.forEach((tab) => {
                     tab.addEventListener('click', function(e) {
-                        e.preventDefault();
-                        const targetId = this.getAttribute('href').substring(1);
+                        const targetId = this.dataset.tabTarget;
                         history.replaceState(null, '', `#${targetId}`);
                         activateTab(targetId);
                     });

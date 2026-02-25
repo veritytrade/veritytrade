@@ -36,7 +36,7 @@ class LandingController extends Controller
                    "Price: {$deal->price_display}\n\n" .
                    "Is it still available?";
 
-        $whatsappNumber = site_setting('whatsapp_business_number', '2347084117779');
+        $whatsappNumber = site_setting('whatsapp_number', site_setting('whatsapp_business_number', '2347084117779'));
         
         return redirect("https://wa.me/{$whatsappNumber}?text=" . urlencode($message));
     }

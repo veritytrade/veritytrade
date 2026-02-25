@@ -21,7 +21,7 @@ class FeatureFlag extends Model
 
     public static function value(string $key, $default = null)
     {
-        $flag = self::query()->where('key', $key)->where('is_active', true)->first();
+        $flag = self::query()->where('key', $key)->first();
 
         if (!$flag) {
             return $default;

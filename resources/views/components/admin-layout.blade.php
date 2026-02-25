@@ -6,13 +6,14 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>Admin - {{ config('app.name') }}</title>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
+    <style>[x-cloak]{display:none !important;}</style>
 </head>
 <body class="bg-gray-50" x-data="{ sidebarOpen: false }">
     @php($user = auth()->user())
 
-    <div x-show="sidebarOpen" x-transition.opacity class="fixed inset-0 bg-black/40 z-30 md:hidden" @click="sidebarOpen = false"></div>
+    <div x-cloak x-show="sidebarOpen" x-transition.opacity class="fixed inset-0 bg-black/40 z-30 md:hidden" @click="sidebarOpen = false"></div>
 
-    <aside class="fixed inset-y-0 left-0 w-64 bg-gradient-to-b from-green-700 to-green-800 shadow-lg z-40 overflow-y-auto transform transition-transform duration-200"
+    <aside x-cloak class="fixed inset-y-0 left-0 w-64 bg-gradient-to-b from-green-700 to-green-800 shadow-lg z-40 overflow-y-auto transform transition-transform duration-200"
            :class="sidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'">
         <div class="p-6 border-b border-green-600">
             <h1 class="text-xl font-bold text-white">VerityTrade Admin</h1>
@@ -29,6 +30,7 @@
                 @endif
                 @if($user->hasPermission('manage_categories'))
                     <li><a href="{{ route('admin.categories.index') }}" class="flex items-center px-4 py-3 text-sm font-medium rounded-lg {{ request()->routeIs('admin.categories.*') ? 'bg-white text-green-700' : 'text-green-100 hover:bg-green-600 hover:text-white' }}">Categories</a></li>
+                    <li><a href="{{ route('admin.specs.index') }}" class="flex items-center px-4 py-3 text-sm font-medium rounded-lg {{ request()->routeIs('admin.specs.*') ? 'bg-white text-green-700' : 'text-green-100 hover:bg-green-600 hover:text-white' }}">Specifications</a></li>
                 @endif
                 @if($user->hasPermission('manage_brands'))
                     <li><a href="{{ route('admin.brands.index') }}" class="flex items-center px-4 py-3 text-sm font-medium rounded-lg {{ request()->routeIs('admin.brands.*') ? 'bg-white text-green-700' : 'text-green-100 hover:bg-green-600 hover:text-white' }}">Brands</a></li>
@@ -37,7 +39,7 @@
                     <li><a href="{{ route('admin.series.index') }}" class="flex items-center px-4 py-3 text-sm font-medium rounded-lg {{ request()->routeIs('admin.series.*') ? 'bg-white text-green-700' : 'text-green-100 hover:bg-green-600 hover:text-white' }}">Series</a></li>
                 @endif
                 @if($user->hasPermission('manage_models'))
-                    <li><a href="{{ route('admin.brands.index') }}" class="flex items-center px-4 py-3 text-sm font-medium rounded-lg text-green-100 hover:bg-green-600 hover:text-white">Models</a></li>
+                    <li><a href="{{ route('admin.models.hub') }}" class="flex items-center px-4 py-3 text-sm font-medium rounded-lg {{ request()->routeIs('admin.models.*') || request()->routeIs('admin.brand-models.*') ? 'bg-white text-green-700' : 'text-green-100 hover:bg-green-600 hover:text-white' }}">Models</a></li>
                 @endif
                 @if($user->hasPermission('access_pricing_engine'))
                     <li><a href="{{ route('admin.pricing.index') }}" class="flex items-center px-4 py-3 text-sm font-medium rounded-lg {{ request()->routeIs('admin.pricing.index') || request()->routeIs('admin.pricing.store') || request()->routeIs('admin.pricing.toggle') || request()->routeIs('admin.pricing.destroy') ? 'bg-white text-green-700' : 'text-green-100 hover:bg-green-600 hover:text-white' }}">Pricing Engine</a></li>
@@ -45,8 +47,11 @@
                 @if($user->hasPermission('access_pricing_settings'))
                     <li><a href="{{ route('admin.pricing.settings') }}" class="flex items-center px-4 py-3 text-sm font-medium rounded-lg {{ request()->routeIs('admin.pricing.settings*') ? 'bg-white text-green-700' : 'text-green-100 hover:bg-green-600 hover:text-white' }}">Pricing Settings</a></li>
                 @endif
+                @if($user->hasPermission('assign_roles'))
+                    <li><a href="{{ route('admin.staff.index') }}" class="flex items-center px-4 py-3 text-sm font-medium rounded-lg {{ request()->routeIs('admin.staff.*') ? 'bg-white text-green-700' : 'text-green-100 hover:bg-green-600 hover:text-white' }}">Staff Management</a></li>
+                @endif
                 @if($user->hasPermission('approve_users'))
-                    <li><a href="{{ route('admin.users.index') }}" class="flex items-center px-4 py-3 text-sm font-medium rounded-lg {{ request()->routeIs('admin.users.*') ? 'bg-white text-green-700' : 'text-green-100 hover:bg-green-600 hover:text-white' }}">Users</a></li>
+                    <li><a href="{{ route('admin.registered-users.index') }}" class="flex items-center px-4 py-3 text-sm font-medium rounded-lg {{ request()->routeIs('admin.registered-users.*') ? 'bg-white text-green-700' : 'text-green-100 hover:bg-green-600 hover:text-white' }}">Registered Users</a></li>
                 @endif
                 @if($user->hasPermission('manage_feature_flags'))
                     <li><a href="{{ route('admin.feature-flags.index') }}" class="flex items-center px-4 py-3 text-sm font-medium rounded-lg {{ request()->routeIs('admin.feature-flags.*') ? 'bg-white text-green-700' : 'text-green-100 hover:bg-green-600 hover:text-white' }}">Feature Flags</a></li>

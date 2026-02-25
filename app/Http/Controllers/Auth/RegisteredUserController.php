@@ -3,12 +3,15 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Models\EmailVerificationCode;
 use App\Models\Role;
 use App\Models\User;
-use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
+use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules;
 use Illuminate\View\View;
 
@@ -29,26 +32,87 @@ class RegisteredUserController extends Controller
      */
     public function store(Request $request): RedirectResponse
     {
+        $normalizedEmail = strtolower(trim((string) $request->input('email')));
+
         $request->validate([
             'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:'.User::class],
+            'email' => [
+                'required',
+                'string',
+                'lowercase',
+                'email',
+                'max:255',
+                Rule::unique('users', 'email')->whereNull('deleted_at'),
+            ],
+            'phone' => ['required', 'regex:/^\+?[0-9]{6,20}$/'],
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
         ]);
 
-        $user = User::create([
-            'name' => $request->name,
-            'email' => $request->email,
-            'password' => Hash::make($request->password),
-            'is_approved' => false,
-        ]);
+        $normalizedPhone = preg_replace('/[^\d+]/', '', (string) $request->phone);
+
+        $requiresAdminApproval = feature_enabled('require_admin_approval', true);
+
+        $existingUser = User::withTrashed()->where('email', $normalizedEmail)->first();
+
+        if ($existingUser && $existingUser->trashed()) {
+            $existingUser->restore();
+            $existingUser->forceFill([
+                'name' => $request->name,
+                'email' => $normalizedEmail,
+                'phone' => $normalizedPhone,
+                'password' => Hash::make($request->password),
+                'is_approved' => !$requiresAdminApproval,
+                'approved_at' => !$requiresAdminApproval ? now() : null,
+                'approved_by' => null,
+                'email_verified_at' => null,
+            ])->save();
+
+            $user = $existingUser;
+        } else {
+            $user = User::create([
+                'name' => $request->name,
+                'email' => $normalizedEmail,
+                'phone' => $normalizedPhone,
+                'password' => Hash::make($request->password),
+                'is_approved' => !$requiresAdminApproval,
+                'approved_at' => !$requiresAdminApproval ? now() : null,
+            ]);
+        }
 
         if ($customerRole = Role::where('name', 'customer')->first()) {
             $user->assignRole($customerRole);
         }
 
-        event(new Registered($user));
+        $code = str_pad((string) random_int(0, 999999), 6, '0', STR_PAD_LEFT);
+        EmailVerificationCode::create([
+            'user_id' => $user->id,
+            'code_hash' => Hash::make($code),
+            'expires_at' => now()->addMinutes(15),
+        ]);
 
-        return redirect()->route('login')
-            ->with('status', 'Registration successful. Verify your email and wait for admin approval.');
+        $fromName = (string) site_setting('mail_from_name', config('mail.from.name'));
+        $fromAddress = (string) site_setting('mail_from_address', config('mail.from.address'));
+
+        try {
+            Mail::raw(
+                "Your VerityTrade verification code is: {$code}\n\nThis code expires in 15 minutes.",
+                function ($message) use ($user, $fromAddress, $fromName): void {
+                    $message->to($user->email, $user->name)->subject('Your VerityTrade Verification Code');
+                    if ($fromAddress) {
+                        $message->from($fromAddress, $fromName ?: 'VerityTrade');
+                    }
+                }
+            );
+        } catch (\Throwable $e) {
+            Log::error('Failed to send verification code after registration.', [
+                'user_id' => $user->id,
+                'email' => $user->email,
+                'error' => $e->getMessage(),
+            ]);
+        }
+
+        return redirect()->route('verification.code', ['email' => $user->email], 303)
+            ->with('status', 'Registration successful. Check your inbox and spam folder for the 6-digit code.')
+            ->with('verification_email', $user->email);
     }
 }

@@ -8,9 +8,10 @@
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
 <body class="bg-gray-50 text-gray-900">
+    @php($customerName = auth()->user()?->name ?: 'Customer')
     <header class="bg-white border-b border-gray-200 sticky top-0 z-20">
         <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
-            <a href="{{ route('dashboard') }}" class="font-bold text-blue-700">VerityTrade Customer</a>
+            <a href="{{ route('dashboard') }}" class="font-bold text-blue-700">{{ $customerName }}</a>
             <nav class="flex items-center gap-3 text-sm">
                 <a href="{{ route('dashboard') }}" class="text-gray-700 hover:text-blue-700">Dashboard</a>
                 <a href="{{ route('dashboard.orders') }}" class="text-gray-700 hover:text-blue-700">Orders</a>

@@ -3,9 +3,13 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\ProfileUpdateRequest;
+use App\Models\EmailVerificationCode;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Redirect;
 use Illuminate\View\View;
 
@@ -26,13 +30,52 @@ class ProfileController extends Controller
      */
     public function update(ProfileUpdateRequest $request): RedirectResponse
     {
-        $request->user()->fill($request->validated());
+        $user = $request->user();
+        $validated = $request->validated();
+        unset($validated['current_password']);
 
-        if ($request->user()->isDirty('email')) {
-            $request->user()->email_verified_at = null;
+        $user->fill($validated);
+
+        $emailChanged = $user->isDirty('email');
+        if ($emailChanged) {
+            $user->email_verified_at = null;
         }
 
-        $request->user()->save();
+        $user->save();
+
+        if ($emailChanged) {
+            $code = str_pad((string) random_int(0, 999999), 6, '0', STR_PAD_LEFT);
+            EmailVerificationCode::where('user_id', $user->id)->whereNull('used_at')->update(['used_at' => now()]);
+            EmailVerificationCode::create([
+                'user_id' => $user->id,
+                'code_hash' => Hash::make($code),
+                'expires_at' => now()->addMinutes(15),
+            ]);
+
+            $fromName = (string) site_setting('mail_from_name', config('mail.from.name'));
+            $fromAddress = (string) site_setting('mail_from_address', config('mail.from.address'));
+
+            try {
+                Mail::raw(
+                    "Your VerityTrade verification code is: {$code}\n\nThis code expires in 15 minutes.",
+                    function ($message) use ($user, $fromAddress, $fromName): void {
+                        $message->to($user->email, $user->name)->subject('Verify your updated email');
+                        if ($fromAddress) {
+                            $message->from($fromAddress, $fromName ?: 'VerityTrade');
+                        }
+                    }
+                );
+            } catch (\Throwable $e) {
+                Log::error('Failed to send OTP after email change.', ['user_id' => $user->id, 'error' => $e->getMessage()]);
+            }
+
+            Auth::logout();
+            $request->session()->invalidate();
+            $request->session()->regenerateToken();
+
+            return Redirect::route('verification.code', ['email' => $user->email])
+                ->with('status', 'Email updated. Verify the new email with the OTP to continue.');
+        }
 
         return Redirect::route('profile.edit')->with('status', 'profile-updated');
     }

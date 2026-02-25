@@ -12,6 +12,7 @@ use App\Models\FunctionalityGrade;
 use App\Models\Memory;
 use App\Models\PriceRule;
 use App\Models\PricingSetting;
+use App\Models\SpecGroup;
 use App\Models\Series;
 use Illuminate\Support\Collection;
 use Illuminate\Http\Request;
@@ -72,9 +73,6 @@ class PhoneController extends Controller
 
         $series = Series::with(['devices' => function ($query) {
                 $query->where('is_active', true)
-                    ->whereHas('priceRules', function ($priceRuleQuery) {
-                        $priceRuleQuery->where('is_active', true);
-                    })
                     ->orderBy('position')
                     ->orderBy('name');
             }])
@@ -90,29 +88,23 @@ class PhoneController extends Controller
                 ->values();
 
             $ruleOptions = $this->buildRuleOptionsByDevice($deviceIds, $pricingSetting);
-
-            if (!empty($ruleOptions)) {
-                return view('public.phones.series', compact('brand', 'series', 'ruleOptions'));
-            }
+            return view('public.phones.series', compact('brand', 'series', 'ruleOptions'));
         }
 
         $devices = Device::where('brand_id', $brand->id)
             ->whereNull('series_id')
             ->where('is_active', true)
-            ->whereHas('priceRules', function ($priceRuleQuery) {
-                $priceRuleQuery->where('is_active', true);
-            })
             ->orderBy('position')
             ->orderBy('name')
             ->get();
 
         $ruleOptions = $this->buildRuleOptionsByDevice($devices->pluck('id'), $pricingSetting);
 
-        if ($devices->isNotEmpty() && !empty($ruleOptions)) {
+        if ($devices->isNotEmpty()) {
             return view('public.phones.devices', compact('brand', 'devices', 'ruleOptions'));
         }
 
-        return view('public.phones.request', compact('brand'));
+        return $this->renderPhoneRequestView($brand);
     }
 
     public function device(string $brandUuid, string $deviceUuid)
@@ -147,7 +139,7 @@ class PhoneController extends Controller
         $deviceRuleOptions = $ruleOptions[$device->id] ?? [];
 
         if (empty($deviceRuleOptions)) {
-            return view('public.phones.request', compact('brand'));
+            return $this->renderPhoneRequestView($brand);
         }
 
         return view('public.phones.device', compact(
@@ -163,6 +155,7 @@ class PhoneController extends Controller
     public function request(Request $request, string $brandUuid): RedirectResponse
     {
         $brand = Brand::where('uuid', $brandUuid)->firstOrFail();
+        $category = $brand->category;
 
         if (!$brand->is_active || !$this->isPhoneBrand($brand)) {
             throw new NotFoundHttpException();
@@ -170,8 +163,17 @@ class PhoneController extends Controller
 
         $validated = $request->validate([
             'manual_model_name' => 'required|string|max:255',
+            'memory_id' => 'required|exists:memories,id',
+            'functionality_grade_id' => 'required|exists:functionality_grades,id',
+            'appearance_grade_id' => 'required|exists:appearance_grades,id',
             'phone_number' => 'required|string|max:30',
+            'request_specs' => 'nullable|array',
         ]);
+
+        $memory = Memory::find($validated['memory_id']);
+        $func = FunctionalityGrade::find($validated['functionality_grade_id']);
+        $appearance = AppearanceGrade::find($validated['appearance_grade_id']);
+        $extraSpecs = $this->extractRequestSpecsFromPayload($request, $category?->id);
 
         CustomerRequest::create([
             'uuid' => (string) Str::uuid(),
@@ -179,22 +181,40 @@ class PhoneController extends Controller
             'category_id' => $brand->category_id,
             'brand_id' => $brand->id,
             'manual_model_name' => $validated['manual_model_name'],
+            'memory_id' => $validated['memory_id'],
+            'functionality_grade_id' => $validated['functionality_grade_id'],
+            'appearance_grade_id' => $validated['appearance_grade_id'],
+            'request_spec_json' => $extraSpecs,
             'phone_number' => $validated['phone_number'],
             'status' => 'pending',
         ]);
 
-        return back()->with('success', 'Request submitted. We will contact you shortly.');
+        $message = "Hello, I want to request a phone:\n\n";
+        $message .= "Brand: {$brand->name}\n";
+        $message .= "Model: {$validated['manual_model_name']}\n";
+        $message .= "Memory: " . ($memory?->size_gb ? $memory->size_gb . "GB" : 'N/A') . "\n";
+        $message .= "Function: " . ($func?->grade ? $func->grade . " Grade" : 'N/A') . "\n";
+        $message .= "Appearance: " . ($appearance?->percentage ? $appearance->percentage . "%" : 'N/A') . "\n";
+        foreach ($extraSpecs as $label => $value) {
+            $message .= "{$label}: {$value}\n";
+        }
+        $message .= "Contact: {$validated['phone_number']}\n";
+
+        $whatsappNumber = site_setting('whatsapp_number', site_setting('whatsapp_business_number', '2347084117779'));
+
+        return redirect()->away("https://wa.me/{$whatsappNumber}?text=" . urlencode($message));
     }
 
     public function requestForm(string $brandUuid): View
     {
         $brand = Brand::where('uuid', $brandUuid)->firstOrFail();
+        $category = $brand->category;
 
         if (!$brand->is_active || !$this->isPhoneBrand($brand)) {
             throw new NotFoundHttpException();
         }
-        
-        return view('public.phones.request', compact('brand'));
+
+        return $this->renderPhoneRequestView($brand);
     }
 
     public function whatsapp(Request $request, string $deviceUuid)
@@ -245,7 +265,7 @@ class PhoneController extends Controller
 
         $message .= "\nPlease confirm availability and delivery options. Thank you!";
 
-        $whatsappNumber = site_setting('whatsapp_business_number', '2347084117779');
+        $whatsappNumber = site_setting('whatsapp_number', site_setting('whatsapp_business_number', '2347084117779'));
 
         return redirect()->away("https://wa.me/{$whatsappNumber}?text=" . urlencode($message));
     }
@@ -294,5 +314,64 @@ class PhoneController extends Controller
         }
 
         return $result;
+    }
+
+    private function getCategorySpecGroups(?int $categoryId)
+    {
+        if (!$categoryId) {
+            return collect();
+        }
+
+        return SpecGroup::with(['specs.values'])
+            ->where('category_id', $categoryId)
+            ->where('is_active', true)
+            ->orderBy('id')
+            ->get();
+    }
+
+    private function extractRequestSpecsFromPayload(Request $request, ?int $categoryId): array
+    {
+        if (!$categoryId) {
+            return [];
+        }
+
+        $payload = $request->input('request_specs', []);
+        if (!is_array($payload)) {
+            return [];
+        }
+
+        $groups = $this->getCategorySpecGroups($categoryId);
+        $resolved = [];
+
+        foreach ($groups as $group) {
+            foreach ($group->specs as $spec) {
+                $raw = $payload[$spec->id] ?? null;
+                if ($raw === null || $raw === '') {
+                    continue;
+                }
+
+                if ($spec->input_type === 'dropdown') {
+                    $value = $spec->values->firstWhere('id', (int) $raw);
+                    if ($value) {
+                        $resolved[$spec->name] = $value->value;
+                    }
+                } else {
+                    $resolved[$spec->name] = (string) $raw;
+                }
+            }
+        }
+
+        return $resolved;
+    }
+
+    private function renderPhoneRequestView(Brand $brand): View
+    {
+        $category = $brand->category;
+        $memories = Memory::where('is_active', true)->orderBy('size_gb')->get();
+        $functionalities = FunctionalityGrade::where('is_active', true)->orderBy('grade')->get();
+        $appearances = AppearanceGrade::where('is_active', true)->orderByDesc('percentage')->get();
+        $specGroups = $this->getCategorySpecGroups($category?->id);
+
+        return view('public.phones.request', compact('brand', 'memories', 'functionalities', 'appearances', 'specGroups'));
     }
 }

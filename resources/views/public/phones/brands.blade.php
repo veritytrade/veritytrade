@@ -12,7 +12,7 @@
                             $isPhones = Str::contains(Str::lower((string) $category->name), 'phone');
                         @endphp
                         <a
-                            href="{{ $isPhones ? route('public.phones.brands') : route('home') . '#' . Str::slug($category->name) }}"
+                            href="{{ $isPhones ? route('public.phones.brands') : route('public.categories.show', ['categorySlug' => Str::slug($category->name)]) }}"
                             class="block flex-shrink-0 px-4 py-3 whitespace-nowrap {{ $isPhones ? 'font-bold text-blue-600 border-b-[3px] border-blue-600' : 'text-gray-500 hover:text-gray-700' }}"
                         >
                             {{ $category->name }}

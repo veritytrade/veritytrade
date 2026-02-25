@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Str;
 
 class Deal extends Model
 {
@@ -28,6 +29,15 @@ class Deal extends Model
         'expires_at' => 'datetime',
         'is_active' => 'boolean',
     ];
+
+    protected static function booted(): void
+    {
+        static::creating(function (Deal $deal): void {
+            if (blank($deal->uuid)) {
+                $deal->uuid = (string) Str::uuid();
+            }
+        });
+    }
 
     public function images(): HasMany
     {

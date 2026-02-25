@@ -21,6 +21,8 @@ class User extends Authenticatable implements MustVerifyEmail
         'password',
         'phone',
         'address',
+        'state',
+        'city',
         'role_id',
         'is_approved',
         'approved_at',
@@ -36,6 +38,10 @@ class User extends Authenticatable implements MustVerifyEmail
         'email_verified_at' => 'datetime',
         'approved_at' => 'datetime',
         'is_approved' => 'boolean',
+        'phone' => 'encrypted',
+        'address' => 'encrypted',
+        'state' => 'encrypted',
+        'city' => 'encrypted',
     ];
 
     public function roles(): BelongsToMany

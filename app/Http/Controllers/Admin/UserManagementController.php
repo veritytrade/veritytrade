@@ -11,31 +11,81 @@ use Illuminate\Http\Request;
 
 class UserManagementController extends Controller
 {
-    public function index()
+    public function staffIndex()
     {
-        $actor = auth()->user();
-        $actorIsSuperAdmin = $actor && $actor->hasRole('super_admin');
+        $staffRoles = Role::whereIn('name', ['admin', 'staff'])->orderBy('name')->get();
 
-        $usersQuery = User::with(['role', 'roles'])->orderByDesc('id');
-        $rolesQuery = Role::orderBy('name');
+        $staffUsers = User::with(['role'])
+            ->whereHas('role', function ($query) {
+                $query->whereIn('name', ['admin', 'staff']);
+            })
+            ->orderByDesc('id')
+            ->get();
 
-        // Non-super-admin users must not see/manage super_admin accounts.
-        if (!$actorIsSuperAdmin) {
-            $superAdminRoleId = Role::where('name', 'super_admin')->value('id');
-            if ($superAdminRoleId) {
-                $usersQuery->where('role_id', '!=', $superAdminRoleId);
-                $rolesQuery->where('name', '!=', 'super_admin');
-            }
+        return view('admin.staff.index', compact('staffRoles', 'staffUsers'));
+    }
+
+    public function registeredUsers()
+    {
+        $usersQuery = User::with(['role'])->orderByDesc('id');
+        $superAdminRoleId = Role::where('name', 'super_admin')->value('id');
+        if ($superAdminRoleId) {
+            $usersQuery->where('role_id', '!=', $superAdminRoleId);
         }
 
         $users = $usersQuery->get();
-        $roles = $rolesQuery->get();
 
-        return view('admin.users.index', compact('users', 'roles', 'actorIsSuperAdmin'));
+        return view('admin.registered-users.index', compact('users'));
+    }
+
+    public function assignRoleByEmail(Request $request): RedirectResponse
+    {
+        $request->validate([
+            'email' => ['required', 'email', 'exists:users,email'],
+            'role_id' => ['required', 'exists:roles,id'],
+        ]);
+
+        $role = Role::findOrFail($request->integer('role_id'));
+        if (!in_array($role->name, ['admin', 'staff'], true)) {
+            abort(403, 'Only admin or staff roles can be assigned here.');
+        }
+
+        $user = User::where('email', $request->input('email'))->firstOrFail();
+        if ($user->hasRole('super_admin')) {
+            abort(403, 'Super admin account cannot be reassigned from this panel.');
+        }
+
+        $before = $user->toArray();
+        $user->assignRole($role);
+        Audit::log('assign_role', 'users', $user->id, $before, $user->fresh()->toArray());
+
+        return back()->with('success', 'Role assigned successfully.');
+    }
+
+    public function removeRole(User $user): RedirectResponse
+    {
+        if ($user->hasRole('super_admin')) {
+            abort(403, 'Super admin role cannot be changed here.');
+        }
+
+        $customerRole = Role::where('name', 'customer')->first();
+        if (!$customerRole) {
+            return back()->with('error', 'Customer role is missing.');
+        }
+
+        $before = $user->toArray();
+        $user->assignRole($customerRole);
+        Audit::log('remove_staff_role', 'users', $user->id, $before, $user->fresh()->toArray());
+
+        return back()->with('success', 'Role removed. User is now a customer.');
     }
 
     public function approve(User $user): RedirectResponse
     {
+        if ($user->hasRole('super_admin')) {
+            abort(403, 'Super admin approval cannot be changed here.');
+        }
+
         $before = $user->toArray();
         $user->update([
             'is_approved' => true,
@@ -47,25 +97,20 @@ class UserManagementController extends Controller
         return back()->with('success', 'User approved successfully.');
     }
 
-    public function updateRole(Request $request, User $user): RedirectResponse
+    public function destroy(User $user): RedirectResponse
     {
-        $request->validate([
-            'role_id' => 'required|exists:roles,id',
-        ]);
+        if ($user->hasRole('super_admin')) {
+            abort(403, 'Super admin account cannot be deleted from this panel.');
+        }
 
-        $role = Role::findOrFail($request->integer('role_id'));
-        $actor = auth()->user();
-        $actorIsSuperAdmin = $actor && $actor->hasRole('super_admin');
-        $targetIsSuperAdmin = $user->hasRole('super_admin');
-
-        if (!$actorIsSuperAdmin && ($role->name === 'super_admin' || $targetIsSuperAdmin)) {
-            abort(403, 'Only super admin can assign or manage super admin roles.');
+        if ((int) auth()->id() === (int) $user->id) {
+            abort(403, 'You cannot delete your own account from this panel.');
         }
 
         $before = $user->toArray();
-        $user->assignRole($role);
-        Audit::log('assign_role', 'users', $user->id, $before, $user->fresh()->toArray());
+        $user->delete();
+        Audit::log('delete_user', 'users', $user->id, $before, null);
 
-        return back()->with('success', 'Role updated successfully.');
+        return back()->with('success', 'User deleted successfully.');
     }
 }

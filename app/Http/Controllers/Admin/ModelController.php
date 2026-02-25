@@ -12,6 +12,19 @@ use Illuminate\Support\Str;
 
 class ModelController extends Controller
 {
+    public function hub()
+    {
+        $brands = Brand::with(['category'])
+            ->orderBy('name')
+            ->get();
+
+        $series = Series::with(['brand'])
+            ->orderBy('name')
+            ->get();
+
+        return view('admin.models.hub', compact('brands', 'series'));
+    }
+
     public function index($seriesId)
     {
         $series = Series::with('brand.category')->findOrFail($seriesId);
