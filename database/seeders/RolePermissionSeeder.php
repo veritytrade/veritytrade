@@ -38,6 +38,10 @@ class RolePermissionSeeder extends Seeder
                 'manage_orders',
                 'generate_invoices',
                 'access_tracking',
+                'update_shipment_stage',
+                'override_order_stage',
+                'view_tracking',
+                'approve_orders',
             ])->pluck('id')->all();
 
             $staff->permissions()->sync($staffPermissionIds);

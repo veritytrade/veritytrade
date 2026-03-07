@@ -24,28 +24,21 @@
             <ul class="space-y-1">
                 @if($user->hasPermission('view_dashboard'))
                     <li><a href="{{ route('admin.dashboard') }}" class="flex items-center px-4 py-3 text-sm font-medium rounded-lg {{ request()->routeIs('admin.dashboard') ? 'bg-white text-green-700' : 'text-green-100 hover:bg-green-600 hover:text-white' }}">Dashboard</a></li>
+                    <li><a href="{{ route('admin.homepage-hero.edit') }}" class="flex items-center px-4 py-3 text-sm font-medium rounded-lg {{ request()->routeIs('admin.homepage-hero.*') ? 'bg-white text-green-700' : 'text-green-100 hover:bg-green-600 hover:text-white' }}">Homepage Hero</a></li>
                 @endif
                 @if($user->hasPermission('manage_deals'))
                     <li><a href="{{ route('admin.deals.index') }}" class="flex items-center px-4 py-3 text-sm font-medium rounded-lg {{ request()->routeIs('admin.deals.*') ? 'bg-white text-green-700' : 'text-green-100 hover:bg-green-600 hover:text-white' }}">Hot Deals</a></li>
                 @endif
-                @if($user->hasPermission('manage_categories'))
-                    <li><a href="{{ route('admin.categories.index') }}" class="flex items-center px-4 py-3 text-sm font-medium rounded-lg {{ request()->routeIs('admin.categories.*') ? 'bg-white text-green-700' : 'text-green-100 hover:bg-green-600 hover:text-white' }}">Categories</a></li>
-                    <li><a href="{{ route('admin.specs.index') }}" class="flex items-center px-4 py-3 text-sm font-medium rounded-lg {{ request()->routeIs('admin.specs.*') ? 'bg-white text-green-700' : 'text-green-100 hover:bg-green-600 hover:text-white' }}">Specifications</a></li>
+                <li><a href="{{ route('admin.phones.brands.index') }}" class="flex items-center px-4 py-3 text-sm font-medium rounded-lg {{ request()->routeIs('admin.phones.*') ? 'bg-white text-green-700' : 'text-green-100 hover:bg-green-600 hover:text-white' }}">Phones</a></li>
+                @if($user->hasPermission('view_tracking'))
+                    <li><a href="{{ route('admin.shipments.index') }}" class="flex items-center px-4 py-3 text-sm font-medium rounded-lg {{ request()->routeIs('admin.shipments.*') ? 'bg-white text-green-700' : 'text-green-100 hover:bg-green-600 hover:text-white' }}">Shipments</a></li>
                 @endif
-                @if($user->hasPermission('manage_brands'))
-                    <li><a href="{{ route('admin.brands.index') }}" class="flex items-center px-4 py-3 text-sm font-medium rounded-lg {{ request()->routeIs('admin.brands.*') ? 'bg-white text-green-700' : 'text-green-100 hover:bg-green-600 hover:text-white' }}">Brands</a></li>
+                @if($user->hasPermission('view_tracking'))
+                    <li><a href="{{ route('admin.orders.index') }}" class="flex items-center px-4 py-3 text-sm font-medium rounded-lg {{ request()->routeIs('admin.orders.*') ? 'bg-white text-green-700' : 'text-green-100 hover:bg-green-600 hover:text-white' }}">Orders</a></li>
                 @endif
-                @if($user->hasPermission('manage_series'))
-                    <li><a href="{{ route('admin.series.index') }}" class="flex items-center px-4 py-3 text-sm font-medium rounded-lg {{ request()->routeIs('admin.series.*') ? 'bg-white text-green-700' : 'text-green-100 hover:bg-green-600 hover:text-white' }}">Series</a></li>
-                @endif
-                @if($user->hasPermission('manage_models'))
-                    <li><a href="{{ route('admin.models.hub') }}" class="flex items-center px-4 py-3 text-sm font-medium rounded-lg {{ request()->routeIs('admin.models.*') || request()->routeIs('admin.brand-models.*') ? 'bg-white text-green-700' : 'text-green-100 hover:bg-green-600 hover:text-white' }}">Models</a></li>
-                @endif
-                @if($user->hasPermission('access_pricing_engine'))
-                    <li><a href="{{ route('admin.pricing.index') }}" class="flex items-center px-4 py-3 text-sm font-medium rounded-lg {{ request()->routeIs('admin.pricing.index') || request()->routeIs('admin.pricing.store') || request()->routeIs('admin.pricing.toggle') || request()->routeIs('admin.pricing.destroy') ? 'bg-white text-green-700' : 'text-green-100 hover:bg-green-600 hover:text-white' }}">Pricing Engine</a></li>
-                @endif
-                @if($user->hasPermission('access_pricing_settings'))
-                    <li><a href="{{ route('admin.pricing.settings') }}" class="flex items-center px-4 py-3 text-sm font-medium rounded-lg {{ request()->routeIs('admin.pricing.settings*') ? 'bg-white text-green-700' : 'text-green-100 hover:bg-green-600 hover:text-white' }}">Pricing Settings</a></li>
+                @if($user->hasPermission('generate_invoices'))
+                    <li><a href="{{ route('admin.invoice-settings.generate') }}" class="flex items-center px-4 py-3 text-sm font-medium rounded-lg {{ request()->routeIs('admin.invoice-settings.generate*') ? 'bg-white text-green-700' : 'text-green-100 hover:bg-green-600 hover:text-white' }}">Generate Invoice</a></li>
+                    <li><a href="{{ route('admin.invoice-settings.edit') }}" class="flex items-center px-4 py-3 text-sm font-medium rounded-lg {{ request()->routeIs('admin.invoice-settings.edit') || request()->routeIs('admin.invoice-settings.preview*') || request()->routeIs('admin.invoice-settings.update') ? 'bg-white text-green-700' : 'text-green-100 hover:bg-green-600 hover:text-white' }}">Invoice Settings</a></li>
                 @endif
                 @if($user->hasPermission('assign_roles'))
                     <li><a href="{{ route('admin.staff.index') }}" class="flex items-center px-4 py-3 text-sm font-medium rounded-lg {{ request()->routeIs('admin.staff.*') ? 'bg-white text-green-700' : 'text-green-100 hover:bg-green-600 hover:text-white' }}">Staff Management</a></li>

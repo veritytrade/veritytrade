@@ -4,8 +4,9 @@ namespace App\Http\Controllers\Public;
 
 use App\Http\Controllers\Controller;
 use App\Models\Category;
-use App\Models\Brand;
 use App\Models\Deal;
+use App\Models\HomepageHero;
+use App\Modules\Phones\Models\PhoneBrand;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 
@@ -17,55 +18,52 @@ class HomeController extends Controller
         $deals = collect();
         $phoneBrands = collect();
 
-        if (!Schema::hasTable('categories')) {
-            return view('public.home', compact('categories', 'deals', 'phoneBrands'));
+        // Categories (optional): for extra tabs; do not block page.
+        if (Schema::hasTable('categories')) {
+            try {
+                $categories = Category::where('is_active', true)
+                    ->orderBy('position')
+                    ->get();
+            } catch (\Throwable $e) {
+                report($e);
+            }
         }
 
-        // Dynamic categories for tabs (only active ones).
-        // Category tabs should not depend on other modules being present.
-        try {
-            $categories = Category::where('is_active', true)
-                ->orderBy('position')
-                ->get();
-        } catch (\Throwable $e) {
-            report($e);
-            $categories = collect();
-        }
-
-        // Hot deals are optional and should never block category tabs.
+        // Hot deals: show all active, non–soft-deleted deals (ignore expiry so admin content always shows).
         if (Schema::hasTable('deals')) {
             try {
-                $deals = Deal::available()
+                $deals = Deal::query()
                     ->with('images')
+                    ->where('is_active', true)
                     ->orderBy('position', 'desc')
+                    ->orderByRaw('CASE WHEN expires_at IS NULL THEN 1 ELSE 0 END')
                     ->orderBy('expires_at', 'desc')
                     ->get();
             } catch (\Throwable $e) {
                 report($e);
-                $deals = collect();
             }
         }
 
-        // Phones module (category name can evolve; detect by name containing "phone").
-        if (Schema::hasTable('brands')) {
-            $phoneCategory = $categories->first(function ($category) {
-                return Str::contains(Str::lower((string) $category->name), 'phone');
-            });
-
+        // Phones module: show active brands for Phones tab.
+        if (Schema::hasTable('phone_brands')) {
             try {
-                $phoneBrands = $phoneCategory
-                    ? Brand::where('category_id', $phoneCategory->id)
-                        ->where('is_active', true)
-                        ->where('uses_pricing_engine', true)
-                        ->orderBy('position')
-                        ->get()
-                    : collect();
+                $phoneBrands = PhoneBrand::where('is_active', true)
+                    ->orderBy('name')
+                    ->get();
             } catch (\Throwable $e) {
                 report($e);
-                $phoneBrands = collect();
             }
         }
 
-        return view('public.home', compact('categories', 'deals', 'phoneBrands'));
+        $hero = null;
+        if (Schema::hasTable('homepage_hero')) {
+            try {
+                $hero = HomepageHero::get();
+            } catch (\Throwable $e) {
+                report($e);
+            }
+        }
+
+        return view('public.home', compact('categories', 'deals', 'phoneBrands', 'hero'));
     }
 }

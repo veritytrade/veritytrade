@@ -42,7 +42,7 @@
                             <td class="p-3">
                                 <div class="flex items-center justify-center gap-2 flex-wrap">
                                     @if(!$user->is_approved)
-                                        <form method="POST" action="{{ route('admin.users.approve', $user) }}">
+                                        <form method="POST" action="{{ route('admin.registered-users.approve', $user) }}">
                                             @csrf
                                             <button class="bg-green-600 hover:bg-green-700 text-white px-3 py-1.5 rounded-lg text-xs font-medium">
                                                 Approve

@@ -11,6 +11,14 @@ class PermissionSeeder extends Seeder
     {
         $permissions = [
             'view_dashboard',
+            'approve_orders',
+            'create_order',
+            'create_shipment',
+            'assign_shipment',
+            'update_shipment_stage',
+            'override_order_stage',
+            'view_tracking',
+            'manage_tracking_stages',
             'manage_categories',
             'manage_brands',
             'manage_series',

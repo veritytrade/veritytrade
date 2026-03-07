@@ -55,7 +55,8 @@ class DealController extends Controller
             'price_display' => $request->price_display,
             'whatsapp_message' => $request->whatsapp_message,
             'expires_at' => $request->expires_at, // ✅ CRITICAL FIX
-            'is_active' => $request->has('is_active'),
+            // New deals default to active unless explicitly unchecked.
+            'is_active' => $request->boolean('is_active', true),
             'position' => Deal::max('position') + 1,
         ]);
 
@@ -112,7 +113,8 @@ class DealController extends Controller
             'price_display' => $request->price_display,
             'whatsapp_message' => $request->whatsapp_message,
             'expires_at' => $request->expires_at, // ✅ CRITICAL FIX
-            'is_active' => $request->has('is_active'),
+            // Keep or update active flag; default to true if not present.
+            'is_active' => $request->boolean('is_active', true),
         ]);
 
         // Handle new images

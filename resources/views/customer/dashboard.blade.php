@@ -1,42 +1,52 @@
 <x-layouts.customer>
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-        <div class="bg-white rounded-xl border border-gray-200 p-4">
-            <div class="text-sm text-gray-500">Orders</div>
-            <div class="text-2xl font-bold text-blue-700">{{ $orders->count() }}</div>
-        </div>
-        <div class="bg-white rounded-xl border border-gray-200 p-4">
-            <div class="text-sm text-gray-500">Invoices</div>
-            <div class="text-2xl font-bold text-green-700">{{ $invoices->count() }}</div>
-        </div>
-        <div class="bg-white rounded-xl border border-gray-200 p-4">
-            <div class="text-sm text-gray-500">Tracking Updates</div>
-            <div class="text-2xl font-bold text-indigo-700">{{ $trackingEvents->count() }}</div>
-        </div>
-    </div>
-
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <section class="bg-white rounded-xl border border-gray-200 p-4">
-            <h2 class="font-bold text-gray-800 mb-3">Recent Orders</h2>
+            <div class="flex items-center justify-between mb-3">
+                <h2 class="font-bold text-gray-800">Recent Orders</h2>
+                <a href="{{ route('dashboard.orders.create') }}" class="text-sm font-medium text-green-600 hover:text-green-700">+ Create order</a>
+            </div>
             @forelse($orders as $order)
-                <div class="py-2 border-b border-gray-100 last:border-b-0 text-sm flex justify-between">
-                    <span>#{{ $order->uuid ?? $order->id }}</span>
-                    <span class="font-semibold">{{ ucfirst($order->status) }}</span>
+                <div class="py-3 border-b border-gray-100 last:border-b-0">
+                    <div class="flex justify-between items-start text-sm">
+                        <div>
+                            <a href="{{ route('dashboard.orders') }}" class="font-semibold text-gray-800 hover:text-blue-700">{{ $order->product_name ?? 'Order #'.($order->verity_tracking_code ?? $order->id) }}</a>
+                            <p class="text-gray-500 text-xs mt-0.5">₦{{ number_format((float) ($order->total_amount_ngn ?? 0)) }} · {{ $order->customer_status_label }}</p>
+                        </div>
+                        @if($order->shipment_id || $order->current_stage_id)
+                            <a href="{{ route('dashboard.tracking') }}" class="text-xs text-blue-600 hover:text-blue-700 font-medium">Track →</a>
+                        @endif
+                    </div>
                 </div>
             @empty
                 <p class="text-sm text-gray-500">No orders yet.</p>
             @endforelse
+            @if($orders->isNotEmpty())
+                <a href="{{ route('dashboard.orders') }}" class="block mt-3 text-sm font-medium text-blue-600 hover:text-blue-700">View all orders →</a>
+            @endif
         </section>
 
         <section class="bg-white rounded-xl border border-gray-200 p-4">
-            <h2 class="font-bold text-gray-800 mb-3">Recent Tracking</h2>
-            @forelse($trackingEvents as $event)
-                <div class="py-2 border-b border-gray-100 last:border-b-0 text-sm">
-                    <div class="font-semibold text-gray-800">{{ $event->status_label }}</div>
-                    <div class="text-gray-500">{{ optional($event->event_time)->format('M d, Y h:i A') }}</div>
+            <h2 class="font-bold text-gray-800 mb-3">Orders in Transit</h2>
+            @forelse($trackableOrders as $order)
+                <div class="py-3 border-b border-gray-100 last:border-b-0">
+                    <div class="flex justify-between items-start text-sm mb-2">
+                        <a href="{{ route('dashboard.tracking') }}" class="font-semibold text-gray-800 hover:text-blue-700">{{ $order->product_name ?? $order->verity_tracking_code }}</a>
+                        <span class="text-gray-500 text-xs">{{ $order->effectiveStage()?->short_name ?? $order->effectiveStage()?->name ?? 'Pending' }}</span>
+                    </div>
+                    <x-tracking-progress-bar :order="$order" />
+                    @if($order->canCustomerConfirmDelivery())
+                        <form method="POST" action="{{ route('dashboard.orders.confirm-delivery', $order) }}" class="mt-2">
+                            @csrf
+                            <button type="submit" class="px-3 py-1.5 bg-green-600 hover:bg-green-700 text-white text-xs font-medium rounded-lg">I received my order</button>
+                        </form>
+                    @endif
                 </div>
             @empty
-                <p class="text-sm text-gray-500">No tracking updates yet.</p>
+                <p class="text-sm text-gray-500">No packages in transit. When your order is assigned to a shipment, tracking will appear here.</p>
             @endforelse
+            @if($trackableOrders->isNotEmpty())
+                <a href="{{ route('dashboard.tracking') }}" class="block mt-3 text-sm font-medium text-blue-600 hover:text-blue-700">View all tracking →</a>
+            @endif
         </section>
     </div>
 </x-layouts.customer>

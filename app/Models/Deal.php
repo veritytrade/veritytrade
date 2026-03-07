@@ -52,6 +52,9 @@ class Deal extends Model
     public function scopeAvailable($query)
     {
         return $query->where('is_active', true)
-            ->where('expires_at', '>', now());
+            ->where(function ($q) {
+                $q->whereNull('expires_at')
+                    ->orWhere('expires_at', '>', now());
+            });
     }
 }

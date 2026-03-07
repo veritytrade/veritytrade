@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\Order;
 
 /*
 |--------------------------------------------------------------------------
@@ -16,6 +17,11 @@ class AdminDashboardController extends Controller
 {
     public function index()
     {
-        return view('admin.dashboard');
+        $packagesInTransit = Order::whereNotNull('shipment_id')
+            ->where('status', '!=', 'delivered')
+            ->where('status', '!=', 'cancelled')
+            ->count();
+
+        return view('admin.dashboard', compact('packagesInTransit'));
     }
 }

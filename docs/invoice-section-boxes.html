@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Invoice Section Boxes - A4 Layout Analysis</title>
+<style>
+/* A4: 210mm x 297mm - content area ~170mm x 277mm */
+body { font-family: Arial, sans-serif; margin: 0; padding: 0; background: #f0f0f0; }
+.page { width: 210mm; min-height: 297mm; margin: 20px auto; background: #fff; box-shadow: 0 2px 10px rgba(0,0,0,0.1); position: relative; }
+.container { width: 170mm; margin: 0 auto; padding: 0 20mm; }
+
+/* SECTION BOXES - dashed borders for visual analysis */
+.section-box { border: 2px dashed #999; margin: 0 -5px; position: relative; }
+.section-box::before { content: attr(data-label); position: absolute; top: 2px; left: 5px; font-size: 10px; color: #666; background: #fff; padding: 0 4px; }
+.section-box::after { content: attr(data-size); position: absolute; top: 2px; right: 5px; font-size: 10px; color: #666; background: #fff; padding: 0 4px; }
+
+/* SECTION 1: Header - 8.9% = ~26.5mm = ~101px */
+#header-section { min-height: 101px; }
+/* SECTION 2: Invoice - 13.4% = ~40mm = ~152px */
+#invoice-section { min-height: 152px; }
+/* SECTION 3: Product - 21.9% = ~65mm = ~248px */
+#product-section { min-height: 248px; }
+/* SECTION 4: Notes - 7.9% = ~24mm = ~90px */
+#notes-section { min-height: 90px; }
+/* SECTION 5: Footer - 16.8% = ~50mm = ~190px */
+#footer-section { min-height: 190px; }
+
+/* Mock content for reference */
+.mock-content { padding: 10px; font-size: 12px; color: #999; }
+.logo-box { width: 60px; height: 60px; background: #1f5fbf; display: inline-block; vertical-align: top; margin-right: 15px; }
+.gradient-bar { height: 6px; background: linear-gradient(90deg, #1f5fbf, #36b37e); }
+</style>
+</head>
+<body>
+<div class="page">
+<div class="container">
+  <div id="header-section" class="section-box" data-label="1. HEADER (8.9%)" data-size="~101px × 800px">
+    <div class="mock-content">[Logo 60×60] VERITY GADGETS | info@veritytrade.ng<br>A Division of... | +234 708 411 7779</div>
+    <div class="gradient-bar"></div>
+  </div>
+
+  <div id="invoice-section" class="section-box" data-label="2. INVOICE (13.4%)" data-size="~152px × 800px">
+    <div class="mock-content" style="padding: 30px 0 0 0;">INVOICE (32px)</div>
+    <div class="mock-content">Bill To: Suleman Godson | Invoice #: VT-2026-0001<br>09039470532 | Date: 20 Jan 2026<br>NASARAWA | Status: Pending</div>
+  </div>
+
+  <div id="product-section" class="section-box" data-label="3. PRODUCT (21.9%)" data-size="~248px × 800px">
+    <div class="mock-content">[Table header gradient] Product | Spec | Qty | Unit Price | Total</div>
+    <div class="mock-content">[70×70 img] iPhone X 256GB • Grade A | 1 | ₦350,000 | ₦350,000</div>
+    <div class="mock-content" style="text-align:right;">Subtotal ₦350,000 | Waybill ₦15,000 | [TOTAL bar] ₦365,000</div>
+  </div>
+
+  <div id="notes-section" class="section-box" data-label="4. NOTES (7.9%)" data-size="~90px × 800px">
+    <div class="mock-content">Notes: • Device sourced... • Please reference...<br>Thank you for choosing Verity Gadgets.<br>Verified Value. Visible Quality.</div>
+  </div>
+
+  <div id="footer-section" class="section-box" data-label="5. FOOTER (16.8%)" data-size="~190px × 800px">
+    <div class="mock-content">Thank you for choosing... [QR 110×110] Scan for Support</div>
+    <div class="gradient-bar"></div>
+    <div class="mock-content" style="text-align:center;">Verity Trade Global Limited</div>
+  </div>
+</div>
+</div>
+<p style="text-align:center;font-size:12px;color:#666;">Open this file in browser to see section boundaries. A4 proportions.</p>
+</body>
+</html>

@@ -22,7 +22,10 @@ class DatabaseSeeder extends Seeder
             RolePermissionSeeder::class,
             FeatureFlagSeeder::class,
             SuperAdminSeeder::class,
-            PricingEngineSeeder::class,
+            PhoneSpecSeeder::class,
+            PhoneBrandSeeder::class,
+            PhoneModelSeeder::class,
+            TrackingStageSeeder::class,
         ]);
     }
 }

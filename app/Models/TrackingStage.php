@@ -3,29 +3,25 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class TrackingStage extends Model
 {
     protected $fillable = [
-        'order_id',
-        'stage_number',
-        'stage_name',
-        'completed_at',
-        'updated_by',
+        'name',
+        'short_name',
+        'position',
+        'description',
+        'color_code',
     ];
 
-    protected $casts = [
-        'completed_at' => 'datetime',
-    ];
-
-    public function order(): BelongsTo
+    public function shipments(): HasMany
     {
-        return $this->belongsTo(Order::class);
+        return $this->hasMany(Shipment::class, 'current_stage_id');
     }
 
-    public function updater(): BelongsTo
+    public function ordersWithOverride(): HasMany
     {
-        return $this->belongsTo(User::class, 'updated_by');
+        return $this->hasMany(Order::class, 'current_stage_id');
     }
 }

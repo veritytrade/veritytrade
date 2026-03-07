@@ -1,15 +1,15 @@
 @props(['deals'])
 
 <div id="hot-deals" class="max-w-7xl mx-auto px-4 py-6">
-    <h1 class="text-2xl md:text-3xl font-extrabold text-gray-900 mb-6 px-2">Hot Deals</h1>
+    <h1 class="text-2xl md:text-3xl font-bold text-gray-900 mb-6">Hot Deals</h1>
 
     @if($deals->isEmpty())
-        <div class="bg-white rounded-2xl shadow-md p-10 text-center text-gray-500 mx-2">
+        <div class="block p-10 bg-white border border-gray-200 rounded-xl shadow-sm text-center text-gray-500">
             <p class="font-semibold text-lg text-gray-800">No hot deals available right now</p>
             <p class="text-sm mt-2">Check back soon for fresh offers.</p>
         </div>
     @else
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
             @foreach($deals as $deal)
                 @php
                     $imageUrls = $deal->images->pluck('image_path')->map(fn ($path) => asset('storage/' . $path))->values();
@@ -24,8 +24,8 @@
                         ->filter(fn ($spec) => $spec['value'] !== '' && !in_array(strtolower($spec['label']), ['model', 'price'], true))
                         ->values();
 
-                    $hoursLeft = now()->diffInHours($deal->expires_at, false);
-                    $isUrgent = $hoursLeft > 0 && $hoursLeft <= 24;
+                    $hoursLeft = $deal->expires_at ? now()->diffInHours($deal->expires_at, false) : null;
+                    $isUrgent = $hoursLeft !== null && $hoursLeft > 0 && $hoursLeft <= 24;
 
                     $priceText = trim((string) $deal->price_display);
                     $priceValue = preg_replace('/^\s*(?:₦|NGN)\s*/u', '', $priceText);
@@ -35,7 +35,7 @@
                         : null;
                 @endphp
 
-                <article class="bg-white rounded-2xl shadow-md hover:shadow-xl transition-all duration-300 hover:-translate-y-1 mx-2 overflow-hidden">
+                <article class="block bg-white border border-gray-200 rounded-xl shadow-sm hover:shadow-md hover:border-green-200 transition overflow-hidden">
                     <div
                         x-data="{
                             images: @js($imageUrls),
@@ -105,7 +105,7 @@
 
                         @if($deal->price_display)
                             <div class="text-center text-[28px] leading-tight text-green-600 mt-2 mb-4">
-                                <span class="font-medium">?</span>
+                                <span class="font-medium">₦</span>
                                 <span class="font-extrabold">{{ $priceValue }}</span>
                             </div>
                         @endif
@@ -122,7 +122,7 @@
                         @endif
 
                         @if($dealWhatsappUrl)
-                            <a href="{{ $dealWhatsappUrl }}" class="w-full min-h-14 bg-green-600 hover:bg-green-700 text-white font-bold text-base rounded-xl flex items-center justify-center gap-2 shadow-md hover:shadow-lg transition-all duration-200 hover:scale-[1.02]">
+                            <a href="{{ $dealWhatsappUrl }}" class="w-full min-h-14 bg-green-600 hover:bg-green-700 text-white font-bold text-base rounded-xl flex items-center justify-center gap-2 focus:ring-4 focus:ring-green-300 transition">
                                 <span>WhatsApp to Buy Now</span>
                             </a>
                         @else
@@ -137,9 +137,9 @@
     @endif
 
     <div class="mt-8 text-center text-xs text-gray-500 px-2 pb-12">
-        <p>Transactions via WhatsApp only</p>
-        <a href="{{ route('public.request-hub') }}" class="mt-3 inline-flex items-center justify-center rounded-lg border border-blue-200 px-4 py-2 text-sm font-semibold text-blue-700">
-            Need Something Else? Make a Request
-        </a>
+        <p>Transactions via WhatsApp only.</p>
+        <p class="mt-3 text-sm text-gray-600">
+            Need something else? Send us a message on WhatsApp with your request.
+        </p>
     </div>
 </div>
