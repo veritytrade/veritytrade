@@ -17,6 +17,7 @@ Then **copy** from `/home/veritytr/veritytrade/public/` into `/home/veritytr/pub
 | `index_public_html.php` | `public_html/index.php` (rename when pasting) |
 | `.htaccess` | `public_html/.htaccess` |
 | `build/` (entire folder) | `public_html/build/` |
+| `images/` (entire folder) | `public_html/images/` ← **Required for logo** |
 | `favicon.ico` (if exists) | `public_html/` |
 | `robots.txt` (if exists) | `public_html/` |
 | `setup.php` | `public_html/setup.php` |
