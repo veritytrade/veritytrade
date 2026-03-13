@@ -13,7 +13,7 @@ class FeatureFlagSeeder extends Seeder
             ['key' => 'require_email_verification', 'value' => '1', 'group' => 'auth', 'description' => 'Require 6-digit email verification code before login'],
             ['key' => 'require_admin_approval', 'value' => '1', 'group' => 'auth', 'description' => 'Require admin approval before login'],
             ['key' => 'enable_customer_address', 'value' => '0', 'group' => 'profile', 'description' => 'Enable customer address field in profile'],
-            ['key' => 'mail_from_address', 'value' => env('MAIL_FROM_ADDRESS', 'noreply@veritytrade.com'), 'group' => 'mail', 'description' => 'Sender email for system messages'],
+            ['key' => 'mail_from_address', 'value' => env('MAIL_FROM_ADDRESS', 'noreply@veritytrade.ng'), 'group' => 'mail', 'description' => 'Sender email for system messages'],
             ['key' => 'mail_from_name', 'value' => env('MAIL_FROM_NAME', 'VerityTrade'), 'group' => 'mail', 'description' => 'Sender name for system messages'],
             ['key' => 'whatsapp_number', 'value' => env('WHATSAPP_BUSINESS_NUMBER', '2347084117779'), 'group' => 'public', 'description' => 'Primary WhatsApp business number'],
         ];

@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Cache;
 
 class FeatureFlag extends Model
 {
@@ -19,21 +20,41 @@ class FeatureFlag extends Model
         'is_active' => 'boolean',
     ];
 
+    /** Cache TTL in seconds (5 min). */
+    private const CACHE_TTL = 300;
+
     public static function value(string $key, $default = null)
     {
-        $flag = self::query()->where('key', $key)->first();
-
-        if (!$flag) {
+        $cacheKey = 'feature_flag_value:' . $key;
+        try {
+            $raw = Cache::remember($cacheKey, self::CACHE_TTL, fn () => self::query()->where('key', $key)->value('value'));
+        } catch (\Throwable) {
             return $default;
         }
 
-        return $flag->value ?? $default;
+        return $raw ?? $default;
     }
 
     public static function enabled(string $key, bool $default = false): bool
     {
-        $value = self::value($key, $default ? '1' : '0');
+        $cacheKey = 'feature_flag_enabled:' . $key;
+        try {
+            $raw = Cache::remember($cacheKey, self::CACHE_TTL, fn () => self::query()->where('key', $key)->value('value'));
+        } catch (\Throwable) {
+            return $default;
+        }
 
-        return filter_var($value, FILTER_VALIDATE_BOOLEAN);
+        if ($raw === null) {
+            return $default;
+        }
+
+        return filter_var($raw, FILTER_VALIDATE_BOOLEAN);
+    }
+
+    /** Clear cached values for a key (call after update). */
+    public static function clearCache(string $key): void
+    {
+        Cache::forget('feature_flag_value:' . $key);
+        Cache::forget('feature_flag_enabled:' . $key);
     }
 }

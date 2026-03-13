@@ -1,7 +1,10 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Admin Login</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Admin Login – {{ config('app.name') }}</title>
+    <link rel="icon" type="image/png" href="{{ asset('images/invoice/logo.png') }}">
     @vite(['resources/css/app.css'])
 </head>
 <body class="bg-gray-100 flex items-center justify-center min-h-screen">

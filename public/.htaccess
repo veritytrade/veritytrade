@@ -1,3 +1,10 @@
+# Block setup/debug scripts from web access (delete them from server when done)
+<FilesMatch "^(debug_500|install_composer|test_db|run_migrations|setup)\.php$">
+    <IfModule mod_authz_core.c>
+        Require all denied
+    </IfModule>
+</FilesMatch>
+
 <IfModule mod_rewrite.c>
     <IfModule mod_negotiation.c>
         Options -MultiViews -Indexes

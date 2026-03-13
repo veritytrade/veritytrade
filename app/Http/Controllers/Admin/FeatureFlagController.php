@@ -65,6 +65,7 @@ class FeatureFlagController extends Controller
             'value' => $this->normalizeFlagValue($request->input('value')),
             'updated_by' => auth()->id(),
         ]);
+        FeatureFlag::clearCache($featureFlag->key);
         Audit::log('update_feature_flag', 'feature_flags', $featureFlag->id, $before, $featureFlag->fresh()->toArray());
 
         return back()->with('success', 'Setting updated successfully.');

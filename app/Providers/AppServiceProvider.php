@@ -10,7 +10,6 @@ use App\Modules\Phones\Models\PhonePricingSetting;
 use App\Modules\Phones\Models\PhoneVariant;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Route;
-use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -47,13 +46,8 @@ class AppServiceProvider extends ServiceProvider
             return Order::findOrFail($value);
         });
 
-        if (!Schema::hasTable('feature_flags')) {
-            return;
-        }
-
         $fromAddress = FeatureFlag::value('mail_from_address', config('mail.from.address'));
         $fromName = FeatureFlag::value('mail_from_name', config('mail.from.name'));
-
         Config::set('mail.from.address', $fromAddress);
         Config::set('mail.from.name', $fromName);
     }

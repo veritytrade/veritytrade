@@ -14,19 +14,17 @@ The logo lives in `public/images/`. With **public_html** as web root, those file
 
 ---
 
-## Slow loading
+## Slow loading – code fixes applied
 
-**Checks on your host:**
-- PHP **opcache** – ask support if it’s enabled
-- **LiteSpeed** – many cPanel hosts use it and it’s usually fast
+The app has been optimized to reduce database queries on every request:
 
-**In your app:**
-1. Ensure caches are built (already done by `run_migrations.php`):
-   - `php artisan config:cache`
-   - `php artisan route:cache`
-   - `php artisan view:cache`
-2. In `.env`: `APP_DEBUG=false` (debug mode slows the app)
-3. If you have SSH/Terminal: run `php artisan optimize` on deploy
+1. **Feature flags / settings** – Cached for 5 minutes (previously hit DB on every call).
+2. **App bootstrap** – Removed `Schema::hasTable` and extra mail config queries.
+3. **Homepage / landing** – Removed 4–5 `Schema::hasTable` checks per request.
+4. **`.env`** – Prefer `SESSION_DRIVER=file` and `CACHE_STORE=file` on shared hosting (faster than database).
 
-**Host limits:**
-- Shared hosting can be slow; upgrade or move to a VPS if needed.
+**If still slow after deploy:**
+
+- In `.env`: set `SESSION_DRIVER=file` and `CACHE_STORE=file`.
+- Run `php artisan config:cache` (and route/view cache via setup if available).
+- Ask your host if PHP **opcache** is enabled.

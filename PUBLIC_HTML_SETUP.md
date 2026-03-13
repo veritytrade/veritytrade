@@ -21,6 +21,7 @@ Then **copy** from `/home/veritytr/veritytrade/public/` into `/home/veritytr/pub
 | `favicon.ico` (if exists) | `public_html/` |
 | `robots.txt` (if exists) | `public_html/` |
 | `setup.php` | `public_html/setup.php` |
+| `run_artisan.php` | `public_html/run_artisan.php` (optional, for running artisan via browser) |
 
 ---
 

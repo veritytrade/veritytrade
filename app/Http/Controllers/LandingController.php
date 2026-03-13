@@ -4,27 +4,26 @@ namespace App\Http\Controllers;
 
 use App\Models\Deal;
 use Illuminate\Support\Collection;
-use Illuminate\Support\Facades\Schema;
 
 class LandingController extends Controller
 {
     public function index()
     {
-        // Hot Deals
         $deals = collect();
-        if (Schema::hasTable('deals')) {
+        $categories = new Collection;
+        $phoneBrands = new Collection;
+
+        try {
             $deals = Deal::with('images')
                 ->where('is_active', true)
                 ->where('expires_at', '>', now())
                 ->orderBy('expires_at', 'asc')
                 ->get();
+        } catch (\Throwable $e) {
+            report($e);
         }
 
-        // Categories & phone brands (optional – models may be removed by cleanup)
-        $categories = new Collection;
-        $phoneBrands = new Collection;
-        if (Schema::hasTable('categories') && Schema::hasTable('brands')
-            && class_exists('App\Models\Category') && class_exists('App\Models\Brand')) {
+        if (class_exists('App\Models\Category') && class_exists('App\Models\Brand')) {
             try {
                 $categories = \App\Models\Category::orderBy('name')->get();
                 $phoneCategory = \App\Models\Category::where('name', 'Phones')->first();

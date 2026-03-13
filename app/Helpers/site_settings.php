@@ -6,10 +6,6 @@ if (!function_exists('setting_value')) {
     function setting_value(string $key, $default = null)
     {
         try {
-            if (!\Illuminate\Support\Facades\Schema::hasTable('feature_flags')) {
-                return $default;
-            }
-
             return FeatureFlag::value($key, $default);
         } catch (\Throwable $e) {
             return $default;
