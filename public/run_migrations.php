@@ -17,6 +17,22 @@ $app = require_once $basePath.'/bootstrap/app.php';
 $app->make(\Illuminate\Contracts\Console\Kernel::class)->bootstrap();
 
 header('Content-Type: text/plain; charset=utf-8');
+
+// Clear any bad cached config
+@unlink($basePath.'/bootstrap/cache/config.php');
+$env = [];
+foreach (file($basePath.'/.env') as $l) {
+    $l = trim($l);
+    if ($l && strpos($l, '#') !== 0 && strpos($l, '=') !== false) {
+        [$k, $v] = explode('=', $l, 2);
+        $env[trim($k)] = trim($v, " \t\n\r\0\x0B\"'");
+    }
+}
+if (empty($env['APP_KEY'] ?? '')) {
+    \Illuminate\Support\Facades\Artisan::call('key:generate', ['--force' => true]);
+    echo "Generated APP_KEY.\n\n";
+}
+echo "Cleared config cache.\n\n";
 echo "Running migrations...\n\n";
 
 try {
