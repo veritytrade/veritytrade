@@ -12,7 +12,12 @@ if (empty($secret) || $secret !== 'veritytrade-setup-2024') {
     die('Forbidden');
 }
 
-chdir(dirname(__DIR__));
+// Support both: veritytrade/public (normal) and public_html (when doc root can't change)
+$basePath = file_exists(dirname(__DIR__).'/artisan') ? dirname(__DIR__) : dirname(__DIR__).'/veritytrade';
+if (!file_exists($basePath.'/artisan')) {
+    die("Laravel not found at $basePath");
+}
+chdir($basePath);
 
 $commands = [
     'php artisan key:generate --force',
