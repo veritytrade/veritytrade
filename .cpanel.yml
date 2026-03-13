@@ -1,0 +1,11 @@
+# cPanel Git deployment – runs when you click "Deploy HEAD Commit"
+# Used for: composer install, migrate, cache (no shell/Terminal needed)
+---
+deployment:
+  tasks:
+    - export REPOPATH=/home/veritytr/veritytrade
+    - cd $REPOPATH && composer install --no-dev --optimize-autoloader
+    - cd $REPOPATH && php artisan migrate --force
+    - cd $REPOPATH && php artisan config:cache
+    - cd $REPOPATH && php artisan route:cache
+    - cd $REPOPATH && php artisan view:cache
