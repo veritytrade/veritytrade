@@ -69,8 +69,9 @@ git clone https://github.com/veritytrade/veritytrade.git veritytrade
 1. GitHub → repo → **Settings** → **Danger Zone** → **Change visibility** → **Public**
 2. **cPanel Git Version Control** → Clone: `https://github.com/veritytrade/veritytrade.git` to `/home/veritytr/veritytrade`
 3. After clone succeeds: GitHub → Settings → Change visibility → **Private** again
-4. **Future updates:** cPanel Git → your repo → **Update from Remote** (pull) → **Deploy HEAD Commit** (runs composer, migrate, cache)
-5. Continue with Step 4 below.
+4. **Future updates:** cPanel Git → **Update from Remote** → **Deploy HEAD Commit**
+5. **First-time only:** Create `.env` (Step 5), then visit `https://yourdomain.com/setup.php?token=veritytrade-setup-2024` – then **delete** `public/setup.php`
+6. Continue with Step 4 below.
 
 ---
 
@@ -138,42 +139,33 @@ SUPER_ADMIN_ADDRESS="Head Office"
 
 ## STEP 6: Run Deployment Commands
 
-1. **cPanel → Terminal**
-2. Run these commands one by one:
+**No Terminal?** Use one of these:
+
+### Option A – Setup script (no Terminal)
+
+1. Ensure Step 4 (Document Root) and Step 5 (.env) are done
+2. Visit: `https://yourdomain.com/setup.php?token=veritytrade-setup-2024`
+3. Wait until it finishes (key, storage link, migrate, seed, cache)
+4. **Delete** `public/setup.php` (File Manager)
+
+### Option B – Deploy + setup script
+
+1. **cPanel Git** → **Deploy HEAD Commit** (runs composer, migrate, cache)
+2. Visit `https://yourdomain.com/setup.php?token=veritytrade-setup-2024` for key + storage link + seed
+3. Delete `public/setup.php`
+
+### Option C – Terminal (if available)
 
 ```bash
 cd ~/veritytrade
-```
-
-```bash
 composer install --no-dev --optimize-autoloader
-```
-
-```bash
 php artisan key:generate
-```
-
-```bash
 php artisan storage:link
-```
-
-```bash
 php artisan migrate --force
-```
 
-```bash
 php artisan db:seed --force
-```
-
-```bash
 php artisan config:cache
-```
-
-```bash
 php artisan route:cache
-```
-
-```bash
 php artisan view:cache
 ```
 
