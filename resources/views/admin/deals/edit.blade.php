@@ -26,7 +26,7 @@
         @endif
 
         <form method="POST"
-              action="{{ route('admin.deals.update', $deal->id) }}"
+              action="{{ route('admin.deals.update', $deal) }}"
               enctype="multipart/form-data">
             @csrf
             @method('PUT')

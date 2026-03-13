@@ -22,9 +22,8 @@
                         <tr>
                             <th class="p-3 sm:p-4 text-left font-semibold text-gray-700">Order</th>
                             <th class="p-3 sm:p-4 text-left font-semibold text-gray-700">Customer</th>
-                            <th class="p-3 sm:p-4 text-left font-semibold text-gray-700">Verity Code</th>
                             <th class="p-3 sm:p-4 text-left font-semibold text-gray-700">Stage</th>
-                            <th class="p-3 sm:p-4 text-left font-semibold text-gray-700 hidden md:table-cell">Shipment</th>
+                            <th class="p-3 sm:p-4 text-left font-semibold text-gray-700 hidden md:table-cell">Invoice</th>
                             <th class="p-3 sm:p-4 text-center font-semibold text-gray-700">Actions</th>
                         </tr>
                     </thead>
@@ -39,15 +38,14 @@
                                     @endif
                                 </td>
                                 <td class="p-3 sm:p-4 text-gray-700">{{ $o->user?->name ?? '—' }}</td>
-                                <td class="p-3 sm:p-4 font-mono text-gray-700">{{ $o->verity_tracking_code ?? '—' }}</td>
                                 <td class="p-3 sm:p-4">{{ $eff?->name ?? '—' }}</td>
-                                <td class="p-3 sm:p-4 text-gray-600 hidden md:table-cell">{{ $o->shipment ? Str::limit($o->shipment->chinese_tracking_code, 10) : '—' }}</td>
+                                <td class="p-3 sm:p-4 text-gray-600 hidden md:table-cell">{{ $o->invoice?->invoice_number ?? '—' }}</td>
                                 <td class="p-3 sm:p-4">
                                     <a href="{{ route('admin.orders.show', $o) }}" class="inline-flex items-center justify-center min-h-[36px] px-3 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm font-medium">View</a>
                                 </td>
                             </tr>
                         @empty
-                            <tr><td colspan="6" class="p-6 text-center text-gray-500">No orders yet.</td></tr>
+                            <tr><td colspan="5" class="p-6 text-center text-gray-500">No orders yet.</td></tr>
                         @endforelse
                     </tbody>
                 </table>

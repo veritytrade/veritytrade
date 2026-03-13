@@ -10,7 +10,7 @@
                 <div class="text-right">
                     <div class="font-semibold text-green-700">NGN {{ number_format((float) $invoice->amount) }}</div>
                     @if($invoice->pdf_path)
-                        <a href="{{ asset('storage/' . $invoice->pdf_path) }}" class="text-blue-600 hover:underline">Download</a>
+                        <a href="{{ route('dashboard.invoices.download', $invoice) }}" class="text-blue-600 hover:underline">Download</a>
                     @else
                         <span class="text-gray-400">No PDF</span>
                     @endif

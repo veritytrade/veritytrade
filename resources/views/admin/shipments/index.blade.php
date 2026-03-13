@@ -22,7 +22,7 @@
                 <table class="w-full text-sm">
                     <thead class="bg-gray-50 border-b border-gray-200">
                         <tr>
-                            <th class="p-3 sm:p-4 text-left font-semibold text-gray-700">Code</th>
+                            <th class="p-3 sm:p-4 text-left font-semibold text-gray-700">Chinese Code</th>
                             <th class="p-3 sm:p-4 text-left font-semibold text-gray-700 hidden sm:table-cell">Logistics</th>
                             <th class="p-3 sm:p-4 text-left font-semibold text-gray-700">Stage</th>
                             <th class="p-3 sm:p-4 text-center font-semibold text-gray-700">Orders</th>

@@ -19,10 +19,13 @@ class OrderController extends Controller
 {
     public function index(Request $request): View
     {
-        $orders = Order::with(['user', 'shipment', 'currentStageOverride'])
-            ->latest('id')
-            ->paginate(15)
-            ->withQueryString();
+        $query = Order::with(['user', 'shipment', 'invoice', 'currentStageOverride'])->latest('id');
+
+        if ($status = $request->query('status')) {
+            $query->where('status', $status);
+        }
+
+        $orders = $query->paginate(15)->withQueryString();
 
         return view('admin.orders.index', compact('orders'));
     }
@@ -46,7 +49,7 @@ class OrderController extends Controller
             'user_id' => 'required|exists:users,id',
             'gadget_description' => 'required|string|max:5000',
             'outstanding_balance_ngn' => 'nullable|numeric|min:0',
-            'logistics_type' => 'required|string|in:within_lagos,outside_lagos,combined',
+            'logistics_type' => 'nullable|string|in:within_lagos,outside_lagos,combined',
             'shipment_id' => 'nullable|exists:shipments,id',
             'payment_slips.*' => [File::types(['jpg', 'jpeg', 'png', 'gif', 'webp', 'pdf'])->max(5 * 1024)],
         ];
@@ -112,7 +115,7 @@ class OrderController extends Controller
 
     public function show(Order $order, InvoiceService $invoiceService): View
     {
-        $order->load(['user', 'shipment', 'currentStageOverride', 'shipment.currentStage', 'paymentSlips', 'invoiceRequest', 'invoice']);
+        $order->load(['user', 'shipment', 'currentStageOverride', 'shipment.currentStage', 'paymentSlips', 'invoiceRequests', 'invoice']);
         $shipments = Shipment::where('status', 'active')->orderBy('id', 'desc')->get();
         $stages = TrackingStage::orderBy('position')->get();
         $uninvoicedOrders = $order->shipment_id
@@ -139,8 +142,7 @@ class OrderController extends Controller
             'full_description' => 'nullable|string|max:5000',
             'total_amount_ngn' => 'required|numeric|min:0',
             'outstanding_balance_ngn' => 'nullable|numeric|min:0',
-            'payment_status' => 'required|string|in:pending,paid,partial',
-            'logistics_type' => 'required|string|in:within_lagos,outside_lagos,combined',
+            'logistics_type' => 'nullable|string|in:within_lagos,outside_lagos,combined',
             'status' => 'required|string|in:pending,pending_approval,processing,shipped,delivered,cancelled',
             'shipment_id' => 'nullable|exists:shipments,id',
             'current_stage_id' => 'nullable|exists:tracking_stages,id',
@@ -169,6 +171,10 @@ class OrderController extends Controller
 
         $valid['outstanding_balance_ngn'] = (float) ($valid['outstanding_balance_ngn'] ?? 0);
         $valid['logistics_type'] = $valid['logistics_type'] ?? 'within_lagos';
+        $totalAmount = (float) ($valid['total_amount_ngn'] ?? 0);
+        $outstanding = $valid['outstanding_balance_ngn'];
+        $paidAmount = $totalAmount - $outstanding;
+        $valid['payment_status'] = $outstanding <= 0 ? 'paid' : ($paidAmount > 0 ? 'partial' : 'pending');
         $order->update($valid);
 
         $slips = $request->file('payment_slips');

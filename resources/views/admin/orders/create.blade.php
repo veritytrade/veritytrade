@@ -56,25 +56,6 @@ Price: 1,030,000">{{ old('gadget_description') }}</textarea>
             </div>
 
             <div>
-                <label class="block text-sm font-medium text-gray-700 mb-2">Delivery / logistics</label>
-                <div class="flex flex-wrap gap-3">
-                    <label class="inline-flex items-center gap-2 cursor-pointer">
-                        <input type="radio" name="logistics_type" value="within_lagos" {{ in_array(old('logistics_type'), ['within_lagos', null, '']) ? 'checked' : '' }} class="rounded border-gray-300 text-green-600">
-                        <span class="text-sm">Within Lagos (N0)</span>
-                    </label>
-                    <label class="inline-flex items-center gap-2 cursor-pointer">
-                        <input type="radio" name="logistics_type" value="outside_lagos" {{ old('logistics_type') === 'outside_lagos' ? 'checked' : '' }} class="rounded border-gray-300 text-green-600">
-                        <span class="text-sm">Outside Lagos (+N10,000)</span>
-                    </label>
-                    <label class="inline-flex items-center gap-2 cursor-pointer">
-                        <input type="radio" name="logistics_type" value="combined" {{ old('logistics_type') === 'combined' ? 'checked' : '' }} class="rounded border-gray-300 text-green-600">
-                        <span class="text-sm">Part of combined shipment (N0)</span>
-                    </label>
-                </div>
-                <p class="text-xs text-gray-500 mt-1">Use "Part of combined shipment" when logistics is paid on another order in the same shipment.</p>
-            </div>
-
-            <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Payment slip(s) (optional)</label>
                 <input type="file" name="payment_slips[]" multiple accept=".jpg,.jpeg,.png,.gif,.webp,.pdf"
                        class="w-full rounded-lg border border-gray-300 px-4 py-3 text-base focus:ring-2 focus:ring-green-500 focus:border-green-500">

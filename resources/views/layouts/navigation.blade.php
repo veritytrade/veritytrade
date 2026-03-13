@@ -4,15 +4,9 @@
             <div class="flex items-center">
                 <a href="{{ route('home') }}" class="flex items-center gap-2 shrink-0">
                     <x-application-logo class="block h-9 w-auto fill-current text-gray-800" />
-                    <span class="hidden sm:inline font-semibold text-gray-800">{{ config('app.name') }}</span>
+                    <span class="hidden sm:inline font-semibold text-gray-800">Verity Gadgets</span>
                 </a>
                 <div class="hidden md:flex md:ml-8 md:gap-1">
-                    <a href="{{ url('/#hot-deals') }}" class="inline-flex items-center px-3 py-2 text-sm font-medium rounded-lg {{ request()->routeIs('home') ? 'text-green-600 bg-green-50' : 'text-gray-700 hover:bg-gray-100 hover:text-gray-900' }}">
-                        Hot Deals
-                    </a>
-                    <a href="{{ url('/#phones') }}" class="inline-flex items-center px-3 py-2 text-sm font-medium rounded-lg {{ request()->routeIs('phones.*') ? 'text-green-600 bg-green-50' : 'text-gray-700 hover:bg-gray-100 hover:text-gray-900' }}">
-                        Phones
-                    </a>
                     @auth
                         <a href="{{ route('dashboard') }}" class="inline-flex items-center px-3 py-2 text-sm font-medium rounded-lg {{ request()->routeIs('dashboard') ? 'text-green-600 bg-green-50' : 'text-gray-700 hover:bg-gray-100 hover:text-gray-900' }}">
                             Dashboard
@@ -58,8 +52,6 @@
 
     <div x-show="mobileOpen" x-cloak x-transition class="md:hidden border-t border-gray-200 bg-white">
         <div class="pt-2 pb-4 px-4 space-y-1">
-            <a href="{{ url('/#hot-deals') }}" class="block px-3 py-2 rounded-lg text-base font-medium text-gray-700 hover:bg-gray-100">Hot Deals</a>
-            <a href="{{ url('/#phones') }}" class="block px-3 py-2 rounded-lg text-base font-medium text-gray-700 hover:bg-gray-100">Phones</a>
             @auth
                 <a href="{{ route('dashboard') }}" class="block px-3 py-2 rounded-lg text-base font-medium text-gray-700 hover:bg-gray-100">Dashboard</a>
                 <a href="{{ route('profile.edit') }}" class="block px-3 py-2 rounded-lg text-base font-medium text-gray-700 hover:bg-gray-100">Profile</a>

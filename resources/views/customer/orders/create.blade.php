@@ -15,13 +15,22 @@
                           x-ref="desc"
                           x-on:input="extractPrice()"
                           class="w-full rounded-lg border border-gray-300 px-4 py-3 text-base focus:ring-2 focus:ring-green-500 focus:border-green-500 font-mono text-sm"
-                          placeholder="Model: iPhone 14 Pro Max (Gold)
-Memory: 512 GB
-Battery: In good condition (100% health, 0 cycles, 4323mAh capacity)
-Defect: Battery replaced (brand battery: Pisen)
-Appearance: 95% (Excellent) Minor marks on housing.
-Features: Dual SIM, 5G, High refresh rate screen
-Price: 1,030,000">{{ old('gadget_description') }}</textarea>
+                          placeholder="📱 OnePlus Turbo 6V
+
+Specifications:
+• 💾 Storage: 256 GB
+• 🧠 RAM: 12 GB
+• 🔋 Battery: 95%-100% health (9000mAh capacity)
+• ⚡ Processor: Qualcomm Snapdragon 7s Gen 4
+• 📶 Connectivity: 5G, Dual SIM
+
+Condition Notes:
+• ✅ Grade S - Fully functional
+• 99% appearance (Like New)
+• No marks on body
+• 📸 See photos for exact condition
+
+💰 Price: ₦440k">{{ old('gadget_description') }}</textarea>
                 @error('gadget_description')<p class="text-red-600 text-sm mt-1">{{ $message }}</p>@enderror
             </div>
 
@@ -54,34 +63,6 @@ Price: 1,030,000">{{ old('gadget_description') }}</textarea>
             @error('payment_slips.*')<p class="text-red-600 text-sm mt-1">{{ $message }}</p>@enderror
         </div>
 
-        <div>
-            <label class="block text-sm font-medium text-gray-700 mb-2">Delivery / logistics</label>
-            <div class="flex flex-wrap gap-3">
-                <label class="flex-1 min-w-[120px] cursor-pointer">
-                    <input type="radio" name="logistics_type" value="within_lagos" {{ in_array(old('logistics_type'), ['within_lagos', null, '']) ? 'checked' : '' }} class="sr-only peer">
-                    <span class="flex flex-col items-center justify-center py-3 px-4 rounded-lg border-2 border-gray-200 bg-white text-gray-700 font-medium hover:border-green-300 transition peer-checked:border-green-600 peer-checked:bg-green-50 peer-checked:text-green-800 peer-checked:ring-2 peer-checked:ring-green-600/20">
-                        <span>Within Lagos</span>
-                        <span class="text-sm font-semibold text-green-700 mt-0.5">N0</span>
-                    </span>
-                </label>
-                <label class="flex-1 min-w-[120px] cursor-pointer">
-                    <input type="radio" name="logistics_type" value="outside_lagos" {{ old('logistics_type') === 'outside_lagos' ? 'checked' : '' }} class="sr-only peer">
-                    <span class="flex flex-col items-center justify-center py-3 px-4 rounded-lg border-2 border-gray-200 bg-white text-gray-700 font-medium hover:border-green-300 transition peer-checked:border-green-600 peer-checked:bg-green-50 peer-checked:text-green-800 peer-checked:ring-2 peer-checked:ring-green-600/20">
-                        <span>Outside Lagos</span>
-                        <span class="text-sm font-semibold text-amber-600 mt-0.5">+N10,000</span>
-                    </span>
-                </label>
-                <label class="flex-1 min-w-[120px] cursor-pointer">
-                    <input type="radio" name="logistics_type" value="combined" {{ old('logistics_type') === 'combined' ? 'checked' : '' }} class="sr-only peer">
-                    <span class="flex flex-col items-center justify-center py-3 px-4 rounded-lg border-2 border-gray-200 bg-white text-gray-700 font-medium hover:border-green-300 transition peer-checked:border-green-600 peer-checked:bg-green-50 peer-checked:text-green-800 peer-checked:ring-2 peer-checked:ring-green-600/20">
-                        <span>Part of combined</span>
-                        <span class="text-sm font-semibold text-green-700 mt-0.5">N0</span>
-                    </span>
-                </label>
-            </div>
-            <p class="text-xs text-gray-500 mt-1">Use "Part of combined" when logistics is paid on another order in the same shipment.</p>
-        </div>
-
         <div class="pt-4 flex flex-col sm:flex-row gap-3">
             <button type="submit" class="min-h-[48px] px-6 py-3 bg-green-600 hover:bg-green-700 text-white font-medium rounded-lg transition">
                 Submit order
@@ -104,11 +85,30 @@ Price: 1,030,000">{{ old('gadget_description') }}</textarea>
                     const textarea = this.$refs.desc;
                     if (!textarea) return;
                     const text = textarea.value || '';
-                    const match = text.match(/Price:\s*(.+)$/im);
-                    if (match) {
-                        const raw = (match[1] || '').replace(/[^\d.]/g, '');
-                        const num = raw ? parseFloat(raw) : 0;
-                        this.amountValue = num;
+                    let num = 0;
+                    const priceMatch = text.match(/(?:Price|Cost|Amount)\s*[:\-]\s*(.+?)(?=\n|$)/im);
+                    const priceLine = priceMatch ? priceMatch[1].trim() : '';
+                    if (priceLine) {
+                        const pm = priceLine.match(/([\d,.]+\s*[kKmM]?)/);
+                        if (pm) {
+                            num = parseFloat(pm[1].replace(/,/g, ''));
+                            const s = (pm[1].match(/[kKmM]/) || [])[0];
+                            if (s === 'k' || s === 'K') num *= 1000;
+                            else if (s === 'm' || s === 'M') num *= 1000000;
+                        }
+                    }
+                    if (!num) {
+                        const nm = text.match(/(?:₦|NGN|N)\s*([\d,.]+\s*[kKmM]?)/);
+                        if (nm) {
+                            const v = nm[1].replace(/,/g, '');
+                            num = parseFloat(v) || 0;
+                            const s = (v.match(/[kKmM]/) || [])[0];
+                            if (s === 'k' || s === 'K') num *= 1000;
+                            else if (s === 'm' || s === 'M') num *= 1000000;
+                        }
+                    }
+                    if (num > 0) {
+                        this.amountValue = Math.round(num);
                         this.hasPrice = true;
                     } else {
                         this.hasPrice = false;

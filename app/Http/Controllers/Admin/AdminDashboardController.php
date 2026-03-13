@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\InvoiceRequest;
 use App\Models\Order;
 
 /*
@@ -22,6 +23,12 @@ class AdminDashboardController extends Controller
             ->where('status', '!=', 'cancelled')
             ->count();
 
-        return view('admin.dashboard', compact('packagesInTransit'));
+        $ordersPendingApproval = Order::where('status', 'pending_approval')->count();
+
+        $pendingInvoiceRequestsCount = InvoiceRequest::where('status', 'pending')
+            ->whereHas('shipment')
+            ->count();
+
+        return view('admin.dashboard', compact('packagesInTransit', 'ordersPendingApproval', 'pendingInvoiceRequestsCount'));
     }
 }

@@ -46,7 +46,7 @@ class ShipmentController extends Controller
 
     public function show(Shipment $shipment): View
     {
-        $shipment->load(['orders.user', 'orders.currentStageOverride', 'currentStage']);
+        $shipment->load(['orders.user', 'orders.invoice', 'orders.currentStageOverride', 'currentStage']);
         $stages = TrackingStage::orderBy('position')->get();
         return view('admin.shipments.show', compact('shipment', 'stages'));
     }
@@ -64,9 +64,13 @@ class ShipmentController extends Controller
             'logistics_company' => 'required|string|max:255',
             'current_stage_id' => 'nullable|exists:tracking_stages,id',
             'status' => 'required|in:active,completed',
+            'waybill_outstanding_ngn' => 'nullable|numeric|min:0|max:10000',
         ]);
 
         $valid['updated_by'] = auth()->id();
+        $valid['waybill_outstanding_ngn'] = $request->filled('waybill_outstanding_ngn')
+            ? (float) $valid['waybill_outstanding_ngn']
+            : null;
         $shipment->update($valid);
 
         $stage = $shipment->currentStage;

@@ -14,8 +14,13 @@ class Shipment extends Model
         'logistics_company',
         'current_stage_id',
         'status',
+        'waybill_outstanding_ngn',
         'created_by',
         'updated_by',
+    ];
+
+    protected $casts = [
+        'waybill_outstanding_ngn' => 'decimal:2',
     ];
 
     public function currentStage(): BelongsTo

@@ -31,7 +31,7 @@
                 
                 <textarea name="description" id="whatsapp-desc" rows="8"
                           class="w-full border border-gray-300 rounded-lg p-3 text-sm font-mono focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition"
-                          placeholder="Model: iPhone 17 Pro Max&#10;Memory: 256GB&#10;Battery: 95%&#10;Defects: None&#10;Appearance: 95%&#10;Features: Face ID, 5G&#10;Price: ₦450,000"
+                          placeholder="📱 OnePlus Turbo 6V&#10;&#10;Specifications:&#10;• 💾 Storage: 256 GB&#10;• 🧠 RAM: 12 GB&#10;• 🔋 Battery: 95%-100% health&#10;• Condition: Grade S, 99% appearance&#10;&#10;💰 Price: ₦440k"
                           required>{{ old('description') }}</textarea>
                 
                 <div class="mt-3 grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -151,17 +151,38 @@ document.addEventListener('DOMContentLoaded', function() {
     function extractFields() {
         const text = whatsappDesc.value;
         
-        // Extract Model/Title
-        const modelMatch = text.match(/Model:\s*(.+)/i);
+        // Extract Model/Title (Model: line, or first non-header line for new format)
+        const modelMatch = text.match(/Model\s*[:\-]\s*(.+?)(?=\n|$)/i);
         if (modelMatch && !autoTitle.dataset.userEdited) {
             autoTitle.value = modelMatch[1].trim();
             syncToForm();
+        } else if (!autoTitle.dataset.userEdited && text.trim()) {
+            const firstLine = text.split('\n').map(l => l.trim()).find(l => l && !/^(?:Specifications?|Condition\s*Notes?|Price)[:\s]/i.test(l) && !/^[•\s]*\s*(?:Storage|RAM|Battery|Processor|Connectivity):/i.test(l));
+            if (firstLine) {
+                const cleaned = firstLine.replace(/^[\s\u2022]*(?:[\u2600-\u27BF]|[\uD83C-\uDBFF][\uDC00-\uDFFF])?\s*/, '').trim();
+                if (cleaned) {
+                    autoTitle.value = cleaned;
+                    syncToForm();
+                }
+            }
         }
         
-        // Extract Price (handles ₦, N, commas, k/m suffixes)
-        const priceMatch = text.match(/Price:\s*([₦N]?\s*[\d,.\s]+[kKmM]?)/i);
-        if (priceMatch && !autoPrice.dataset.userEdited) {
-            autoPrice.value = priceMatch[1].trim().replace(/\s/g, '');
+        // Extract Price (Price: ₦440k, 💰 Price:, standalone ₦450k, etc.)
+        let priceVal = null;
+        const patterns = [
+            /\b(?:Price|Cost|Amount)\s*[:\-]\s*([₦NGN\s]*[\d,]+(?:\.\d+)?\s*[kKmM]?)/i,
+            /(₦|NGN|N)\s*([\d,]+(?:\.\d+)?\s*[kKmM]?)/i,
+        ];
+        for (const re of patterns) {
+            const m = text.match(re);
+            if (m) {
+                priceVal = (m[2] !== undefined ? (m[1] + m[2]) : m[1]).trim();
+                break;
+            }
+        }
+        if (priceVal && !autoPrice.dataset.userEdited) {
+            const cleaned = priceVal.replace(/\s+/g, '');
+            autoPrice.value = /^[₦NGN]/i.test(cleaned) ? cleaned : ('₦' + cleaned);
             syncToForm();
         }
     }
@@ -177,8 +198,14 @@ document.addEventListener('DOMContentLoaded', function() {
     whatsappDesc.addEventListener('input', extractFields);
     whatsappDesc.addEventListener('paste', () => setTimeout(extractFields, 100));
     
-    // Initial sync if values exist from old()
+    // Run extraction on load if textarea has content (e.g. from validation old())
+    if (whatsappDesc.value && whatsappDesc.value.trim()) {
+        extractFields();
+    }
     syncToForm();
+
+    // Ensure hidden fields are synced before form submit (safety net)
+    document.getElementById('deal-form').addEventListener('submit', syncToForm);
 });
 
 // Image Preview Functionality

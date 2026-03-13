@@ -5,67 +5,55 @@
         @endphp
 
         @if($hero && $hero->hero_visible && ($hero->hero_headline || $hero->hero_image_path))
+            @php
+                $hasText = $hero->hero_headline || $hero->hero_subheadline || $hero->hero_cta_text;
+                $hasImage = (bool) $hero->hero_image_path;
+                $useSplit = $hasText && $hasImage;
+            @endphp
             <section class="bg-gradient-to-br from-slate-50 via-white to-green-50/30 border-b border-gray-100">
                 <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 lg:py-16">
-                    <div class="flex flex-col gap-8 lg:gap-12 items-center">
-                        @if($hero->hero_image_path)
-                            <div class="flex justify-center w-full">
-                                <img src="{{ $hero->hero_image_url }}" alt="" class="w-full max-w-md lg:max-w-xl xl:max-w-2xl object-contain drop-shadow-2xl" loading="eager">
+                    <div class="flex flex-col {{ $useSplit ? 'lg:flex-row lg:items-center lg:justify-between lg:gap-12 xl:gap-16' : '' }} {{ $hasImage && !$hasText ? 'items-center' : '' }}">
+                        @if($hasText)
+                            <div class="flex-1 text-center {{ $useSplit ? 'lg:text-left order-2 lg:order-1' : '' }}">
+                                @if($hero->hero_headline)
+                                    <h1 class="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-gray-900 leading-tight">
+                                        {{ $hero->hero_headline }}
+                                    </h1>
+                                @endif
+                                @if($hero->hero_subheadline)
+                                    <p class="mt-3 sm:mt-4 text-base sm:text-lg text-gray-600 max-w-xl mx-auto {{ $useSplit ? 'lg:mx-0' : '' }}">{{ $hero->hero_subheadline }}</p>
+                                @endif
+                                @if($hero->hero_cta_text)
+                                    <a href="{{ $hero->hero_cta_url ?: '#hot-deals' }}" class="inline-flex items-center justify-center mt-6 sm:mt-8 px-6 sm:px-8 py-3 sm:py-4 bg-blue-600 hover:bg-blue-700 text-white font-semibold text-base sm:text-lg rounded-xl shadow-lg hover:shadow-xl transition-all duration-200">
+                                        {{ $hero->hero_cta_text }}
+                                    </a>
+                                @endif
                             </div>
                         @endif
-                        <div class="text-center">
-                            @if($hero->hero_headline)
-                                <h1 class="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-gray-900 leading-tight">
-                                    {{ $hero->hero_headline }}
-                                </h1>
-                            @endif
-                            @if($hero->hero_subheadline)
-                                <p class="mt-3 sm:mt-4 text-base sm:text-lg text-gray-600">{{ $hero->hero_subheadline }}</p>
-                            @endif
-                            @if($hero->hero_cta_text)
-                                <a href="{{ $hero->hero_cta_url ?: '#hot-deals' }}" class="inline-flex items-center justify-center mt-6 sm:mt-8 px-6 sm:px-8 py-3 sm:py-4 bg-blue-600 hover:bg-blue-700 text-white font-semibold text-base sm:text-lg rounded-xl shadow-lg hover:shadow-xl transition-all duration-200">
-                                    {{ $hero->hero_cta_text }}
-                                </a>
-                            @endif
-                        </div>
+                        @if($hasImage)
+                            <div class="flex-shrink-0 flex justify-center {{ $useSplit ? 'lg:justify-end order-1 lg:order-2 lg:w-[45%] xl:w-[50%]' : 'w-full' }}">
+                                <img src="{{ $hero->hero_image_url }}" alt="" class="w-full {{ $useSplit ? 'max-w-sm sm:max-w-md lg:max-w-full max-h-[280px] sm:max-h-[320px] lg:max-h-[360px] xl:max-h-[420px]' : 'max-w-md lg:max-w-2xl xl:max-w-3xl max-h-[320px] lg:max-h-[400px]' }} object-contain object-center drop-shadow-2xl" loading="eager">
+                            </div>
+                        @endif
                     </div>
                 </div>
             </section>
         @endif
 
-        <div class="bg-white border-b border-gray-200 sticky top-0 z-10 shadow-sm">
-            <div class="overflow-x-auto scrollbar-hide">
-                <ul class="flex min-w-max text-sm font-medium text-center text-gray-500 border-b border-gray-200">
-                    <li class="me-2">
-                        <button type="button" data-tab-target="hot-deals" class="tab-trigger inline-block p-4 rounded-t-lg border-b-2 border-green-600 whitespace-nowrap text-green-600 font-semibold">
-                            Hot Deals
-                        </button>
-                    </li>
-                    <li class="me-2">
-                        <button type="button" data-tab-target="{{ $phoneTabId }}" class="tab-trigger inline-block p-4 rounded-t-lg border-b-2 border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 whitespace-nowrap">
-                            Phones
-                        </button>
-                    </li>
-                    @if(Route::has('public.categories.show'))
-                        @foreach($categories as $category)
-                            @if(Str::contains(Str::lower((string) $category->name), 'phone'))
-                                @continue
-                            @endif
-                            <li class="me-2">
-                                <a href="{{ route('public.categories.show', ['categorySlug' => Str::slug($category->name)]) }}"
-                                   class="inline-block p-4 rounded-t-lg border-b-2 border-transparent hover:text-gray-700 hover:border-gray-300 whitespace-nowrap">
-                                    {{ $category->name }}
-                                </a>
-                            </li>
-                        @endforeach
-                    @endif
-                </ul>
+        <div class="bg-white border-b border-gray-200 sticky top-16 z-20 shadow-sm">
+            <div class="flex w-full">
+                <button type="button" data-tab-target="hot-deals" class="tab-trigger w-1/2 min-w-0 py-4 px-3 text-sm font-semibold border-b-2 border-green-600 text-green-600 bg-white">
+                    🔥 Hot Deals
+                </button>
+                <button type="button" data-tab-target="{{ $phoneTabId }}" class="tab-trigger w-1/2 min-w-0 py-4 px-3 text-sm font-medium border-b-2 border-transparent text-gray-500 hover:text-gray-700 hover:bg-gray-50">
+                    Phones
+                </button>
             </div>
         </div>
 
         <x-hot-deals-section :deals="$deals" />
 
-        <div id="{{ $phoneTabId }}" class="max-w-7xl mx-auto px-4 py-6 hidden">
+        <div id="{{ $phoneTabId }}" data-tab-section class="max-w-7xl mx-auto px-4 py-6 hidden" aria-hidden="true">
             <h1 class="text-xl font-bold text-gray-900 mb-4">Select phone brand</h1>
 
             @if($phoneBrands->isEmpty())
@@ -109,37 +97,43 @@
         <script>
             document.addEventListener('DOMContentLoaded', function() {
                 const tabs = document.querySelectorAll('[data-tab-target]');
-                const sections = Array.from(tabs)
-                    .map((tab) => tab.dataset.tabTarget)
-                    .map((id) => document.getElementById(id))
-                    .filter(Boolean);
+                const sectionIds = ['hot-deals', '{{ $phoneTabId }}'];
 
                 const activateTab = (targetId) => {
-                    sections.forEach((section) => section.classList.add('hidden'));
+                    const target = document.getElementById(targetId);
+                    if (!target) return;
 
-                    const target = document.getElementById(targetId) || document.getElementById('hot-deals');
+                    document.querySelectorAll('[data-tab-section]').forEach(function(el) {
+                        el.classList.add('hidden');
+                        el.setAttribute('aria-hidden', 'true');
+                    });
                     target.classList.remove('hidden');
+                    target.removeAttribute('aria-hidden');
 
                     tabs.forEach((tab) => {
-                        const isActive = tab.dataset.tabTarget === target.id;
+                        const isActive = tab.dataset.tabTarget === targetId;
                         tab.classList.toggle('text-green-600', isActive);
                         tab.classList.toggle('border-b-2', isActive);
                         tab.classList.toggle('border-green-600', isActive);
                         tab.classList.toggle('border-transparent', !isActive);
                         tab.classList.toggle('font-semibold', isActive);
                         tab.classList.toggle('text-gray-500', !isActive);
+                        tab.classList.toggle('font-medium', !isActive);
                     });
                 };
 
                 tabs.forEach((tab) => {
-                    tab.addEventListener('click', function() {
+                    tab.addEventListener('click', function(evt) {
+                        evt.preventDefault();
                         const targetId = this.dataset.tabTarget;
-                        history.replaceState(null, '', `#${targetId}`);
+                        history.replaceState(null, '', '#' + targetId);
                         activateTab(targetId);
                     });
                 });
 
-                const initialTarget = window.location.hash ? window.location.hash.substring(1) : 'hot-deals';
+                const initialTarget = (window.location.hash && sectionIds.includes(window.location.hash.slice(1)))
+                    ? window.location.hash.slice(1)
+                    : 'hot-deals';
                 activateTab(initialTarget);
             });
         </script>

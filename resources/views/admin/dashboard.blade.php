@@ -11,12 +11,14 @@
                     <p class="text-sm text-gray-500 mt-1">Overview of your core system</p>
                 </div>
                 
+                @if(auth()->user()?->hasPermission('manage_deals'))
                 <div class="flex gap-3">
                     <a href="{{ route('admin.deals.create') }}"
                        class="bg-green-600 hover:bg-green-700 text-white px-6 py-2.5 rounded-lg font-medium transition shadow-sm whitespace-nowrap text-center text-sm">
                         + Add Hot Deal
                     </a>
                 </div>
+                @endif
             </div>
         </div>
 
@@ -50,7 +52,7 @@
                     <div>
                         <p class="text-sm text-gray-500 mb-1">Active Hot Deals</p>
                         <p class="text-2xl md:text-3xl font-bold text-red-700">
-                            {{ \App\Models\Deal::where('is_active', true)->where('expires_at', '>', now())->count() }}
+                            {{ \App\Models\Deal::available()->count() }}
                         </p>
                     </div>
                     <div class="bg-red-100 p-3 rounded-lg">
@@ -59,12 +61,58 @@
                         </svg>
                     </div>
                 </div>
+                @if(auth()->user()?->hasPermission('manage_deals'))
                 <a href="{{ route('admin.deals.index') }}" 
                    class="text-sm text-red-600 hover:text-red-800 font-medium mt-3 inline-block">
                     View All →
                 </a>
+                @else
+                <span class="text-sm text-red-600 font-medium mt-3 inline-block">View All →</span>
+                @endif
             </div>
 
+            {{-- Pending Invoice Requests --}}
+            <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4 md:p-6 hover:shadow-md transition">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm text-gray-500 mb-1">Pending Invoice Requests</p>
+                        <p class="text-2xl md:text-3xl font-bold {{ ($pendingInvoiceRequestsCount ?? 0) > 0 ? 'text-amber-700' : 'text-gray-600' }}">
+                            {{ $pendingInvoiceRequestsCount ?? 0 }}
+                        </p>
+                    </div>
+                    <div class="p-3 rounded-lg {{ ($pendingInvoiceRequestsCount ?? 0) > 0 ? 'bg-amber-100' : 'bg-gray-100' }}">
+                        <svg class="w-6 h-6 {{ ($pendingInvoiceRequestsCount ?? 0) > 0 ? 'text-amber-600' : 'text-gray-500' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                        </svg>
+                    </div>
+                </div>
+                <a href="{{ route('admin.invoice-settings.edit') }}"
+                   class="text-sm font-medium mt-3 inline-block {{ ($pendingInvoiceRequestsCount ?? 0) > 0 ? 'text-amber-700 hover:text-amber-900' : 'text-gray-600 hover:text-gray-800' }}">
+                    Generate Invoices →
+                </a>
+            </div>
+            @if(auth()->user()?->hasPermission('approve_orders') && ($ordersPendingApproval ?? 0) > 0)
+                {{-- Orders Pending Approval --}}
+                <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4 md:p-6 hover:shadow-md transition">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm text-gray-500 mb-1">Orders Pending Approval</p>
+                            <p class="text-2xl md:text-3xl font-bold text-amber-700">
+                                {{ $ordersPendingApproval }}
+                            </p>
+                        </div>
+                        <div class="bg-amber-100 p-3 rounded-lg">
+                            <svg class="w-6 h-6 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/>
+                            </svg>
+                        </div>
+                    </div>
+                    <a href="{{ route('admin.orders.index') }}?status=pending_approval"
+                       class="text-sm text-amber-700 hover:text-amber-900 font-medium mt-3 inline-block">
+                        Review Orders →
+                    </a>
+                </div>
+            @endif
             @if(auth()->user() && auth()->user()->hasPermission('approve_users'))
                 {{-- Pending Approvals Card --}}
                 <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4 md:p-6 hover:shadow-md transition">
@@ -93,8 +141,6 @@
         <div class="mt-6 bg-blue-50 border border-blue-200 p-4 md:p-6 rounded-lg">
             <h3 class="font-semibold text-blue-800 mb-3">📊 Dashboard Tips</h3>
             <ul class="text-sm text-blue-700 space-y-2">
-                <li>• Hot Deals expire automatically after the set date</li>
-                <li>• Only active + non-expired deals show on homepage</li>
                 <li>• Use Feature Flags to gradually roll out new modules</li>
                 <li>• Customer approvals and staff permissions control access</li>
             </ul>

@@ -9,15 +9,17 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::table('orders', function (Blueprint $table) {
+        $afterCol = Schema::hasColumn('orders', 'spec_summary') ? 'spec_summary' : (Schema::hasColumn('orders', 'product_name') ? 'product_name' : 'user_id');
+        Schema::table('orders', function (Blueprint $table) use ($afterCol) {
             if (!Schema::hasColumn('orders', 'full_description')) {
-                $table->text('full_description')->nullable()->after('spec_summary');
+                $table->text('full_description')->nullable()->after($afterCol);
             }
             if (!Schema::hasColumn('orders', 'outstanding_balance_ngn')) {
                 $table->decimal('outstanding_balance_ngn', 14, 2)->default(0)->after('total_amount_ngn');
             }
             if (!Schema::hasColumn('orders', 'pays_logistics')) {
-                $table->boolean('pays_logistics')->default(false)->after('payment_status');
+                $paysAfter = Schema::hasColumn('orders', 'payment_status') ? 'payment_status' : 'total_amount_ngn';
+                $table->boolean('pays_logistics')->default(false)->after($paysAfter);
             }
         });
 

@@ -22,6 +22,13 @@ class SuperAdminSeeder extends Seeder
         $password = env('SUPER_ADMIN_PASSWORD', 'password123');
         $name = env('SUPER_ADMIN_NAME', 'Super Admin');
 
+        // Production: block default credentials
+        if (app()->environment('production')) {
+            if ($password === 'password123' || strlen($password) < 16) {
+                throw new \RuntimeException('Production requires SUPER_ADMIN_PASSWORD to be set in .env (min 16 chars, never use "password123").');
+            }
+        }
+
         $user = User::updateOrCreate(
             ['email' => $email],
             [

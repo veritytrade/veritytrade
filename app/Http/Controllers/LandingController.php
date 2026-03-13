@@ -3,27 +3,38 @@
 namespace App\Http\Controllers;
 
 use App\Models\Deal;
-use App\Models\Category;
-use App\Models\Brand;
-use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Schema;
 
 class LandingController extends Controller
 {
     public function index()
     {
         // Hot Deals
-        $deals = Deal::with('images')
-                    ->where('is_active', true)
-                    ->where('expires_at', '>', now())
-                    ->orderBy('expires_at', 'asc')
-                    ->get();
+        $deals = collect();
+        if (Schema::hasTable('deals')) {
+            $deals = Deal::with('images')
+                ->where('is_active', true)
+                ->where('expires_at', '>', now())
+                ->orderBy('expires_at', 'asc')
+                ->get();
+        }
 
-        // Categories (for tabs)
-        $categories = Category::orderBy('name')->get();
-
-        // Phone Brands (for Phones tab)
-        $phoneCategory = Category::where('name', 'Phones')->first();
-        $phoneBrands = $phoneCategory ? Brand::where('category_id', $phoneCategory->id)->orderBy('name')->get() : collect();
+        // Categories & phone brands (optional – models may be removed by cleanup)
+        $categories = new Collection;
+        $phoneBrands = new Collection;
+        if (Schema::hasTable('categories') && Schema::hasTable('brands')
+            && class_exists('App\Models\Category') && class_exists('App\Models\Brand')) {
+            try {
+                $categories = \App\Models\Category::orderBy('name')->get();
+                $phoneCategory = \App\Models\Category::where('name', 'Phones')->first();
+                $phoneBrands = $phoneCategory
+                    ? \App\Models\Brand::where('category_id', $phoneCategory->id)->orderBy('name')->get()
+                    : collect();
+            } catch (\Throwable $e) {
+                report($e);
+            }
+        }
 
         return view('landing.index', compact('deals', 'categories', 'phoneBrands'));
     }

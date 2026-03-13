@@ -29,7 +29,7 @@ class SyncOrderStatusCommand extends Command
                 $order->shipment
             );
             if ($order->status !== $correct) {
-                $this->line("Order #{$order->id} ({$order->verity_tracking_code}): {$order->status} → {$correct}");
+                $this->line("Order #{$order->id}: {$order->status} → {$correct}");
                 if (!$dryRun) {
                     $order->update(['status' => $correct]);
                 }

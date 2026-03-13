@@ -42,7 +42,7 @@ class OrderController extends Controller
         $rules = [
             'gadget_description' => 'required|string|max:5000',
             'outstanding_balance_ngn' => 'nullable|numeric|min:0',
-            'logistics_type' => 'required|string|in:within_lagos,outside_lagos,combined',
+            'logistics_type' => 'nullable|string|in:within_lagos,outside_lagos,combined',
             'payment_slips.*' => [File::types(['jpg', 'jpeg', 'png', 'gif', 'webp', 'pdf'])->max(5 * 1024)],
         ];
 
@@ -98,7 +98,8 @@ class OrderController extends Controller
             }
         }
 
-        return redirect()->route('dashboard.orders')->with('status', 'Order submitted for approval. Ref: ' . $order->verity_tracking_code);
+        $ref = $order->invoice?->invoice_number ?? 'Order #'.$order->id;
+        return redirect()->route('dashboard.orders')->with('status', 'Order submitted for approval. Ref: ' . $ref);
     }
 
     public function edit(Order $order): View|RedirectResponse
@@ -134,7 +135,7 @@ class OrderController extends Controller
         $rules = [
             'gadget_description' => 'required|string|max:5000',
             'outstanding_balance_ngn' => 'nullable|numeric|min:0',
-            'logistics_type' => 'required|string|in:within_lagos,outside_lagos,combined',
+            'logistics_type' => 'nullable|string|in:within_lagos,outside_lagos,combined',
             'payment_slips.*' => [File::types(['jpg', 'jpeg', 'png', 'gif', 'webp', 'pdf'])->max(5 * 1024)],
         ];
 

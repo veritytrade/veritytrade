@@ -12,19 +12,11 @@
             <div class="bg-white rounded-xl border border-gray-200 p-4 sm:p-5 shadow-sm hover:shadow-md transition">
                 <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
                     <div class="flex-1 min-w-0">
-                        <h2 class="font-bold text-gray-900">{{ $order->product_name ?? 'Order #'.($order->verity_tracking_code ?? $order->id) }}</h2>
+                        <h2 class="font-bold text-gray-900">{{ $order->product_name ?? 'Order #'.$order->id }}</h2>
                         @if($order->spec_summary)
                             <p class="text-sm text-gray-600 mt-0.5">{{ $order->spec_summary }}</p>
                         @endif
                         <p class="text-lg font-bold text-green-700 mt-2">₦{{ number_format((float) ($order->total_amount_ngn ?? 0)) }}</p>
-                        @if($order->verity_tracking_code)
-                            <p class="text-sm text-gray-600 mt-1 flex items-center gap-2 flex-wrap">
-                                <span>Ref: </span>
-                                <code class="font-mono bg-gray-100 px-2 py-0.5 rounded">{{ $order->verity_tracking_code }}</code>
-                                <button type="button" onclick="navigator.clipboard.writeText('{{ $order->verity_tracking_code }}'); this.textContent='Copied!'; setTimeout(()=>this.textContent='Copy', 1500)" class="text-xs text-blue-600 hover:text-blue-700 font-medium">Copy</button>
-                            </p>
-                            <p class="text-xs text-gray-500 mt-0.5">Quote this when contacting support</p>
-                        @endif
                         <span class="inline-block mt-2 px-2 py-0.5 rounded text-xs font-medium {{ $order->status === 'delivered' ? 'bg-green-100 text-green-800' : ($order->status === 'cancelled' ? 'bg-red-100 text-red-800' : 'bg-blue-100 text-blue-800') }}">{{ $order->customer_status_label }}</span>
                     </div>
                     <div class="shrink-0 flex flex-col sm:flex-row gap-2">
@@ -33,9 +25,9 @@
                         @endif
                         @if($order->invoice)
                             @if($order->invoice->pdf_path)
-                                <a href="{{ asset('storage/' . $order->invoice->pdf_path) }}" target="_blank" rel="noopener" class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-sm font-medium rounded-lg text-center">Download Invoice</a>
+                                <a href="{{ route('dashboard.invoices.download', $order->invoice) }}" target="_blank" rel="noopener" class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-sm font-medium rounded-lg text-center">See Invoice</a>
                             @else
-                                <a href="{{ route('dashboard.invoices') }}" class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-sm font-medium rounded-lg text-center">View Invoices</a>
+                                <a href="{{ route('dashboard.invoices') }}" class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-sm font-medium rounded-lg text-center">See Invoice</a>
                             @endif
                         @elseif(in_array($order->status, ['processing', 'shipped', 'delivered']) && $order->shipment_id)
                             @if($order->invoiceRequest?->isPending())

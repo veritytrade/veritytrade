@@ -4,11 +4,12 @@ namespace App\Services;
 
 use App\Models\Invoice;
 use App\Models\InvoiceRequest;
-use App\Models\InvoiceSetting;
 use App\Models\Order;
 use App\Models\Shipment;
+use Illuminate\Support\Facades\DB;
 use Barryvdh\DomPDF\Facade\Pdf;
 use chillerlan\QRCode\QRCode;
+use chillerlan\QRCode\Output\QRGdImagePNG;
 use chillerlan\QRCode\Output\QRMarkupSVG;
 use chillerlan\QRCode\QROptions;
 use Illuminate\Support\Collection;
@@ -26,6 +27,9 @@ class InvoiceService
     /** Hardcoded – not editable from admin */
     protected const COMPANY_NAME = 'Verity Gadgets';
     protected const TAGLINE = 'A Division of Verity Trade Global Limited';
+    protected const COMPANY_EMAIL = 'info@veritytrade.ng';
+    protected const COMPANY_PHONE = '+234 708 411 7779';
+    protected const COPYRIGHT = 'Verity Trade Global Limited';
     protected const QR_BASE_URL = 'https://veritytrade.ng/connect/';
 
     /** Get uninvoiced orders in a shipment for a customer */
@@ -55,41 +59,40 @@ class InvoiceService
     /** Build invoice view data (reusable for HTML preview and PDF) */
     public function buildPreviewData(): array
     {
-        $settings = InvoiceSetting::get();
         $useImages = $this->hasGd();
         $qrImageData = $this->generateQrDataUri(self::QR_BASE_URL);
-        $logoDataUri = $this->getLogoDataUri($settings->logo_path);
+        $logoDataUri = $this->getLogoDataUri(null);
         $logoUrl = $this->getLogoAssetUrl();
-        $iconLocation = $useImages ? $this->getIconDataUri('location') : null;
-        $iconEmail = $useImages ? $this->getIconDataUri('email') : null;
-        $iconPhone = $useImages ? $this->getIconDataUri('phone') : null;
+        $iconLocation = $this->getIconDataUri('location');
+        $iconEmail = $this->getIconDataUri('email');
+        $iconPhone = $this->getIconDataUri('phone');
 
         return [
             'companyName' => self::COMPANY_NAME,
             'tagline' => self::TAGLINE,
-            'companyAddress' => $settings->company_address,
-            'companyPhone' => $settings->company_phone,
-            'companyEmail' => $settings->company_email,
+            'companyAddress' => '',
+            'companyPhone' => self::COMPANY_PHONE,
+            'companyEmail' => self::COMPANY_EMAIL,
             'logoDataUri' => $logoDataUri,
             'logoUrl' => $logoUrl,
             'iconLocation' => $iconLocation,
             'iconEmail' => $iconEmail,
             'iconPhone' => $iconPhone,
-            'invoiceNumber' => 'VT-' . now()->format('Y') . '-' . str_pad('1', 4, '0', STR_PAD_LEFT),
+            'invoiceNumber' => 'VG-' . now()->format('Ym') . '-0001',
             'invoiceDate' => now()->format('d M Y'),
             'customerName' => 'Suleman Godson',
             'customerPhone' => '09039470532',
             'customerAddress' => 'Nasarawa',
             'items' => [
-                ['model' => 'iPhone X', 'specification' => '256GB · Grade A · 95%', 'qty' => 1, 'unit_price' => 350000, 'total_price' => 350000],
+                ['model' => 'iPhone X · 256GB', 'specification' => 'Grade A · 95%', 'qty' => 1, 'unit_price' => 350000, 'total_price' => 350000],
                 ['model' => 'Charger', 'specification' => 'Fast charger', 'qty' => 1, 'unit_price' => 15000, 'total_price' => 15000],
             ],
             'subtotal' => 365000,
-            'waybill' => 15000,
-            'grandTotal' => 380000,
-            'copyright' => $settings->copyright ?? 'Verity Trade Global Limited',
+            'grandTotal' => 365000,
+            'outstandingBalance' => 50000,
+            'copyright' => self::COPYRIGHT,
             'qrImageUrl' => $qrImageData,
-            'status' => 'Pending',
+            'status' => 'Unpaid',
         ];
     }
 
@@ -97,12 +100,73 @@ class InvoiceService
     public function previewPdf(): Response
     {
         $data = $this->buildPreviewData();
-        $html = view('pdf.invoice', $data)->render();
+        return $this->streamPdfFromData($data);
+    }
 
+    /** Stream PDF from invoice view data */
+    public function streamPdfFromData(array $data): Response
+    {
+        $html = view('pdf.invoice', $data)->render();
         $pdf = Pdf::loadHTML($html);
         $pdf->setPaper('a4', 'portrait');
-
         return $pdf->stream('invoice-preview.pdf', ['Attachment' => false]);
+    }
+
+    /** Build invoice view data from orders (for preview, no save) */
+    public function buildInvoiceDataFromOrders(Collection $orders): array
+    {
+        if ($orders->isEmpty()) {
+            return $this->buildPreviewData();
+        }
+        $orders->load(['user', 'shipment']);
+        $first = $orders->first();
+        $customer = $first->user;
+        $useImages = $this->hasGd();
+        $qrImageData = $this->generateQrDataUri(self::QR_BASE_URL);
+        $logoDataUri = $this->getLogoDataUri(null);
+        $logoUrl = $this->getLogoAssetUrl();
+
+        $subtotal = 0;
+        $outstandingBalance = 0;
+        $items = [];
+        foreach ($orders as $order) {
+            $amount = (float) $order->total_amount_ngn;
+            $subtotal += $amount;
+            $outstandingBalance += (float) ($order->outstanding_balance_ngn ?? 0);
+            $items[] = [
+                'model' => $this->extractModelFromOrder($order),
+                'specification' => $this->extractSpecificationFromOrder($order),
+                'qty' => 1,
+                'unit_price' => $amount,
+                'total_price' => $amount,
+            ];
+        }
+        $grandTotal = $subtotal;
+
+        return [
+            'companyName' => self::COMPANY_NAME,
+            'tagline' => self::TAGLINE,
+            'companyAddress' => '',
+            'companyPhone' => self::COMPANY_PHONE,
+            'companyEmail' => self::COMPANY_EMAIL,
+            'logoDataUri' => $logoDataUri,
+            'logoUrl' => $logoUrl,
+            'iconLocation' => $this->getIconDataUri('location'),
+            'iconEmail' => $this->getIconDataUri('email'),
+            'iconPhone' => $this->getIconDataUri('phone'),
+            'invoiceNumber' => 'VG-PREVIEW-' . now()->format('YmdHis'),
+            'invoiceDate' => now()->format('d M Y'),
+            'customerName' => $customer?->name ?? 'Customer',
+            'customerPhone' => $customer?->phone ?? '',
+            'customerAddress' => $this->formatCustomerAddress($customer),
+            'items' => $items,
+            'subtotal' => $subtotal,
+            'grandTotal' => $grandTotal,
+            'outstandingBalance' => $outstandingBalance,
+            'copyright' => self::COPYRIGHT,
+            'qrImageUrl' => $qrImageData,
+            'status' => $outstandingBalance <= 0 ? 'Paid' : 'Unpaid',
+        ];
     }
 
     /** Generate invoice for a collection of orders (same shipment, same customer) */
@@ -111,6 +175,18 @@ class InvoiceService
         if ($orders->isEmpty()) {
             throw new \InvalidArgumentException('At least one order is required.');
         }
+        $orderIds = $orders->pluck('id')->toArray();
+        $alreadyInvoiced = Order::whereIn('id', $orderIds)->whereNotNull('invoice_id')->exists();
+        if ($alreadyInvoiced) {
+            throw new \InvalidArgumentException('One or more of these orders already have an invoice. Please refresh the page.');
+        }
+        return DB::transaction(function () use ($orders, $generatedBy) {
+            return $this->doGenerateForOrders($orders, $generatedBy);
+        });
+    }
+
+    protected function doGenerateForOrders(Collection $orders, ?int $generatedBy = null): Invoice
+    {
         $orders->load(['user', 'shipment']);
         $first = $orders->first();
         $customer = $first->user;
@@ -123,15 +199,13 @@ class InvoiceService
         $invoice->generated_by = $generatedBy;
 
         $subtotal = 0;
-        $waybill = 0;
+        $outstandingBalance = 0;
         $items = [];
 
         foreach ($orders as $order) {
             $amount = (float) $order->total_amount_ngn;
             $subtotal += $amount;
-            if ($order->pays_logistics) {
-                $waybill = 10000;
-            }
+            $outstandingBalance += (float) ($order->outstanding_balance_ngn ?? 0);
             $items[] = [
                 'model' => $this->extractModelFromOrder($order),
                 'specification' => $this->extractSpecificationFromOrder($order),
@@ -140,24 +214,23 @@ class InvoiceService
                 'total_price' => $amount,
             ];
         }
-        $grandTotal = $subtotal + $waybill;
+        $grandTotal = $subtotal;
 
-        $settings = InvoiceSetting::get();
         $useImages = $this->hasGd();
         $qrImageData = $this->generateQrDataUri(self::QR_BASE_URL);
-        $logoDataUri = $this->getLogoDataUri($settings->logo_path);
+        $logoDataUri = $this->getLogoDataUri(null);
         $logoUrl = $this->getLogoAssetUrl();
-        $iconLocation = $useImages ? $this->getIconDataUri('location') : null;
-        $iconEmail = $useImages ? $this->getIconDataUri('email') : null;
-        $iconPhone = $useImages ? $this->getIconDataUri('phone') : null;
+        $iconLocation = $this->getIconDataUri('location');
+        $iconEmail = $this->getIconDataUri('email');
+        $iconPhone = $this->getIconDataUri('phone');
         $customerAddress = $this->formatCustomerAddress($customer);
 
         $html = view('pdf.invoice', [
             'companyName' => self::COMPANY_NAME,
             'tagline' => self::TAGLINE,
-            'companyAddress' => $settings->company_address,
-            'companyPhone' => $settings->company_phone,
-            'companyEmail' => $settings->company_email,
+            'companyAddress' => '',
+            'companyPhone' => self::COMPANY_PHONE,
+            'companyEmail' => self::COMPANY_EMAIL,
             'logoDataUri' => $logoDataUri,
             'logoUrl' => $logoUrl,
             'iconLocation' => $iconLocation,
@@ -170,19 +243,19 @@ class InvoiceService
             'customerAddress' => $customerAddress,
             'items' => $items,
             'subtotal' => $subtotal,
-            'waybill' => $waybill,
             'grandTotal' => $grandTotal,
-            'copyright' => $settings->copyright ?? 'Verity Trade Global Limited',
+            'outstandingBalance' => $outstandingBalance,
+            'copyright' => self::COPYRIGHT,
             'qrImageUrl' => $qrImageData,
-            'status' => $orders->max(fn ($o) => $o->payment_status === 'paid' ? 1 : 0) ? 'Paid' : 'Pending',
+            'status' => $outstandingBalance <= 0 ? 'Paid' : 'Unpaid',
         ])->render();
 
         $pdf = Pdf::loadHTML($html);
         $pdf->setPaper('a4', 'portrait');
 
         $dir = 'invoices';
-        $slug = Str::slug($first->verity_tracking_code ?? $first->shipment?->chinese_tracking_code ?? $first->id);
-        $filename = 'invoice-' . $invoice->invoice_number . '-' . $slug . '.pdf';
+        $slug = Str::slug($invoice->invoice_number . '-' . $first->id);
+        $filename = 'invoice-' . $invoice->invoice_number . '.pdf';
         $path = $dir . '/' . $filename;
 
         Storage::disk('public')->put($path, $pdf->output());
@@ -190,7 +263,6 @@ class InvoiceService
         $invoice->amount = $grandTotal;
         $invoice->details_json = [
             'subtotal' => $subtotal,
-            'waybill' => $waybill,
             'order_ids' => $orders->pluck('id')->toArray(),
             'shipment_id' => $shipmentId,
         ];
@@ -201,7 +273,9 @@ class InvoiceService
             $order->update(['invoice_id' => $invoice->id]);
         }
 
-        $invoiceRequest = InvoiceRequest::where('shipment_id', $shipmentId)->first();
+        $invoiceRequest = InvoiceRequest::where('shipment_id', $shipmentId)
+            ->where('user_id', $customer->id)
+            ->first();
         if ($invoiceRequest) {
             $invoiceRequest->update(['status' => 'generated', 'invoice_id' => $invoice->id]);
         }
@@ -221,13 +295,13 @@ class InvoiceService
 
     protected function generateInvoiceNumber(): string
     {
-        $year = now()->format('Y');
-        $prefix = 'VT-' . $year . '-';
+        $ym = now()->format('Ym');
+        $prefix = 'VG-' . $ym . '-';
         $last = Invoice::where('invoice_number', 'like', $prefix . '%')
             ->orderByDesc('id')
             ->value('invoice_number');
         $seq = 1;
-        if ($last && preg_match('/-' . $year . '-(\d+)$/', $last, $m)) {
+        if ($last && preg_match('/-' . $ym . '-(\d+)$/', $last, $m)) {
             $seq = (int) $m[1] + 1;
         }
         return $prefix . str_pad((string) $seq, 4, '0', STR_PAD_LEFT);
@@ -286,10 +360,14 @@ class InvoiceService
 
     protected function generateQrDataUri(string $url): string
     {
+        // PNG renders reliably in DomPDF; SVG can be clipped/unsupported. Use PNG when GD available.
         $options = new QROptions([
-            'outputInterface' => QRMarkupSVG::class,
+            'outputInterface' => $this->hasGd() ? QRGdImagePNG::class : QRMarkupSVG::class,
             'outputBase64' => true,
         ]);
+        if ($this->hasGd()) {
+            $options->scale = 6;
+        }
         return (new QRCode($options))->render($url);
     }
 
@@ -305,27 +383,41 @@ class InvoiceService
     protected function extractModelFromOrder(Order $order): string
     {
         $parsed = Order::parseDescription($order->full_description ?? '');
-        if (! empty($parsed['product_name'])) {
-            return $parsed['product_name'];
+        $model = $parsed['product_name'] ?: $order->product_name ?: 'Order';
+        $size = $parsed['storage'] ?? $parsed['memory'] ?? null;
+        if ($size) {
+            return trim($model) . ' · ' . trim($size);
         }
-        return $order->product_name ?: 'Order';
+        return trim($model);
     }
 
     protected function extractSpecificationFromOrder(Order $order): string
     {
+        $parsed = Order::parseDescription($order->full_description ?? '');
+        $appearancePct = $parsed['appearance_pct'] ?? null;
+        $defectGrade = $parsed['defect_grade'] ?? null;
+
+        $parts = [];
+        if ($defectGrade) {
+            $parts[] = $defectGrade;
+        }
+        if ($appearancePct !== null) {
+            $parts[] = $appearancePct . '%';
+        }
+
+        if (! empty($parts)) {
+            return implode(' · ', $parts);
+        }
+
         if ($order->spec_summary) {
             return $order->spec_summary;
         }
         $desc = $order->full_description ?? '';
-        $parts = [];
-        if (preg_match('/(\d+\s*GB)/i', $desc, $m)) {
-            $parts[] = trim($m[1]);
-        }
-        if (preg_match('/(?:battery|bat\.?)\s*[:\s]*(\d+%?)/i', $desc, $m) || preg_match('/(\d+%)\s*(?:battery|health)/i', $desc, $m)) {
-            $parts[] = trim($m[1]);
-        }
-        if (preg_match('/(?:grade|condition)\s*[:\s]*([A-Da-d])/i', $desc, $m) || preg_match('/([A-Da-d])\s*(?:grade)/i', $desc, $m)) {
+        if (preg_match('/(?:grade|condition)\s*[:\s]*([A-Da-dSs])/i', $desc, $m) || preg_match('/Grade\s+([A-Da-dSs])/i', $desc, $m)) {
             $parts[] = 'Grade ' . strtoupper($m[1]);
+        }
+        if (preg_match('/(?:appearance|battery)\s*[:\s]*(\d+)\s*%/i', $desc, $m)) {
+            $parts[] = $m[1] . '%';
         }
         return ! empty($parts) ? implode(' · ', $parts) : '—';
     }

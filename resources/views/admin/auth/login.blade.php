@@ -7,7 +7,9 @@
 <body class="bg-gray-100 flex items-center justify-center min-h-screen">
 
 <div class="bg-white p-8 rounded shadow-md w-96">
-
+    <a href="{{ route('home') }}" class="flex justify-center mb-6">
+        <x-application-logo class="h-16 w-16 object-contain" />
+    </a>
     <h2 class="text-2xl font-bold text-center mb-6">
         Admin Login
     </h2>

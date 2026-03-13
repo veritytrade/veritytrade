@@ -9,9 +9,10 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::table('orders', function (Blueprint $table) {
+        $afterCol = Schema::hasColumn('orders', 'payment_status') ? 'payment_status' : 'total_amount_ngn';
+        Schema::table('orders', function (Blueprint $table) use ($afterCol) {
             if (!Schema::hasColumn('orders', 'logistics_type')) {
-                $table->string('logistics_type', 32)->default('within_lagos')->after('payment_status');
+                $table->string('logistics_type', 32)->default('within_lagos')->after($afterCol);
             }
         });
 
@@ -27,8 +28,9 @@ return new class extends Migration
     public function down(): void
     {
         if (!Schema::hasColumn('orders', 'pays_logistics')) {
-            Schema::table('orders', function (Blueprint $table) {
-                $table->boolean('pays_logistics')->default(false)->after('payment_status');
+            $paysAfter = Schema::hasColumn('orders', 'payment_status') ? 'payment_status' : 'total_amount_ngn';
+            Schema::table('orders', function (Blueprint $table) use ($paysAfter) {
+                $table->boolean('pays_logistics')->default(false)->after($paysAfter);
             });
             DB::table('orders')->whereIn('logistics_type', ['outside_lagos'])->update(['pays_logistics' => true]);
             DB::table('orders')->whereIn('logistics_type', ['within_lagos', 'combined'])->update(['pays_logistics' => false]);

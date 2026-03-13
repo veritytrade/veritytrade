@@ -20,6 +20,7 @@ use App\Http\Controllers\Customer\DashboardController as CustomerDashboardContro
 |--------------------------------------------------------------------------
 */
 Route::get('/', [HomeController::class, 'index'])->name('home');
+Route::get('/landing', [LandingController::class, 'index'])->name('landing');
 
 // WhatsApp redirect for Hot Deals
 Route::get('/deal/{deal:uuid}/whatsapp', [LandingController::class, 'whatsapp'])
@@ -51,6 +52,7 @@ Route::prefix('dashboard')
         Route::post('/orders/{order}/request-invoice', [CustomerDashboardController::class, 'requestInvoice'])->name('dashboard.orders.request-invoice');
         Route::get('/tracking', [CustomerDashboardController::class, 'tracking'])->name('dashboard.tracking');
         Route::get('/invoices', [CustomerDashboardController::class, 'invoices'])->name('dashboard.invoices');
+        Route::get('/invoices/{invoice}/download', [CustomerDashboardController::class, 'downloadInvoice'])->name('dashboard.invoices.download');
     });
 
 /*
@@ -79,6 +81,7 @@ Route::prefix('admin')->group(function () {
         ->name('admin.login');
 
     Route::post('/login', [AdminLoginController::class, 'login'])
+        ->middleware('throttle:5,1')
         ->name('admin.login.submit');
 
     Route::post('/logout', [AdminLoginController::class, 'logout'])
@@ -124,7 +127,6 @@ Route::prefix('admin')
             Route::get('/invoice-settings', [\App\Http\Controllers\Admin\InvoiceSettingsController::class, 'edit'])->name('admin.invoice-settings.edit');
             Route::get('/invoice-settings/preview', [\App\Http\Controllers\Admin\InvoiceSettingsController::class, 'preview'])->name('admin.invoice-settings.preview');
             Route::get('/invoice-settings/preview-html', [\App\Http\Controllers\Admin\InvoiceSettingsController::class, 'previewHtml'])->name('admin.invoice-settings.preview-html');
-            Route::put('/invoice-settings', [\App\Http\Controllers\Admin\InvoiceSettingsController::class, 'update'])->name('admin.invoice-settings.update');
             Route::get('/invoices/generate', [\App\Http\Controllers\Admin\InvoiceSettingsController::class, 'generateIndex'])->name('admin.invoice-settings.generate');
             Route::post('/invoices/generate', [\App\Http\Controllers\Admin\InvoiceSettingsController::class, 'generateForShipment'])->name('admin.invoice-settings.generate-for-shipment');
         });

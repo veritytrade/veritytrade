@@ -20,7 +20,7 @@
             <p class="text-xs text-green-200 mt-1">Management Panel</p>
         </div>
 
-        <nav class="mt-4 px-3 pb-24">
+        <nav class="mt-4 px-3 pb-24" @click="sidebarOpen = false">
             <ul class="space-y-1">
                 @if($user->hasPermission('view_dashboard'))
                     <li><a href="{{ route('admin.dashboard') }}" class="flex items-center px-4 py-3 text-sm font-medium rounded-lg {{ request()->routeIs('admin.dashboard') ? 'bg-white text-green-700' : 'text-green-100 hover:bg-green-600 hover:text-white' }}">Dashboard</a></li>
@@ -37,8 +37,7 @@
                     <li><a href="{{ route('admin.orders.index') }}" class="flex items-center px-4 py-3 text-sm font-medium rounded-lg {{ request()->routeIs('admin.orders.*') ? 'bg-white text-green-700' : 'text-green-100 hover:bg-green-600 hover:text-white' }}">Orders</a></li>
                 @endif
                 @if($user->hasPermission('generate_invoices'))
-                    <li><a href="{{ route('admin.invoice-settings.generate') }}" class="flex items-center px-4 py-3 text-sm font-medium rounded-lg {{ request()->routeIs('admin.invoice-settings.generate*') ? 'bg-white text-green-700' : 'text-green-100 hover:bg-green-600 hover:text-white' }}">Generate Invoice</a></li>
-                    <li><a href="{{ route('admin.invoice-settings.edit') }}" class="flex items-center px-4 py-3 text-sm font-medium rounded-lg {{ request()->routeIs('admin.invoice-settings.edit') || request()->routeIs('admin.invoice-settings.preview*') || request()->routeIs('admin.invoice-settings.update') ? 'bg-white text-green-700' : 'text-green-100 hover:bg-green-600 hover:text-white' }}">Invoice Settings</a></li>
+                    <li><a href="{{ route('admin.invoice-settings.edit') }}" class="flex items-center px-4 py-3 text-sm font-medium rounded-lg {{ request()->routeIs('admin.invoice-settings.*') ? 'bg-white text-green-700' : 'text-green-100 hover:bg-green-600 hover:text-white' }}">Invoice</a></li>
                 @endif
                 @if($user->hasPermission('assign_roles'))
                     <li><a href="{{ route('admin.staff.index') }}" class="flex items-center px-4 py-3 text-sm font-medium rounded-lg {{ request()->routeIs('admin.staff.*') ? 'bg-white text-green-700' : 'text-green-100 hover:bg-green-600 hover:text-white' }}">Staff Management</a></li>

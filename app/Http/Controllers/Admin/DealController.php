@@ -13,11 +13,16 @@ class DealController extends Controller
     // Show all deals (admin index)
     public function index()
     {
+        // Automatically remove expired deals
+        Deal::whereNotNull('expires_at')
+            ->where('expires_at', '<', now())
+            ->delete();
+
         $deals = Deal::with('images')
                     ->orderBy('position', 'desc')
                     ->orderBy('expires_at', 'desc')
                     ->get();
-        
+
         return view('admin.deals.index', compact('deals'));
     }
 
@@ -40,13 +45,13 @@ class DealController extends Controller
             'images.*' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
         ]);
 
-        // --- CLEAN DESCRIPTION LOGIC ---
-        $cleanDesc = preg_replace('/^Model:.*$/im', '', $request->description);
-        $cleanDesc = preg_replace('/^Price:.*$/im', '', $cleanDesc);
+        // --- CLEAN DESCRIPTION LOGIC (remove Model/Price lines) ---
+        $cleanDesc = preg_replace('/^Model\s*[:\-].*$/im', '', $request->description);
+        $cleanDesc = preg_replace('/^(?:Price|Cost|Amount)\s*[:\-].*$/im', '', $cleanDesc);
+        $cleanDesc = preg_replace('/^[^\S\n]*[📱💰⚠️✅]*\s*(?:Price|Cost|Amount)\s*[:\-].*$/imu', '', $cleanDesc);
         $cleanDesc = preg_replace('/^\s+|\s+$/m', '', $cleanDesc);
         $cleanDesc = preg_replace('/\n{2,}/', "\n", $cleanDesc);
         $cleanDesc = trim($cleanDesc);
-        // -------------------------------
 
         // ✅ FIXED: Save ACTUAL expires_at value (was validation string)
         $deal = Deal::create([
@@ -99,12 +104,12 @@ class DealController extends Controller
         ]);
 
         // --- CLEAN DESCRIPTION LOGIC ---
-        $cleanDesc = preg_replace('/^Model:.*$/im', '', $request->description);
-        $cleanDesc = preg_replace('/^Price:.*$/im', '', $cleanDesc);
+        $cleanDesc = preg_replace('/^Model\s*[:\-].*$/im', '', $request->description);
+        $cleanDesc = preg_replace('/^(?:Price|Cost|Amount)\s*[:\-].*$/im', '', $cleanDesc);
+        $cleanDesc = preg_replace('/^[^\S\n]*[📱💰⚠️✅]*\s*(?:Price|Cost|Amount)\s*[:\-].*$/imu', '', $cleanDesc);
         $cleanDesc = preg_replace('/^\s+|\s+$/m', '', $cleanDesc);
         $cleanDesc = preg_replace('/\n{2,}/', "\n", $cleanDesc);
         $cleanDesc = trim($cleanDesc);
-        // -----------------------------------------------
 
         // ✅ FIXED: Added expires_at (was MISSING)
         $deal->update([

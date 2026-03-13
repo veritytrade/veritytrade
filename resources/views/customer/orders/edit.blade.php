@@ -2,7 +2,7 @@
     <div class="mb-6">
         <a href="{{ route('dashboard.orders') }}" class="text-blue-600 hover:text-blue-700 text-sm font-medium">← Orders</a>
         <h1 class="text-xl sm:text-2xl font-bold text-gray-800 mt-2">Edit Order</h1>
-        <p class="text-sm text-gray-600 mt-1">Ref: {{ $order->verity_tracking_code }} — Only editable while pending approval.</p>
+        <p class="text-sm text-gray-600 mt-1">Only editable while pending approval.</p>
     </div>
 
     <form method="POST" action="{{ route('dashboard.orders.update', $order) }}" enctype="multipart/form-data"
@@ -48,33 +48,6 @@
             <input type="file" name="payment_slips[]" multiple accept=".jpg,.jpeg,.png,.gif,.webp,.pdf"
                    class="w-full rounded-lg border border-gray-300 px-4 py-3 text-base focus:ring-2 focus:ring-green-500 focus:border-green-500">
             @error('payment_slips.*')<p class="text-red-600 text-sm mt-1">{{ $message }}</p>@enderror
-        </div>
-
-        <div>
-            <label class="block text-sm font-medium text-gray-700 mb-2">Delivery / logistics</label>
-            <div class="flex flex-wrap gap-3">
-                <label class="flex-1 min-w-[120px] cursor-pointer">
-                    <input type="radio" name="logistics_type" value="within_lagos" {{ in_array(old('logistics_type', $order->logistics_type ?? 'within_lagos'), ['within_lagos', null, '']) ? 'checked' : '' }} class="sr-only peer">
-                    <span class="flex flex-col items-center justify-center py-3 px-4 rounded-lg border-2 border-gray-200 bg-white text-gray-700 font-medium hover:border-green-300 transition peer-checked:border-green-600 peer-checked:bg-green-50 peer-checked:text-green-800 peer-checked:ring-2 peer-checked:ring-green-600/20">
-                        <span>Within Lagos</span>
-                        <span class="text-sm font-semibold text-green-700 mt-0.5">N0</span>
-                    </span>
-                </label>
-                <label class="flex-1 min-w-[120px] cursor-pointer">
-                    <input type="radio" name="logistics_type" value="outside_lagos" {{ old('logistics_type', $order->logistics_type) === 'outside_lagos' ? 'checked' : '' }} class="sr-only peer">
-                    <span class="flex flex-col items-center justify-center py-3 px-4 rounded-lg border-2 border-gray-200 bg-white text-gray-700 font-medium hover:border-green-300 transition peer-checked:border-green-600 peer-checked:bg-green-50 peer-checked:text-green-800 peer-checked:ring-2 peer-checked:ring-green-600/20">
-                        <span>Outside Lagos</span>
-                        <span class="text-sm font-semibold text-amber-600 mt-0.5">+N10,000</span>
-                    </span>
-                </label>
-                <label class="flex-1 min-w-[120px] cursor-pointer">
-                    <input type="radio" name="logistics_type" value="combined" {{ old('logistics_type', $order->logistics_type) === 'combined' ? 'checked' : '' }} class="sr-only peer">
-                    <span class="flex flex-col items-center justify-center py-3 px-4 rounded-lg border-2 border-gray-200 bg-white text-gray-700 font-medium hover:border-green-300 transition peer-checked:border-green-600 peer-checked:bg-green-50 peer-checked:text-green-800 peer-checked:ring-2 peer-checked:ring-green-600/20">
-                        <span>Part of combined</span>
-                        <span class="text-sm font-semibold text-green-700 mt-0.5">N0</span>
-                    </span>
-                </label>
-            </div>
         </div>
 
         <div class="pt-4 flex flex-col sm:flex-row gap-3">

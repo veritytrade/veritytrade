@@ -65,7 +65,7 @@
                     <tr>
                         <th class="p-3 sm:p-4 text-left font-semibold text-gray-700">Order</th>
                         <th class="p-3 sm:p-4 text-left font-semibold text-gray-700">Customer</th>
-                        <th class="p-3 sm:p-4 text-left font-semibold text-gray-700">Verity Code</th>
+                        <th class="p-3 sm:p-4 text-left font-semibold text-gray-700">Invoice</th>
                         <th class="p-3 sm:p-4 text-left font-semibold text-gray-700">Stage</th>
                         <th class="p-3 sm:p-4 text-center font-semibold text-gray-700">Override</th>
                     </tr>
@@ -76,7 +76,7 @@
                         <tr class="hover:bg-gray-50">
                             <td class="p-3 sm:p-4"><a href="{{ route('admin.orders.show', $order) }}" class="text-green-600 hover:text-green-700 font-medium">{{ Str::limit($order->product_name ?? 'Order #'.$order->id, 20) }}</a></td>
                             <td class="p-3 sm:p-4 text-gray-700">{{ $order->user?->name ?? '—' }}</td>
-                            <td class="p-3 sm:p-4 font-mono text-gray-700">{{ $order->verity_tracking_code ?? '—' }}</td>
+                            <td class="p-3 sm:p-4 font-mono text-gray-700">{{ $order->invoice?->invoice_number ?? '—' }}</td>
                             <td class="p-3 sm:p-4">{{ $eff?->name ?? '—' }}</td>
                             <td class="p-3 sm:p-4">
                                 @if(auth()->user()->hasPermission('override_order_stage'))

@@ -56,9 +56,13 @@
                             <td class="p-3 md:p-4 font-medium text-gray-800">{{ $deal->title }}</td>
                             <td class="p-3 md:p-4 text-gray-600">{{ $deal->price_display ?? '-' }}</td>
                             <td class="p-3 md:p-4">
-                                <span class="{{ $deal->expires_at->isPast() ? 'text-red-600' : 'text-green-600' }} font-medium">
-                                    {{ $deal->expires_at->format('M d, H:i') }}
-                                </span>
+                                @if($deal->expires_at)
+                                    <span class="{{ $deal->expires_at->isPast() ? 'text-red-600' : 'text-green-600' }} font-medium">
+                                        {{ $deal->expires_at->format('M d, H:i') }}
+                                    </span>
+                                @else
+                                    <span class="text-gray-500">No expiry</span>
+                                @endif
                             </td>
                             <td class="p-3 md:p-4 text-center">
                                 <form method="POST" action="{{ route('admin.deals.toggle', $deal) }}">
@@ -96,15 +100,5 @@
             </div>
         </div>
 
-        {{-- Info Box --}}
-        <div class="mt-6 bg-blue-50 border border-blue-200 p-4 md:p-6 rounded-lg">
-            <h3 class="font-semibold text-blue-800 mb-3">Hot Deal Rules</h3>
-            <ul class="text-sm text-blue-700 space-y-2">
-                <li>• Deals expire automatically after set date</li>
-                <li>• Only active + non-expired deals show on homepage</li>
-                <li>• Images stored in: <code class="bg-white px-2 py-1 rounded">storage/app/public/deals/</code></li>
-                <li>• Create new deals to replace expired ones</li>
-            </ul>
-        </div>
     </div>
 </x-admin-layout>

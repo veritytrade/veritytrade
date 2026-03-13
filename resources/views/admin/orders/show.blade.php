@@ -2,8 +2,10 @@
 <div class="max-w-2xl mx-auto p-4 sm:p-6">
     <div class="mb-6">
         <a href="{{ route('admin.orders.index') }}" class="text-green-600 hover:text-green-700 text-sm font-medium">← Orders</a>
-        <h2 class="text-xl sm:text-2xl font-bold text-gray-900 mt-2">Order {{ $order->verity_tracking_code ?? '#'.$order->id }}</h2>
-        <p class="text-sm text-gray-600 font-mono mt-1">Verity: {{ $order->verity_tracking_code ?? '—' }}</p>
+        <h2 class="text-xl sm:text-2xl font-bold text-gray-900 mt-2">Order #{{ $order->id }}</h2>
+        @if($order->invoice)
+            <p class="text-sm text-gray-600 mt-1">Invoice: {{ $order->invoice->invoice_number }}</p>
+        @endif
     </div>
 
     @if(session('success'))
@@ -34,7 +36,7 @@
                 @if($order->status === 'pending_approval' && auth()->user()->hasPermission('approve_orders'))
                     <form method="POST" action="{{ route('admin.orders.approve', $order) }}" class="inline ml-2">
                         @csrf
-                        <button type="submit" class="text-sm text-green-600 hover:text-green-700 font-medium">Approve →</button>
+                        <button type="submit" class="inline-flex items-center justify-center min-h-[44px] px-6 py-2.5 bg-green-600 hover:bg-green-700 text-white font-bold rounded-xl shadow-md hover:shadow-lg transition-all">✓ Approve Order</button>
                     </form>
                 @endif
             </dd>
@@ -54,8 +56,6 @@
                 <dt class="text-gray-500">Outstanding</dt>
                 <dd class="font-medium text-gray-800">₦{{ number_format($order->outstanding_balance_ngn) }}</dd>
             @endif
-            <dt class="text-gray-500">Delivery location</dt>
-            <dd class="font-medium text-gray-800">{{ match($order->logistics_type ?? 'within_lagos') { 'outside_lagos' => 'Outside Lagos (+N10,000)', 'combined' => 'Part of combined shipment (N0)', default => 'Within Lagos (N0)' } }}</dd>
         </dl>
         @if($order->paymentSlips->isNotEmpty())
             <div class="mt-4">

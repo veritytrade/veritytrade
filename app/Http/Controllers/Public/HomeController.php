@@ -29,12 +29,16 @@ class HomeController extends Controller
             }
         }
 
-        // Hot deals: show all active, non–soft-deleted deals (ignore expiry so admin content always shows).
+        // Hot deals: show only active deals that have not expired.
         if (Schema::hasTable('deals')) {
             try {
                 $deals = Deal::query()
                     ->with('images')
                     ->where('is_active', true)
+                    ->where(function ($q) {
+                        $q->whereNull('expires_at')
+                            ->orWhere('expires_at', '>', now());
+                    })
                     ->orderBy('position', 'desc')
                     ->orderByRaw('CASE WHEN expires_at IS NULL THEN 1 ELSE 0 END')
                     ->orderBy('expires_at', 'desc')

@@ -9,10 +9,16 @@
     <style>[x-cloak]{display:none!important}</style>
 </head>
 <body class="bg-gray-50 text-gray-900">
-    @php($customerName = auth()->user()?->name ?: 'Customer')
+    @php
+        $fullName = auth()->user()?->name ?: 'Customer';
+        $customerName = trim(explode(' ', $fullName)[0] ?? $fullName);
+    @endphp
     <header class="bg-white border-b border-gray-200 sticky top-0 z-20 shadow-sm" x-data="{ mobileOpen: false }">
         <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
-            <a href="{{ route('dashboard') }}" class="font-bold text-blue-700 truncate max-w-[140px] sm:max-w-none">{{ $customerName }}</a>
+            <a href="{{ route('dashboard') }}" class="flex items-center gap-2 shrink-0">
+                <x-application-logo class="h-8 w-8 sm:h-9 sm:w-9 object-contain" />
+                <span class="font-bold text-blue-700 truncate max-w-[120px] sm:max-w-none">{{ $customerName }}</span>
+            </a>
             <nav class="hidden sm:flex items-center gap-2 lg:gap-3 text-sm">
                 <a href="{{ route('dashboard') }}" class="px-2 py-1.5 rounded-lg {{ request()->routeIs('dashboard') && !request()->routeIs('dashboard.*') ? 'bg-blue-50 text-blue-700' : 'text-gray-700 hover:bg-gray-100 hover:text-blue-700' }}">Dashboard</a>
                 <a href="{{ route('dashboard.orders') }}" class="px-2 py-1.5 rounded-lg {{ request()->routeIs('dashboard.orders') ? 'bg-blue-50 text-blue-700' : 'text-gray-700 hover:bg-gray-100 hover:text-blue-700' }}">Orders</a>

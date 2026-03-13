@@ -52,14 +52,11 @@
                 @error('outstanding_balance_ngn')<p class="text-red-600 text-sm mt-1">{{ $message }}</p>@enderror
             </div>
             <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Payment Status *</label>
-                <select name="payment_status" required
-                        class="w-full rounded-lg border border-gray-300 px-4 py-3 text-base focus:ring-2 focus:ring-green-500 focus:border-green-500 min-h-[48px]">
-                    <option value="pending" {{ old('payment_status', $order->payment_status) === 'pending' ? 'selected' : '' }}>Pending</option>
-                    <option value="paid" {{ old('payment_status', $order->payment_status) === 'paid' ? 'selected' : '' }}>Paid</option>
-                    <option value="partial" {{ old('payment_status', $order->payment_status) === 'partial' ? 'selected' : '' }}>Partial</option>
-                </select>
-                @error('payment_status')<p class="text-red-600 text-sm mt-1">{{ $message }}</p>@enderror
+                <label class="block text-sm font-medium text-gray-700 mb-1">Payment Status</label>
+                <p class="text-sm text-gray-500 mb-1">Derived from Outstanding Balance (paid when 0, partial when some paid, pending when none).</p>
+                <div class="px-4 py-3 rounded-lg bg-gray-50 border border-gray-200 text-gray-700">
+                    {{ ucfirst($order->payment_status ?? 'pending') }}
+                </div>
             </div>
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Status</label>
@@ -74,23 +71,6 @@
                     <option value="pending_approval" {{ old('status', $order->status) === 'pending_approval' ? 'selected' : '' }}>Pending approval</option>
                 </select>
                 @error('status')<p class="text-red-600 text-sm mt-1">{{ $message }}</p>@enderror
-            </div>
-            <div>
-                <label class="block text-sm font-medium text-gray-700 mb-2">Delivery / logistics</label>
-                <div class="flex flex-wrap gap-3">
-                    <label class="inline-flex items-center gap-2 cursor-pointer">
-                        <input type="radio" name="logistics_type" value="within_lagos" {{ in_array(old('logistics_type', $order->logistics_type ?? 'within_lagos'), ['within_lagos', null, '']) ? 'checked' : '' }} class="rounded border-gray-300 text-green-600">
-                        <span class="text-sm">Within Lagos (N0)</span>
-                    </label>
-                    <label class="inline-flex items-center gap-2 cursor-pointer">
-                        <input type="radio" name="logistics_type" value="outside_lagos" {{ old('logistics_type', $order->logistics_type) === 'outside_lagos' ? 'checked' : '' }} class="rounded border-gray-300 text-green-600">
-                        <span class="text-sm">Outside Lagos (+N10,000)</span>
-                    </label>
-                    <label class="inline-flex items-center gap-2 cursor-pointer">
-                        <input type="radio" name="logistics_type" value="combined" {{ old('logistics_type', $order->logistics_type) === 'combined' ? 'checked' : '' }} class="rounded border-gray-300 text-green-600">
-                        <span class="text-sm">Part of combined shipment (N0)</span>
-                    </label>
-                </div>
             </div>
             @if($order->paymentSlips && $order->paymentSlips->isNotEmpty())
                 <div>
