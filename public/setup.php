@@ -19,6 +19,17 @@ if (!file_exists($basePath.'/artisan')) {
 }
 chdir($basePath);
 
+// When using public_html as doc root: create storage symlink (File Manager may block manual creation)
+$webRoot = __DIR__;
+$storageLink = $webRoot.'/storage';
+$storageTarget = $basePath.'/storage/app/public';
+$isPublicHtml = ($webRoot !== $basePath.'/public');
+if ($isPublicHtml && !file_exists($storageLink) && is_dir($storageTarget)) {
+    if (@symlink($storageTarget, $storageLink)) {
+        $created = true;
+    }
+}
+
 $commands = [
     'php artisan key:generate --force',
     'php artisan storage:link --force',
@@ -42,4 +53,7 @@ foreach ($commands as $cmd) {
     }
 }
 
-echo "Done. DELETE this file (public/setup.php) for security.\n";
+if (isset($created) && $created) {
+    echo "Storage symlink created in web root (public_html/storage).\n";
+}
+echo "Done. DELETE this file for security.\n";
