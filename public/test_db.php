@@ -15,7 +15,14 @@ if (!file_exists($envFile)) {
     die('.env not found');
 }
 
-$env = parse_ini_file($envFile);
+$env = [];
+foreach (file($envFile) as $line) {
+    $line = trim($line);
+    if ($line && strpos($line, '#') !== 0 && strpos($line, '=') !== false) {
+        [$k, $v] = explode('=', $line, 2);
+        $env[trim($k)] = trim($v, " \t\n\r\0\x0B\"'");
+    }
+}
 $host = $env['DB_HOST'] ?? '127.0.0.1';
 $port = $env['DB_PORT'] ?? '3306';
 $database = $env['DB_DATABASE'] ?? '';
