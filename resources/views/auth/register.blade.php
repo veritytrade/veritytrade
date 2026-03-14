@@ -13,6 +13,7 @@
 
     <form method="POST" action="{{ route('register') }}">
         @csrf
+        @php($ngStatesCities = (array) (config('nigeria.states_cities') ?? []))
 
         <!-- Name -->
         <div>
@@ -45,15 +46,49 @@
             <x-input-error :messages="$errors->get('phone')" class="mt-2" />
         </div>
 
-        <div class="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div class="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-4"
+             x-data="{
+                statesCities: @js($ngStatesCities),
+                state: @js(old('state')),
+                city: @js(old('city')),
+                get states() { return Object.keys(this.statesCities || {}).sort(); },
+                get cities() {
+                    const s = (this.state || '').trim();
+                    return (this.statesCities && this.statesCities[s]) ? this.statesCities[s] : [];
+                },
+                onStateChange() {
+                    if (!this.cities.includes(this.city)) {
+                        this.city = '';
+                    }
+                }
+             }">
             <div>
                 <x-input-label for="state" :value="__('State')" />
-                <x-text-input id="state" class="block mt-1 w-full" type="text" name="state" :value="old('state')" required autocomplete="address-level1" maxlength="100" placeholder="e.g. Lagos" />
+                <input id="state" name="state" type="text"
+                       class="block mt-1 w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                       list="ng_states_register"
+                       x-model="state"
+                       x-on:input.debounce.100="onStateChange()"
+                       required autocomplete="address-level1" maxlength="100" placeholder="e.g. Lagos">
+                <datalist id="ng_states_register">
+                    <template x-for="s in states" :key="s">
+                        <option :value="s"></option>
+                    </template>
+                </datalist>
                 <x-input-error :messages="$errors->get('state')" class="mt-2" />
             </div>
             <div>
                 <x-input-label for="city" :value="__('City')" />
-                <x-text-input id="city" class="block mt-1 w-full" type="text" name="city" :value="old('city')" required autocomplete="address-level2" maxlength="100" placeholder="e.g. Ikeja" />
+                <input id="city" name="city" type="text"
+                       class="block mt-1 w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                       :list="cities.length ? 'ng_cities_register' : null"
+                       x-model="city"
+                       required autocomplete="address-level2" maxlength="100" placeholder="e.g. Ikeja">
+                <datalist id="ng_cities_register">
+                    <template x-for="c in cities" :key="c">
+                        <option :value="c"></option>
+                    </template>
+                </datalist>
                 <x-input-error :messages="$errors->get('city')" class="mt-2" />
             </div>
         </div>

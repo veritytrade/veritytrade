@@ -120,6 +120,10 @@ Route::middleware('auth')->group(function () {
 
     Route::delete('/profile', [ProfileController::class, 'destroy'])
         ->name('profile.destroy');
+
+    Route::post('/profile/delete-otp', [ProfileController::class, 'sendDeleteOtp'])
+        ->middleware('throttle:3,1')
+        ->name('profile.delete-otp.send');
 });
 
 /*

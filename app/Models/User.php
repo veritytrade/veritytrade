@@ -38,7 +38,6 @@ class User extends Authenticatable implements MustVerifyEmail
         'email_verified_at' => 'datetime',
         'approved_at' => 'datetime',
         'is_approved' => 'boolean',
-        'phone' => 'encrypted',
         'address' => 'encrypted',
         // state and city stored as plain text so they persist and display in profile + admin
     ];

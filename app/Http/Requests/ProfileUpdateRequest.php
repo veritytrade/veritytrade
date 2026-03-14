@@ -41,7 +41,6 @@ class ProfileUpdateRequest extends FormRequest
             'address' => $addressRules,
             'state' => ['nullable', 'string', 'max:100'],
             'city' => ['nullable', 'string', 'max:100'],
-            'current_password' => ['required', 'current_password'],
         ];
     }
 
@@ -51,8 +50,6 @@ class ProfileUpdateRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'current_password.required' => 'Current password is required to save changes.',
-            'current_password.current_password' => 'The current password is incorrect. Please try again.',
             'phone.required' => 'Phone number is required.',
             'phone.regex' => 'Please enter a valid phone number (digits only, 6–20 characters, optional + prefix).',
             'email.unique' => 'This email is already registered. Use a different email.',

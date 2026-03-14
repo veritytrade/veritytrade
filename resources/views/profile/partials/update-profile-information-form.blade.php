@@ -2,6 +2,7 @@
     @php
         $rawPhone = old('phone', $user->getDisplayPhone());
         $safePhone = preg_match('/^\+?[0-9]{6,20}$/', $rawPhone) ? $rawPhone : '';
+        $ngStatesCities = (array) (config('nigeria.states_cities') ?? []);
     @endphp
     <header>
         <h2 class="text-lg font-medium text-gray-900">
@@ -70,7 +71,7 @@
 
         <div>
             <x-input-label for="phone" :value="__('Phone Number')" />
-            <x-text-input id="phone" name="phone" type="tel" class="mt-1 block w-full" :value="$safePhone" required autocomplete="tel" inputmode="tel" />
+            <x-text-input id="phone" name="phone" type="tel" class="mt-1 block w-full" :value="$safePhone" required autocomplete="tel" inputmode="tel" placeholder="{{ __('Number reachable for delivery and logistics (e.g. call/WhatsApp)') }}" />
             <x-input-error class="mt-2" :messages="$errors->get('phone')" />
         </div>
 
@@ -82,23 +83,57 @@
             </div>
         @endif
 
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4"
+             x-data="{
+                statesCities: @js($ngStatesCities),
+                state: @js(old('state', $user->getDisplayState())),
+                city: @js(old('city', $user->getDisplayCity())),
+                get states() { return Object.keys(this.statesCities || {}).sort(); },
+                get cities() {
+                    const s = (this.state || '').trim();
+                    return (this.statesCities && this.statesCities[s]) ? this.statesCities[s] : [];
+                },
+                onStateChange() {
+                    if (!this.cities.includes(this.city)) {
+                        this.city = '';
+                    }
+                }
+             }">
             <div>
-                <x-input-label for="state" :value="__('State')" />
-                <x-text-input id="state" name="state" type="text" class="mt-1 block w-full" :value="old('state', $user->getDisplayState())" />
+                <x-input-label for="state" :value="__('State (Nigeria)')" />
+                <input id="state" name="state" type="text"
+                       class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                       list="ng_states"
+                       x-model="state"
+                       x-on:input.debounce.100="onStateChange()"
+                       autocomplete="address-level1"
+                       placeholder="e.g. Lagos">
+                <datalist id="ng_states">
+                    <template x-for="s in states" :key="s">
+                        <option :value="s"></option>
+                    </template>
+                </datalist>
                 <x-input-error class="mt-2" :messages="$errors->get('state')" />
             </div>
+
             <div>
                 <x-input-label for="city" :value="__('City')" />
-                <x-text-input id="city" name="city" type="text" class="mt-1 block w-full" :value="old('city', $user->getDisplayCity())" />
+                <input id="city" name="city" type="text"
+                       class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                       :list="cities.length ? 'ng_cities' : null"
+                       x-model="city"
+                       autocomplete="address-level2"
+                       placeholder="e.g. Ikeja">
+                <datalist id="ng_cities">
+                    <template x-for="c in cities" :key="c">
+                        <option :value="c"></option>
+                    </template>
+                </datalist>
+                <p class="mt-1 text-xs text-gray-500" x-show="!cities.length && (state || '').trim().length">
+                    {{ __('Select a state to see suggested cities.') }}
+                </p>
                 <x-input-error class="mt-2" :messages="$errors->get('city')" />
             </div>
-        </div>
-
-        <div>
-            <x-input-label for="current_password" :value="__('Current Password (Required to Save Changes)')" />
-            <x-text-input id="current_password" name="current_password" type="password" class="mt-1 block w-full" required autocomplete="current-password" />
-            <x-input-error class="mt-2" :messages="$errors->get('current_password')" />
         </div>
 
         <div class="flex items-center gap-4">
