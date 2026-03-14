@@ -77,7 +77,7 @@
                     <label class="block text-sm font-medium text-gray-700 mb-1">Current payment slips</label>
                     <div class="flex flex-wrap gap-2">
                         @foreach($order->paymentSlips as $slip)
-                            <a href="{{ asset('storage/' . $slip->file_path) }}" target="_blank" class="text-sm text-green-600 hover:text-green-700">{{ $slip->original_name ?: 'Slip' }}</a>
+                            <a href="{{ storage_asset($slip->file_path) }}" target="_blank" class="text-sm text-green-600 hover:text-green-700">{{ $slip->original_name ?: 'Slip' }}</a>
                         @endforeach
                     </div>
                 </div>

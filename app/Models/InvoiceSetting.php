@@ -38,6 +38,6 @@ class InvoiceSetting extends Model
         if (! $this->logo_path) {
             return null;
         }
-        return asset('storage/' . $this->logo_path);
+        return storage_asset($this->logo_path);
     }
 }

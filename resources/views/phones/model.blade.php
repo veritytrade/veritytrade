@@ -9,7 +9,7 @@
                 </ol>
             </nav>
 
-            <div class="block p-0 bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden mb-6" x-data="{ currentImage: '{{ $model->images->isNotEmpty() ? asset('storage/'.$model->images->first()->path) : ($model->image ? asset('storage/'.$model->image) : '') }}' }">
+            <div class="block p-0 bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden mb-6" x-data="{ currentImage: '{{ $model->images->isNotEmpty() ? storage_asset($model->images->first()->path) : ($model->image ? storage_asset($model->image) : '') }}' }">
                 <div class="aspect-square bg-white p-4 flex items-center justify-center">
                     @if($model->images->isNotEmpty() || $model->image)
                         <img :src="currentImage" alt="{{ $model->name }}" class="max-w-full max-h-full object-contain" id="model-main-image">
@@ -20,8 +20,8 @@
                 @if($model->images->isNotEmpty() || $model->image)
                     @php
                         $galleryImages = $model->images->isNotEmpty()
-                            ? $model->images->map(fn($i) => asset('storage/'.$i->path))->values()
-                            : collect([asset('storage/'.$model->image)]);
+                            ? $model->images->map(fn($i) => storage_asset($i->path))->values()
+                            : collect([storage_asset($model->image)]);
                     @endphp
                     <div class="flex flex-wrap gap-2 p-3 border-t border-gray-100 bg-gray-50">
                         @foreach($galleryImages as $idx => $imgUrl)

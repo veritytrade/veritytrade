@@ -15,7 +15,7 @@ Open each URL in your browser (use your real domain and the same token you use f
 | Rebuild config | `https://veritytrade.ng/run_artisan.php?token=veritytrade-setup-2024&cmd=config:cache` |
 | Clear view cache (optional) | `https://veritytrade.ng/run_artisan.php?token=veritytrade-setup-2024&cmd=view:clear` |
 
-**Why:** The **storage image route** and other changes are in `routes/web.php`. If the server was using a cached route list (`route:cache`), the new route is not used until you run **route:clear**. Config cache can also serve old paths, so clear and rebuild it.
+**Why:** Image URLs now use the **`/_f/`** route (no symlink needed). Routes are loaded from `routes/web.php`; if the server was using a cached route list (`route:cache`), run **route:clear** so the `/_f/` route is active. Config cache can also serve old paths, so clear and rebuild it.
 
 ---
 

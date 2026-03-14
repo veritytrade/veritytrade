@@ -27,7 +27,7 @@
                         <div class="flex flex-wrap gap-3">
                             @foreach($model->images as $img)
                                 <label class="flex flex-col items-center gap-1 cursor-pointer group">
-                                    <img src="{{ asset('storage/'.$img->path) }}" alt="" class="w-16 h-16 object-contain rounded border border-gray-200 group-hover:border-red-400">
+                                    <img src="{{ storage_asset($img->path) }}" alt="" class="w-16 h-16 object-contain rounded border border-gray-200 group-hover:border-red-400">
                                     <span class="text-xs text-gray-500 flex items-center gap-1">
                                         <input type="checkbox" name="delete_images[]" value="{{ $img->id }}" class="rounded border-gray-300 text-red-600 focus:ring-red-500">
                                         Delete

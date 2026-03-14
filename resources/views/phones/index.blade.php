@@ -18,7 +18,7 @@
                     @foreach($brands as $b)
                         <a href="{{ route('phones.brand', $b->slug) }}" class="block p-6 bg-white border border-gray-200 rounded-xl shadow-sm hover:bg-green-50 hover:border-green-200 hover:shadow-md transition duration-200">
                             @if($b->image)
-                                <img src="{{ asset('storage/'.$b->image) }}" alt="" class="w-16 h-16 sm:w-20 sm:h-20 object-contain mx-auto mb-3">
+                                <img src="{{ storage_asset($b->image) }}" alt="" class="w-16 h-16 sm:w-20 sm:h-20 object-contain mx-auto mb-3">
                             @else
                                 <div class="w-16 h-16 sm:w-20 sm:h-20 rounded-lg bg-gray-100 mx-auto mb-3 flex items-center justify-center text-gray-400 text-2xl font-bold">{{ Str::limit($b->name, 1) }}</div>
                             @endif

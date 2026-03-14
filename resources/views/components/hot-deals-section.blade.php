@@ -12,7 +12,7 @@
         <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
             @foreach($deals as $deal)
                 @php
-                    $imageUrls = ($deal->images ?? collect())->pluck('image_path')->map(fn ($path) => asset('storage/' . $path))->values();
+                    $imageUrls = ($deal->images ?? collect())->pluck('image_path')->map(fn ($path) => storage_asset($path))->values();
 
                     $specLines = collect(explode("\n", (string) $deal->description))
                         ->map(fn ($line) => trim($line))

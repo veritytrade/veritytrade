@@ -14,7 +14,7 @@
                 <div>
                     <label for="image" class="block text-sm font-medium text-gray-700">Image (optional)</label>
                     @if($brand->image)
-                        <p class="text-xs text-gray-500 mb-1">Current: <img src="{{ asset('storage/'.$brand->image) }}" alt="" class="w-8 h-8 object-contain inline-block rounded"></p>
+                        <p class="text-xs text-gray-500 mb-1">Current: <img src="{{ storage_asset($brand->image) }}" alt="" class="w-8 h-8 object-contain inline-block rounded"></p>
                     @endif
                     <input type="file" name="image" id="image" accept="image/jpeg,image/png,image/jpg,image/webp"
                            class="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-gray-100 file:text-gray-700">

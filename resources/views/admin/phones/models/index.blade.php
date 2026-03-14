@@ -40,7 +40,7 @@
                         <tr>
                             <td class="px-4 py-3">
                                 @if($m->image)
-                                    <img src="{{ asset('storage/'.$m->image) }}" alt="" class="w-10 h-10 object-contain rounded-lg inline-block align-middle mr-2">
+                                    <img src="{{ storage_asset($m->image) }}" alt="" class="w-10 h-10 object-contain rounded-lg inline-block align-middle mr-2">
                                 @endif
                                 <span class="text-sm font-medium text-gray-900">{{ $m->name }}</span>
                             </td>

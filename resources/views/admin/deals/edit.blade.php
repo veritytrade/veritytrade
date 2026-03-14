@@ -113,7 +113,7 @@
                     <div class="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 max-h-64 overflow-y-auto p-2 border border-gray-200 rounded">
                         @foreach($deal->images as $image)
                             <div class="relative border rounded overflow-hidden group">
-                                <img src="{{ asset('storage/' . $image->image_path) }}"
+                                <img src="{{ storage_asset($image->image_path) }}"
                                     alt="Deal image"
                                     class="w-full aspect-square object-cover">
                                 <div class="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-20 transition flex items-center justify-center">

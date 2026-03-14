@@ -62,7 +62,7 @@
                 <h4 class="text-sm font-semibold text-gray-700 mb-2">Payment slips</h4>
                 <div class="flex flex-wrap gap-2">
                     @foreach($order->paymentSlips as $slip)
-                        <a href="{{ asset('storage/' . $slip->file_path) }}" target="_blank" rel="noopener"
+                        <a href="{{ storage_asset($slip->file_path) }}" target="_blank" rel="noopener"
                            class="text-sm text-green-600 hover:text-green-700">{{ $slip->original_name ?: 'Slip' }}</a>
                     @endforeach
                 </div>
@@ -107,7 +107,7 @@
                 <button type="submit" class="inline-flex items-center min-h-[44px] px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg">Generate Invoice ({{ $uninvoicedOrders->count() }} item{{ $uninvoicedOrders->count() > 1 ? 's' : '' }})</button>
             </form>
         @elseif($order->invoice && $order->invoice->pdf_path)
-            <a href="{{ asset('storage/' . $order->invoice->pdf_path) }}" target="_blank" rel="noopener" class="inline-flex items-center min-h-[44px] px-4 py-2 bg-green-600 hover:bg-green-700 text-white font-medium rounded-lg">Download Invoice</a>
+            <a href="{{ storage_asset($order->invoice->pdf_path) }}" target="_blank" rel="noopener" class="inline-flex items-center min-h-[44px] px-4 py-2 bg-green-600 hover:bg-green-700 text-white font-medium rounded-lg">Download Invoice</a>
         @endif
     </div>
 </div>

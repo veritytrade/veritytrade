@@ -16,7 +16,7 @@
                     @foreach($models as $m)
                         <a href="{{ route('phones.model', [$brand->slug, $m->slug]) }}" class="flex items-center gap-4 p-4 bg-white border border-gray-200 rounded-xl shadow-sm hover:bg-green-50 hover:border-green-200 hover:shadow-md transition duration-200">
                             @if($m->image)
-                                <img src="{{ asset('storage/'.$m->image) }}" alt="" class="w-14 h-14 object-contain rounded-lg bg-gray-50 flex-shrink-0">
+                                <img src="{{ storage_asset($m->image) }}" alt="" class="w-14 h-14 object-contain rounded-lg bg-gray-50 flex-shrink-0">
                             @else
                                 <div class="w-14 h-14 rounded-lg bg-gray-100 flex items-center justify-center text-gray-400 text-xs flex-shrink-0">—</div>
                             @endif

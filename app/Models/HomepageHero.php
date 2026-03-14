@@ -29,7 +29,7 @@ class HomepageHero extends Model
     public function getHeroImageUrlAttribute(): ?string
     {
         return $this->hero_image_path
-            ? asset('storage/' . $this->hero_image_path)
+            ? storage_asset($this->hero_image_path)
             : null;
     }
 }

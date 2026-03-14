@@ -40,7 +40,7 @@
                 <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                     @foreach($deals as $deal)
                         <div class="bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1" 
-                             x-data="{ ...dealCarousel(@js(($deal->images ?? collect())->pluck('image_path')->map(fn($p) => asset('storage/' . $p))->values()->toArray())), specsOpen: false }"
+                             x-data="{ ...dealCarousel(@js(($deal->images ?? collect())->pluck('image_path')->map(fn($p) => storage_asset($p))->values()->toArray())), specsOpen: false }"
                              @touchstart.passive="handleTouchStart($event)"
                              @touchend="handleTouchEnd($event)">
 

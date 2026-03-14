@@ -1,7 +1,6 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
-use Illuminate\Support\Facades\Storage;
 
 /*
 |--------------------------------------------------------------------------
@@ -17,40 +16,53 @@ use App\Http\Controllers\Customer\DashboardController as CustomerDashboardContro
 
 /*
 |--------------------------------------------------------------------------
-| Storage file serving (when symlink is missing, e.g. public_html deployment)
+| Secure storage file serving (/_f/*) – no symlink required; path & extension restricted
 |--------------------------------------------------------------------------
 */
-Route::get('/storage/{path}', function (string $path) {
-    $path = str_replace(['..', '\\'], ['', '/'], $path);
+Route::get('/_f/{path}', function (string $path) {
+    $path = str_replace(['..', '\\', "\0"], ['', '/', ''], $path);
     $path = trim($path, '/');
     if ($path === '') {
         abort(404);
     }
 
-    $fullPath = storage_path('app/public/' . $path);
-    if (! is_file($fullPath)) {
-        try {
-            if (! Storage::disk('public')->exists($path)) {
-                abort(404);
-            }
-            $fullPath = Storage::disk('public')->path($path);
-        } catch (\Throwable $e) {
-            report($e);
-            abort(404);
-        }
+    $ext = strtolower(pathinfo($path, PATHINFO_EXTENSION));
+    $allowed = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg', 'pdf', 'ico'];
+    if (! in_array($ext, $allowed, true)) {
+        abort(404);
     }
 
-    $mime = match (strtolower(pathinfo($path, PATHINFO_EXTENSION))) {
+    $root = storage_path('app/public');
+    $fullPath = $root . DIRECTORY_SEPARATOR . str_replace('/', DIRECTORY_SEPARATOR, $path);
+    $real = @realpath($fullPath);
+    if ($real === false || ! is_file($real)) {
+        abort(404);
+    }
+    $rootReal = realpath($root);
+    if ($rootReal === false || ! str_starts_with($real, $rootReal)) {
+        abort(404);
+    }
+    $sep = DIRECTORY_SEPARATOR;
+    if (strlen($real) > strlen($rootReal) && ! in_array($real[strlen($rootReal)], [$sep, '/', '\\'], true)) {
+        abort(404);
+    }
+
+    $mime = match ($ext) {
         'jpg', 'jpeg' => 'image/jpeg',
         'png' => 'image/png',
         'gif' => 'image/gif',
         'webp' => 'image/webp',
         'pdf' => 'application/pdf',
         'svg' => 'image/svg+xml',
+        'ico' => 'image/x-icon',
         default => 'application/octet-stream',
     };
 
-    return response()->file($fullPath, ['Content-Type' => $mime, 'Cache-Control' => 'public, max-age=86400']);
+    return response()->file($real, [
+        'Content-Type' => $mime,
+        'Cache-Control' => 'public, max-age=86400',
+        'X-Content-Type-Options' => 'nosniff',
+    ]);
 })->where('path', '.*')->name('storage.serve');
 
 /*
