@@ -1,6 +1,6 @@
 <section>
     @php
-        $rawPhone = old('phone', (string) ($user->phone ?? ''));
+        $rawPhone = old('phone', $user->getDisplayPhone());
         $safePhone = preg_match('/^\+?[0-9]{6,20}$/', $rawPhone) ? $rawPhone : '';
     @endphp
     <header>
@@ -60,7 +60,7 @@
         @if(feature_enabled('enable_customer_address', false))
             <div>
                 <x-input-label for="address" :value="__('Address')" />
-                <x-text-input id="address" name="address" type="text" class="mt-1 block w-full" :value="old('address', $user->address)" />
+                <x-text-input id="address" name="address" type="text" class="mt-1 block w-full" :value="old('address', $user->getDisplayAddress())" />
                 <x-input-error class="mt-2" :messages="$errors->get('address')" />
             </div>
         @endif
@@ -68,12 +68,12 @@
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
                 <x-input-label for="state" :value="__('State')" />
-                <x-text-input id="state" name="state" type="text" class="mt-1 block w-full" :value="old('state', $user->state)" />
+                <x-text-input id="state" name="state" type="text" class="mt-1 block w-full" :value="old('state', $user->getDisplayState())" />
                 <x-input-error class="mt-2" :messages="$errors->get('state')" />
             </div>
             <div>
                 <x-input-label for="city" :value="__('City')" />
-                <x-text-input id="city" name="city" type="text" class="mt-1 block w-full" :value="old('city', $user->city)" />
+                <x-text-input id="city" name="city" type="text" class="mt-1 block w-full" :value="old('city', $user->getDisplayCity())" />
                 <x-input-error class="mt-2" :messages="$errors->get('city')" />
             </div>
         </div>

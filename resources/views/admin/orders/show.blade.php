@@ -109,6 +109,11 @@
         @elseif($order->invoice && $order->invoice->pdf_path)
             <a href="{{ storage_asset($order->invoice->pdf_path) }}" target="_blank" rel="noopener" class="inline-flex items-center min-h-[44px] px-4 py-2 bg-green-600 hover:bg-green-700 text-white font-medium rounded-lg">Download Invoice</a>
         @endif
+        <form method="POST" action="{{ route('admin.orders.destroy', $order) }}" class="inline" onsubmit="return confirm('Delete this order? This cannot be undone.');">
+            @csrf
+            @method('DELETE')
+            <button type="submit" class="inline-flex items-center min-h-[44px] px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-medium rounded-lg">Delete Order</button>
+        </form>
     </div>
 </div>
 </x-admin-layout>

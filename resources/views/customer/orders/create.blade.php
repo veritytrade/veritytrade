@@ -60,6 +60,7 @@ Condition Notes:
             <input type="file" name="payment_slips[]" multiple accept=".jpg,.jpeg,.png,.gif,.webp,.pdf"
                    class="w-full rounded-lg border border-gray-300 px-4 py-3 text-base focus:ring-2 focus:ring-green-500 focus:border-green-500">
             <p class="text-xs text-gray-500 mt-1">Up to 5 images or PDFs. Max 5MB each.</p>
+            @error('payment_slips')<p class="text-red-600 text-sm mt-1">{{ $message }}</p>@enderror
             @error('payment_slips.*')<p class="text-red-600 text-sm mt-1">{{ $message }}</p>@enderror
         </div>
 

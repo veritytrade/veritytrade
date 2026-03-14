@@ -51,6 +51,7 @@ class OrderController extends Controller
             'outstanding_balance_ngn' => 'nullable|numeric|min:0',
             'logistics_type' => 'nullable|string|in:within_lagos,outside_lagos,combined',
             'shipment_id' => 'nullable|exists:shipments,id',
+            'payment_slips' => 'nullable|array|max:5',
             'payment_slips.*' => [File::types(['jpg', 'jpeg', 'png', 'gif', 'webp', 'pdf'])->max(5 * 1024)],
         ];
 
@@ -60,7 +61,10 @@ class OrderController extends Controller
             $rules['total_amount_ngn'] = 'nullable|numeric|min:0';
         }
 
-        $valid = $request->validate($rules, ['payment_slips.*.max' => 'Each slip must not exceed 5MB.']);
+        $valid = $request->validate($rules, [
+            'payment_slips.max' => 'Maximum 5 images or PDFs allowed.',
+            'payment_slips.*.max' => 'Each slip must not exceed 5MB.',
+        ]);
 
         $totalAmount = $parsed['has_price_in_description']
             ? ($parsed['price_ngn'] ?? (float) ($valid['total_amount_ngn'] ?? 0))
@@ -146,8 +150,12 @@ class OrderController extends Controller
             'status' => 'required|string|in:pending,pending_approval,processing,shipped,delivered,cancelled',
             'shipment_id' => 'nullable|exists:shipments,id',
             'current_stage_id' => 'nullable|exists:tracking_stages,id',
+            'payment_slips' => 'nullable|array|max:5',
             'payment_slips.*' => [File::types(['jpg', 'jpeg', 'png', 'gif', 'webp', 'pdf'])->max(5 * 1024)],
-        ], ['payment_slips.*.max' => 'Each slip must not exceed 5MB.']);
+        ], [
+            'payment_slips.max' => 'Maximum 5 images or PDFs allowed.',
+            'payment_slips.*.max' => 'Each slip must not exceed 5MB.',
+        ]);
 
         if (array_key_exists('current_stage_id', $valid) && $valid['current_stage_id'] === '') {
             $valid['current_stage_id'] = null;
@@ -266,5 +274,16 @@ class OrderController extends Controller
         $order->syncStatusFromStage();
 
         return back()->with('success', 'Order stage override updated.');
+    }
+
+    public function destroy(Order $order): RedirectResponse
+    {
+        foreach ($order->paymentSlips as $slip) {
+            if (Storage::disk('public')->exists($slip->file_path)) {
+                Storage::disk('public')->delete($slip->file_path);
+            }
+        }
+        $order->delete();
+        return redirect()->route('admin.orders.index')->with('success', 'Order deleted.');
     }
 }

@@ -186,4 +186,20 @@ class User extends Authenticatable implements MustVerifyEmail
             return '';
         }
     }
+
+    /**
+     * Safe attributes for audit logging (no encrypted fields to avoid DecryptException).
+     */
+    public function getSafeAttributesForAudit(): array
+    {
+        $attrs = $this->getAttributes();
+        $safe = ['id', 'name', 'email', 'role_id', 'is_approved', 'approved_at', 'approved_by', 'created_at', 'updated_at', 'deleted_at'];
+        $out = [];
+        foreach ($safe as $key) {
+            if (array_key_exists($key, $attrs)) {
+                $out[$key] = $attrs[$key];
+            }
+        }
+        return $out;
+    }
 }

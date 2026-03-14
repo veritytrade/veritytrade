@@ -64,6 +64,8 @@ Visit:
 https://yourdomain.com/setup.php?token=veritytrade-setup-2024
 ```
 
+Setup runs **migrate** (not `migrate:fresh`) and does **not** run `db:seed`, so existing user and profile data (e.g. phone, city) are **not** wiped. Do **not** run `php artisan db:seed` on production unless you intend to reset feature flags and other seeded data.
+
 Then **delete** `public_html/setup.php`.
 
 ---

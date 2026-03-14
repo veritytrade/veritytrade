@@ -160,11 +160,13 @@ td { padding: 8px; vertical-align: top; }
 <strong style="color:#12c06b;">Thank you for choosing Verity Gadgets.</strong><br>
 <span style="font-size:12px;color:#2C3E50;margin-left:40px;display:inline-block;">Verified Value. Visible Quality.</span>
 </td>
-<td style="text-align:right;width:150px;padding-bottom:2px;">
-    @if($qrImageUrl)
-        <img src="{{ $qrImageUrl }}" alt="QR" style="width:72px;height:72px;display:block;" />
-    @endif
-<br><span style="font-size:12px;color:#2C3E50;margin-top:-5px;margin-left:1.5em;display:block;text-align:right;">Scan for Support</span>
+<td style="text-align:right;width:150px;padding-bottom:2px;vertical-align:top;">
+    <div style="width:72px;margin-left:auto;margin-right:0;display:block;">
+        @if($qrImageUrl)
+            <img src="{{ $qrImageUrl }}" alt="QR" style="width:72px;height:72px;display:block;" />
+        @endif
+        <span style="font-size:12px;color:#2C3E50;margin-top:2px;display:block;text-align:right;padding-right:0;padding-left:14px;">Scan for Support</span>
+    </div>
 </td>
 </tr>
 </table>

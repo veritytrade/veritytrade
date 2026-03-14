@@ -60,9 +60,9 @@ class UserManagementController extends Controller
             abort(403, 'Super admin account cannot be reassigned from this panel.');
         }
 
-        $before = $user->toArray();
+        $before = $user->getSafeAttributesForAudit();
         $user->assignRole($role);
-        Audit::log('assign_role', 'users', $user->id, $before, $user->fresh()->toArray());
+        Audit::log('assign_role', 'users', $user->id, $before, $user->fresh()->getSafeAttributesForAudit());
 
         return back()->with('success', 'Role assigned successfully.');
     }
@@ -91,13 +91,13 @@ class UserManagementController extends Controller
             abort(403, 'Super admin approval cannot be changed here.');
         }
 
-        $before = $user->toArray();
+        $before = $user->getSafeAttributesForAudit();
         $user->update([
             'is_approved' => true,
             'approved_at' => now(),
             'approved_by' => auth()->id(),
         ]);
-        Audit::log('approve_user', 'users', $user->id, $before, $user->fresh()->toArray());
+        Audit::log('approve_user', 'users', $user->id, $before, $user->fresh()->getSafeAttributesForAudit());
 
         return back()->with('success', 'User approved successfully.');
     }
@@ -112,7 +112,7 @@ class UserManagementController extends Controller
             abort(403, 'You cannot delete your own account from this panel.');
         }
 
-        $before = $user->toArray();
+        $before = $user->getSafeAttributesForAudit();
         $user->delete();
         Audit::log('delete_user', 'users', $user->id, $before, null);
 

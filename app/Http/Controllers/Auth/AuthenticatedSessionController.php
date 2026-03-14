@@ -28,17 +28,14 @@ class AuthenticatedSessionController extends Controller
 
         $user = Auth::user();
 
+        // Hardcoded: require either email verification (OTP) or admin approval; either is enough to login.
         $requireEmailVerification = feature_enabled('require_email_verification', true);
-        $requireAdminApproval = feature_enabled('require_admin_approval', false);
+        $requireAdminApproval = feature_enabled('require_admin_approval', true);
 
         $hasVerifiedEmail = (bool) ($user?->hasVerifiedEmail());
         $hasAdminApproval = (bool) ($user?->is_approved);
 
-        // Policy:
-        // - if both are enabled, either verification OR approval is enough
-        // - if only one is enabled, that enabled condition is required
         $isAllowedByPolicy = true;
-
         if ($requireEmailVerification && $requireAdminApproval) {
             $isAllowedByPolicy = $hasVerifiedEmail || $hasAdminApproval;
         } elseif ($requireEmailVerification) {
@@ -51,9 +48,8 @@ class AuthenticatedSessionController extends Controller
             Auth::logout();
             $request->session()->invalidate();
             $request->session()->regenerateToken();
-
             return back()->withErrors([
-                'email' => 'Complete email verification with your 6-digit code to continue. Check inbox and spam folder, then use Resend if needed.',
+                'email' => 'Verify your email with the 6-digit code (check inbox/spam) or wait for admin approval to sign in.',
             ])->onlyInput('email');
         }
 

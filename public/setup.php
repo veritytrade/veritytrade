@@ -30,11 +30,12 @@ if ($isPublicHtml && !file_exists($storageLink) && is_dir($storageTarget)) {
     }
 }
 
+// NOTE: Do NOT add 'db:seed' here. Seeding can overwrite feature_flags and other data.
+// Run seed only on fresh installs (e.g. php artisan db:seed) manually.
 $commands = [
     'php artisan key:generate --force',
     'php artisan storage:link --force',
     'php artisan migrate --force',
-    'php artisan db:seed --force',
     'php artisan config:cache',
     'php artisan route:cache',
     'php artisan view:cache',

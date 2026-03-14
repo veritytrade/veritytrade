@@ -43,6 +43,7 @@ class OrderController extends Controller
             'gadget_description' => 'required|string|max:5000',
             'outstanding_balance_ngn' => 'nullable|numeric|min:0',
             'logistics_type' => 'nullable|string|in:within_lagos,outside_lagos,combined',
+            'payment_slips' => 'nullable|array|max:5',
             'payment_slips.*' => [File::types(['jpg', 'jpeg', 'png', 'gif', 'webp', 'pdf'])->max(5 * 1024)],
         ];
 
@@ -53,6 +54,7 @@ class OrderController extends Controller
         }
 
         $valid = $request->validate($rules, [
+            'payment_slips.max' => 'Maximum 5 images or PDFs allowed. Please reduce the number of files.',
             'payment_slips.*.max' => 'Each payment slip must not exceed 5MB.',
         ]);
 
@@ -136,6 +138,7 @@ class OrderController extends Controller
             'gadget_description' => 'required|string|max:5000',
             'outstanding_balance_ngn' => 'nullable|numeric|min:0',
             'logistics_type' => 'nullable|string|in:within_lagos,outside_lagos,combined',
+            'payment_slips' => 'nullable|array|max:5',
             'payment_slips.*' => [File::types(['jpg', 'jpeg', 'png', 'gif', 'webp', 'pdf'])->max(5 * 1024)],
         ];
 
@@ -146,6 +149,7 @@ class OrderController extends Controller
         }
 
         $valid = $request->validate($rules, [
+            'payment_slips.max' => 'Maximum 5 images or PDFs allowed. Please reduce the number of files.',
             'payment_slips.*.max' => 'Each payment slip must not exceed 5MB.',
         ]);
 

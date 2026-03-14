@@ -290,6 +290,9 @@ Route::prefix('admin')
         Route::middleware('permission:override_order_stage')->group(function () {
             Route::post('/orders/{order}/override-stage', [\App\Http\Controllers\Admin\OrderController::class, 'overrideStage'])->name('admin.orders.override-stage');
         });
+        Route::middleware('permission:view_tracking')->group(function () {
+            Route::delete('/orders/{order}', [\App\Http\Controllers\Admin\OrderController::class, 'destroy'])->name('admin.orders.destroy');
+        });
 
         // Phones module (admin)
         $phonesAdminRoutes = base_path('app/Modules/Phones/routes_admin.php');
