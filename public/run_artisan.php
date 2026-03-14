@@ -1,16 +1,27 @@
 <?php
 /**
  * Run artisan commands via browser when no Terminal/SSH is available.
- * Visit: https://yoursite.com/run_artisan.php?token=veritytrade-setup-2024&cmd=cache:clear
+ * Visit: https://yoursite.com/run_artisan.php?token=YOUR_TOKEN&cmd=cache:clear
  *
- * DELETE this file after use for security.
+ * Token: set ARTISAN_TOKEN in .env (recommended), or falls back to veritytrade-setup-2024.
+ * DELETE this file when you no longer need it (e.g. once you have SSH).
  */
+$basePath = file_exists(dirname(__DIR__) . '/artisan') ? dirname(__DIR__) : dirname(__DIR__) . '/veritytrade';
+$envPath = $basePath . DIRECTORY_SEPARATOR . '.env';
+$expectedToken = 'veritytrade-setup-2024';
+if (is_file($envPath) && is_readable($envPath)) {
+    $env = file_get_contents($envPath);
+    if (preg_match('/^\s*ARTISAN_TOKEN\s*=\s*(.+)/m', $env, $m)) {
+        $expectedToken = trim($m[1], " \t\"'");
+    }
+}
+
 $token = $_GET['token'] ?? '';
 $cmd = $_GET['cmd'] ?? '';
 
-if ($token !== 'veritytrade-setup-2024' || $cmd === '') {
+if ($token === '' || $cmd === '' || !hash_equals($expectedToken, $token)) {
     http_response_code(403);
-    die('Forbidden. Use ?token=veritytrade-setup-2024&cmd=COMMAND');
+    die('Forbidden. Use ?token=YOUR_TOKEN&cmd=COMMAND');
 }
 
 // Allowed commands (whitelist – add more if needed)
@@ -30,7 +41,6 @@ if (!in_array($cmd, $allowed, true)) {
     die('Command not allowed. Allowed: ' . implode(', ', $allowed));
 }
 
-$basePath = file_exists(dirname(__DIR__) . '/artisan') ? dirname(__DIR__) : dirname(__DIR__) . '/veritytrade';
 if (!file_exists($basePath . '/artisan')) {
     die("Laravel not found at $basePath");
 }
