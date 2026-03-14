@@ -17,6 +17,23 @@
         @csrf
     </form>
 
+    @if ($errors->any())
+        <div class="mb-4 p-4 rounded-lg bg-red-50 border border-red-200 text-red-800 text-sm">
+            <p class="font-medium">{{ __('Please fix the following:') }}</p>
+            <ul class="mt-2 list-disc list-inside space-y-1">
+                @foreach ($errors->all() as $err)
+                    <li>{{ $err }}</li>
+                @endforeach
+            </ul>
+        </div>
+    @endif
+    @if (session('error'))
+        <div class="mb-4 p-4 rounded-lg bg-red-50 border border-red-200 text-red-800 text-sm">{{ session('error') }}</div>
+    @endif
+    @if (session('status') === 'profile-updated')
+        <div class="mb-4 p-4 rounded-lg bg-green-50 border border-green-200 text-green-800 text-sm font-medium">{{ __('Profile saved successfully.') }}</div>
+    @endif
+
     <form method="post" action="{{ route('profile.update') }}" class="mt-6 space-y-6">
         @csrf
         @method('patch')

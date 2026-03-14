@@ -33,7 +33,6 @@ class ProfileController extends Controller
         $user = $request->user();
         $validated = $request->validated();
         unset($validated['current_password']);
-
         $user->fill($validated);
 
         $emailChanged = $user->isDirty('email');
@@ -41,7 +40,14 @@ class ProfileController extends Controller
             $user->email_verified_at = null;
         }
 
-        $user->save();
+        try {
+            $user->save();
+        } catch (\Throwable $e) {
+            Log::error('Profile update save failed', ['user_id' => $user->id, 'error' => $e->getMessage()]);
+            return Redirect::route('profile.edit')
+                ->withInput()
+                ->with('error', 'Could not save your profile. Please try again or contact support.');
+        }
 
         if ($emailChanged) {
             $code = str_pad((string) random_int(0, 999999), 6, '0', STR_PAD_LEFT);

@@ -44,4 +44,18 @@ class ProfileUpdateRequest extends FormRequest
             'current_password' => ['required', 'current_password'],
         ];
     }
+
+    /**
+     * Custom messages so the user always sees clear feedback (e.g. wrong password).
+     */
+    public function messages(): array
+    {
+        return [
+            'current_password.required' => 'Current password is required to save changes.',
+            'current_password.current_password' => 'The current password is incorrect. Please try again.',
+            'phone.required' => 'Phone number is required.',
+            'phone.regex' => 'Please enter a valid phone number (digits only, 6–20 characters, optional + prefix).',
+            'email.unique' => 'This email is already registered. Use a different email.',
+        ];
+    }
 }
