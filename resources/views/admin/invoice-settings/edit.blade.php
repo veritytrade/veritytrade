@@ -29,18 +29,29 @@
             <div class="bg-white rounded-xl border border-gray-200 p-4 sm:p-6 mb-6">
                 <h3 class="font-bold text-gray-800 mb-2">{{ $user->name }} ({{ $user->email }})</h3>
                 @if($shipments->isEmpty())
-                    <p class="text-sm text-gray-500">No uninvoiced shipments found.</p>
+                    <p class="text-sm text-gray-500">No shipments with orders found for this customer.</p>
                 @else
                     <div class="space-y-4">
                         @foreach($shipments as $shipment)
-                            @php $orderCount = $shipment->orders->count(); @endphp
+                            @php
+                                $orderCount = $shipment->orders->count();
+                                $hasInvoice = $orderCount > 0 && $shipment->orders->first()->invoice_id;
+                                $invoiceNumber = $hasInvoice ? $shipment->orders->first()->invoice->invoice_number ?? null : null;
+                                $uninvoicedCount = $shipment->orders->filter(fn($o) => !$o->invoice_id)->count();
+                            @endphp
                             @if($orderCount > 0)
                                 @php $isSelected = $selectedShipmentId && (int) $selectedShipmentId === (int) $shipment->id; @endphp
                                 <div class="flex flex-wrap items-center justify-between gap-3 p-4 rounded-lg {{ $isSelected ? 'bg-green-50 border-2 border-green-300' : 'bg-gray-50' }}">
                                     <div>
                                         <span class="font-medium">{{ $shipment->chinese_tracking_code ?? 'Shipment #'.$shipment->id }}</span>
                                         <span class="text-sm text-gray-500 ml-2">({{ $shipment->logistics_company ?? '—' }})</span>
-                                        <p class="text-sm text-gray-600 mt-1">{{ $orderCount }} uninvoiced order{{ $orderCount > 1 ? 's' : '' }}</p>
+                                        <p class="text-sm text-gray-600 mt-1">
+                                            @if($hasInvoice)
+                                                Invoice {{ $invoiceNumber }} · Regenerate to update PDF
+                                            @else
+                                                {{ $uninvoicedCount }} uninvoiced order{{ $uninvoicedCount !== 1 ? 's' : '' }}
+                                            @endif
+                                        </p>
                                     </div>
                                     <div class="flex items-center gap-2">
                                         <a href="{{ route('admin.invoice-settings.edit', ['email' => $user->email, 'shipment_id' => $shipment->id]) }}"
@@ -51,7 +62,9 @@
                                             @csrf
                                             <input type="hidden" name="shipment_id" value="{{ $shipment->id }}">
                                             <input type="hidden" name="user_id" value="{{ $user->id }}">
-                                            <button type="submit" class="min-h-[40px] px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg text-sm">Generate Invoice</button>
+                                            <button type="submit" class="min-h-[40px] px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg text-sm">
+                                                {{ $hasInvoice ? 'Regenerate Invoice' : 'Generate Invoice' }}
+                                            </button>
                                         </form>
                                     </div>
                                 </div>

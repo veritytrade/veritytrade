@@ -213,11 +213,27 @@ class OrderController extends Controller
             return back()->with('error', 'Order must be assigned to a shipment before generating invoice.');
         }
         $orders = $invoiceService->getUninvoicedOrdersForShipment($order->shipment_id, $order->user_id);
+        $regenerated = false;
         if ($orders->isEmpty()) {
-            return back()->with('status', 'Invoice already generated for this shipment.');
+            $existing = $invoiceService->getExistingInvoiceForShipmentAndUser($order->shipment_id, $order->user_id);
+            if (! $existing) {
+                return back()->with('status', 'Invoice already generated for this shipment.');
+            }
+            $orders = Order::where('invoice_id', $existing->id)->orderBy('id')->get();
+            if ($orders->isEmpty()) {
+                return back()->with('error', 'Existing invoice has no orders.');
+            }
+            $regenerated = true;
         }
-        $invoice = $invoiceService->generateForOrders($orders, auth()->id());
-        return back()->with('success', 'Invoice ' . $invoice->invoice_number . ' generated for ' . $orders->count() . ' item(s). Customer can download from their dashboard.');
+        try {
+            $invoice = $invoiceService->generateForOrders($orders, auth()->id());
+        } catch (\InvalidArgumentException $e) {
+            return back()->with('error', $e->getMessage());
+        }
+        $message = $regenerated
+            ? 'Invoice ' . $invoice->invoice_number . ' regenerated. PDF updated; customer can download the new file.'
+            : 'Invoice ' . $invoice->invoice_number . ' generated for ' . $orders->count() . ' item(s). Customer can download from their dashboard.';
+        return back()->with('success', $message);
     }
 
     public function assignShipment(Request $request, Order $order): RedirectResponse

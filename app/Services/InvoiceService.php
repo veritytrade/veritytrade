@@ -56,6 +56,23 @@ class InvoiceService
             ->get();
     }
 
+    /** Get all shipments that have orders for this customer (invoiced or not), for generate/regenerate UI */
+    public function getShipmentsForUser(int $userId): Collection
+    {
+        return Shipment::whereHas('orders', fn ($q) => $q->where('user_id', $userId))
+            ->with(['orders' => fn ($q) => $q->where('user_id', $userId)->with('invoice')])
+            ->orderByDesc('id')
+            ->get();
+    }
+
+    /** Get existing invoice for this shipment + customer (if any); same invoice number is reused on regenerate */
+    public function getExistingInvoiceForShipmentAndUser(int $shipmentId, int $userId): ?Invoice
+    {
+        return Invoice::where('user_id', $userId)
+            ->whereHas('orders', fn ($q) => $q->where('shipment_id', $shipmentId))
+            ->first();
+    }
+
     /** Build invoice view data (reusable for HTML preview and PDF) */
     public function buildPreviewData(): array
     {
@@ -169,20 +186,118 @@ class InvoiceService
         ];
     }
 
-    /** Generate invoice for a collection of orders (same shipment, same customer) */
+    /** Generate or regenerate invoice. If orders already have an invoice for this shipment+user, regenerates (same number, overwrites PDF). */
     public function generateForOrders(Collection $orders, ?int $generatedBy = null): Invoice
     {
         if ($orders->isEmpty()) {
             throw new \InvalidArgumentException('At least one order is required.');
         }
+        $first = $orders->first();
+        $shipmentId = $first->shipment_id;
+        $userId = $first->user_id;
         $orderIds = $orders->pluck('id')->toArray();
         $alreadyInvoiced = Order::whereIn('id', $orderIds)->whereNotNull('invoice_id')->exists();
+
         if ($alreadyInvoiced) {
+            $existing = $this->getExistingInvoiceForShipmentAndUser($shipmentId, $userId);
+            if ($existing) {
+                $ordersForInvoice = Order::where('invoice_id', $existing->id)->orderBy('id')->get();
+                if ($ordersForInvoice->isNotEmpty()) {
+                    return DB::transaction(function () use ($existing, $ordersForInvoice, $generatedBy) {
+                        return $this->doRegenerateInvoice($existing, $ordersForInvoice, $generatedBy);
+                    });
+                }
+            }
             throw new \InvalidArgumentException('One or more of these orders already have an invoice. Please refresh the page.');
         }
+
         return DB::transaction(function () use ($orders, $generatedBy) {
             return $this->doGenerateForOrders($orders, $generatedBy);
         });
+    }
+
+    /** Regenerate PDF for an existing invoice (same number, same path; overwrites file so customer dashboard gets updated PDF). */
+    protected function doRegenerateInvoice(Invoice $invoice, Collection $orders, ?int $generatedBy = null): Invoice
+    {
+        $orders->load(['user', 'shipment']);
+        $first = $orders->first();
+        $customer = $first->user;
+        $shipmentId = $first->shipment_id;
+
+        $subtotal = 0;
+        $outstandingBalance = 0;
+        $items = [];
+        foreach ($orders as $order) {
+            $amount = (float) $order->total_amount_ngn;
+            $subtotal += $amount;
+            $outstandingBalance += (float) ($order->outstanding_balance_ngn ?? 0);
+            $items[] = [
+                'model' => $this->extractModelFromOrder($order),
+                'specification' => $this->extractSpecificationFromOrder($order),
+                'qty' => 1,
+                'unit_price' => $amount,
+                'total_price' => $amount,
+            ];
+        }
+        $grandTotal = $subtotal;
+
+        $qrImageData = $this->generateQrDataUri(self::QR_BASE_URL);
+        $logoDataUri = $this->getLogoDataUri(null);
+        $logoUrl = $this->getLogoAssetUrl();
+        $iconLocation = $this->getIconDataUri('location');
+        $iconEmail = $this->getIconDataUri('email');
+        $iconPhone = $this->getIconDataUri('phone');
+        $customerAddress = $this->formatCustomerAddress($customer);
+
+        $html = view('pdf.invoice', [
+            'companyName' => self::COMPANY_NAME,
+            'tagline' => self::TAGLINE,
+            'companyAddress' => '',
+            'companyPhone' => self::COMPANY_PHONE,
+            'companyEmail' => self::COMPANY_EMAIL,
+            'logoDataUri' => $logoDataUri,
+            'logoUrl' => $logoUrl,
+            'iconLocation' => $iconLocation,
+            'iconEmail' => $iconEmail,
+            'iconPhone' => $iconPhone,
+            'invoiceNumber' => $invoice->invoice_number,
+            'invoiceDate' => now()->format('d M Y'),
+            'customerName' => $customer?->name ?? 'Customer',
+            'customerPhone' => $customer ? $customer->getDisplayPhone() : '',
+            'customerAddress' => $customerAddress,
+            'items' => $items,
+            'subtotal' => $subtotal,
+            'grandTotal' => $grandTotal,
+            'outstandingBalance' => $outstandingBalance,
+            'copyright' => self::COPYRIGHT,
+            'qrImageUrl' => $qrImageData,
+            'status' => $outstandingBalance <= 0 ? 'Paid' : 'Unpaid',
+        ])->render();
+
+        $pdf = Pdf::loadHTML($html);
+        $pdf->setPaper('a4', 'portrait');
+
+        $path = $invoice->pdf_path;
+        if (! $path || str_contains($path, '..')) {
+            $dir = 'invoices';
+            $filename = 'invoice-' . $invoice->invoice_number . '.pdf';
+            $path = $dir . '/' . $filename;
+            $invoice->pdf_path = $path;
+        }
+        Storage::disk('public')->put($path, $pdf->output());
+
+        $invoice->amount = $grandTotal;
+        $invoice->details_json = [
+            'subtotal' => $subtotal,
+            'order_ids' => $orders->pluck('id')->toArray(),
+            'shipment_id' => $shipmentId,
+        ];
+        if ($generatedBy !== null) {
+            $invoice->generated_by = $generatedBy;
+        }
+        $invoice->save();
+
+        return $invoice;
     }
 
     protected function doGenerateForOrders(Collection $orders, ?int $generatedBy = null): Invoice

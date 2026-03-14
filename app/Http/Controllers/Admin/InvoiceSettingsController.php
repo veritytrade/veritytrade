@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\InvoiceRequest;
+use App\Models\Order;
 use App\Models\User;
 use App\Services\InvoiceService;
 use Illuminate\Http\RedirectResponse;
@@ -33,8 +34,17 @@ class InvoiceSettingsController extends Controller
             'user_id' => 'required|exists:users,id',
         ]);
         $orders = $invoiceService->getUninvoicedOrdersForShipment($valid['shipment_id'], $valid['user_id']);
+        $regenerated = false;
         if ($orders->isEmpty()) {
-            return back()->with('error', 'No uninvoiced orders in this shipment. These orders may already have an invoice.');
+            $existing = $invoiceService->getExistingInvoiceForShipmentAndUser($valid['shipment_id'], $valid['user_id']);
+            if (! $existing) {
+                return back()->with('error', 'No uninvoiced orders in this shipment and no existing invoice to regenerate.');
+            }
+            $orders = Order::where('invoice_id', $existing->id)->orderBy('id')->get();
+            if ($orders->isEmpty()) {
+                return back()->with('error', 'Existing invoice has no orders.');
+            }
+            $regenerated = true;
         }
         try {
             $invoice = $invoiceService->generateForOrders($orders, auth()->id());
@@ -42,8 +52,11 @@ class InvoiceSettingsController extends Controller
             return back()->with('error', $e->getMessage());
         }
 
+        $message = $regenerated
+            ? 'Invoice ' . $invoice->invoice_number . ' regenerated. PDF updated; customer dashboard will show the new file.'
+            : 'Invoice ' . $invoice->invoice_number . ' generated for ' . $orders->count() . ' item(s).';
         return redirect()->route('admin.invoice-settings.edit', ['email' => User::find($valid['user_id'])->email])
-            ->with('success', 'Invoice ' . $invoice->invoice_number . ' generated for ' . $orders->count() . ' item(s).');
+            ->with('success', $message);
     }
 
     public function edit(Request $request, InvoiceService $invoiceService): View
@@ -61,7 +74,7 @@ class InvoiceSettingsController extends Controller
         if ($email) {
             $user = User::where('email', $email)->first();
             if ($user) {
-                $shipments = $invoiceService->getUninvoicedShipmentsForUser($user->id);
+                $shipments = $invoiceService->getShipmentsForUser($user->id);
                 if ($selectedShipmentId && $shipments->contains('id', (int) $selectedShipmentId)) {
                     // valid selection
                 } elseif ($shipments->isNotEmpty()) {
@@ -80,7 +93,15 @@ class InvoiceSettingsController extends Controller
 
         if ($userId && $shipmentId) {
             $orders = $invoiceService->getUninvoicedOrdersForShipment((int) $shipmentId, (int) $userId);
-            $data = $invoiceService->buildInvoiceDataFromOrders($orders);
+            if ($orders->isEmpty()) {
+                $existing = $invoiceService->getExistingInvoiceForShipmentAndUser((int) $shipmentId, (int) $userId);
+                if ($existing) {
+                    $orders = Order::where('invoice_id', $existing->id)->orderBy('id')->get();
+                }
+            }
+            $data = $orders->isNotEmpty()
+                ? $invoiceService->buildInvoiceDataFromOrders($orders)
+                : $invoiceService->buildPreviewData();
         } else {
             $data = $invoiceService->buildPreviewData();
         }
@@ -109,7 +130,15 @@ class InvoiceSettingsController extends Controller
         $shipmentId = $request->query('shipment_id');
         if ($userId && $shipmentId) {
             $orders = $invoiceService->getUninvoicedOrdersForShipment((int) $shipmentId, (int) $userId);
-            $data = $invoiceService->buildInvoiceDataFromOrders($orders);
+            if ($orders->isEmpty()) {
+                $existing = $invoiceService->getExistingInvoiceForShipmentAndUser((int) $shipmentId, (int) $userId);
+                if ($existing) {
+                    $orders = Order::where('invoice_id', $existing->id)->orderBy('id')->get();
+                }
+            }
+            $data = $orders->isNotEmpty()
+                ? $invoiceService->buildInvoiceDataFromOrders($orders)
+                : $invoiceService->buildPreviewData();
             return $invoiceService->streamPdfFromData($data);
         }
         return $invoiceService->previewPdf();
