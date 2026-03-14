@@ -388,20 +388,20 @@ class InvoiceService
     {
         $parsed = Order::parseDescription($order->full_description ?? '');
         $model = $parsed['product_name'] ?: $order->product_name ?: 'Order';
-        $size = $parsed['storage'] ?? $parsed['memory'] ?? null;
-        if ($size) {
-            return trim($model) . ' · ' . trim($size);
-        }
         return trim($model);
     }
 
     protected function extractSpecificationFromOrder(Order $order): string
     {
         $parsed = Order::parseDescription($order->full_description ?? '');
+        $size = $parsed['storage'] ?? $parsed['memory'] ?? null;
         $appearancePct = $parsed['appearance_pct'] ?? null;
         $defectGrade = $parsed['defect_grade'] ?? null;
 
         $parts = [];
+        if ($size) {
+            $parts[] = trim($size);
+        }
         if ($defectGrade) {
             $parts[] = $defectGrade;
         }
