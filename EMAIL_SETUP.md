@@ -1,6 +1,6 @@
 # Email Setup for VerityTrade
 
-Email verification and other system emails use SMTP. On cPanel, use the built-in email.
+The app uses **Authenticated SMTP** (not PHP `mail()`), so you must use the same settings as cPanel’s “Mail Client Manual Settings”.
 
 ## 1. Create email in cPanel
 
@@ -9,31 +9,49 @@ Email verification and other system emails use SMTP. On cPanel, use the built-in
 3. Set a strong password
 4. Save
 
-## 2. Add to .env on server
+## 2. Match “Connect Devices” in .env
+
+Use the **exact** values from **cPanel → Email Accounts → Connect Devices** (Secure SSL/TLS).
+
+**For port 465 (SSL) – recommended by your host:**
 
 ```env
 MAIL_MAILER=smtp
 MAIL_HOST=mail.veritytrade.ng
-MAIL_PORT=587
-MAIL_ENCRYPTION=starttls
+MAIL_PORT=465
+MAIL_ENCRYPTION=ssl
 MAIL_USERNAME=noreply@veritytrade.ng
-MAIL_PASSWORD=your_email_password
+MAIL_PASSWORD=the_email_account_password
 MAIL_FROM_ADDRESS=noreply@veritytrade.ng
 MAIL_FROM_NAME="VerityTrade"
 ```
 
-**Note:** If `mail.veritytrade.ng` fails, try:
-- `localhost`
-- Your server hostname (shown in cPanel)
-- Or check cPanel Email → **Connect Devices** for the correct server
+**If your host gives port 587 (TLS) instead:**
 
-## 3. Update feature flags (optional)
+```env
+MAIL_PORT=587
+MAIL_ENCRYPTION=starttls
+```
+
+**Do not use port 25** – it is often blocked. Use **465 (SSL)** or **587 (TLS)** only.
+
+After editing `.env`, run:  
+`run_artisan.php?token=veritytrade-setup-2024&cmd=config:cache`
+
+## 3. Email Routing (cPanel)
+
+If the mailbox is on the same server, **Email Routing** must not send that domain to a remote server:
+
+1. **cPanel → Email Deliverability** or **Email Routing**
+2. For **veritytrade.ng** (or your domain), set to **Local** (or “Automatically detect”) so mail for `noreply@veritytrade.ng` is delivered locally. If it’s set to **Remote** but the mailbox is local, the server can fail to send.
+
+## 4. Update feature flags (optional)
 
 The `mail_from_address` and `mail_from_name` in feature flags override .env. To use .env defaults, either:
 - Don’t change them in Admin → Feature Flags, or
 - Set them to match your .env values
 
-## 4. Test
+## 5. Test
 
 1. Register a new user
 2. Check inbox (and spam) for the 6-digit verification code
@@ -41,7 +59,7 @@ The `mail_from_address` and `mail_from_name` in feature flags override .env. To 
 
 ---
 
-## 5. Troubleshooting: “Webmail works but app emails don’t send”
+## 6. Troubleshooting: “Webmail works but app emails don’t send”
 
 **Symptom:** You can send from Webmail, but verification emails from the site never arrive (or you see errors in `storage/logs/laravel.log`).
 
@@ -61,10 +79,8 @@ The host has **suspended outgoing SMTP** for that address (often after bounces o
 
 ### C. Use the same settings as “Connect Devices”
 
-In cPanel → **Email Accounts** → **Connect Devices** (or **Set Up Mail Client**), note:
+Copy **Outgoing Server**, **Port**, and **Security** from cPanel → **Connect Devices** into `.env` (see section 2 above). Then run `config:cache`.
 
-- **Outgoing server**, **Port** (465 or 587), **Security** (SSL/TLS).
-- Set in `.env`:
-  - **Port 465:** `MAIL_PORT=465`, `MAIL_ENCRYPTION=null`, and in many setups `MAIL_SCHEME=smtps`
-  - **Port 587:** `MAIL_PORT=587`, `MAIL_ENCRYPTION=starttls`
-- Then run `config:cache` again.
+### D. Deliverability (SPF / DKIM)
+
+If mail “sends” but goes to spam or is rejected by Gmail/Outlook, set up **SPF** and **DKIM** for your domain (cPanel → **Email Deliverability** or **Authentication**). That authorizes your server to send for `@veritytrade.ng`.
