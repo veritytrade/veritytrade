@@ -157,7 +157,7 @@ class InvoiceService
             'invoiceNumber' => 'VG-PREVIEW-' . now()->format('YmdHis'),
             'invoiceDate' => now()->format('d M Y'),
             'customerName' => $customer?->name ?? 'Customer',
-            'customerPhone' => $customer?->phone ?? '',
+            'customerPhone' => $customer ? $customer->getDisplayPhone() : '',
             'customerAddress' => $this->formatCustomerAddress($customer),
             'items' => $items,
             'subtotal' => $subtotal,
@@ -239,7 +239,7 @@ class InvoiceService
             'invoiceNumber' => $invoice->invoice_number,
             'invoiceDate' => now()->format('d M Y'),
             'customerName' => $customer?->name ?? 'Customer',
-            'customerPhone' => $customer?->phone ?? '',
+            'customerPhone' => $customer ? $customer->getDisplayPhone() : '',
             'customerAddress' => $customerAddress,
             'items' => $items,
             'subtotal' => $subtotal,
@@ -376,7 +376,11 @@ class InvoiceService
         if (! $customer) {
             return '';
         }
-        $parts = array_filter([$customer->address, $customer->city, $customer->state]);
+        $parts = array_filter([
+            $customer->getDisplayAddress(),
+            $customer->getDisplayCity(),
+            $customer->getDisplayState(),
+        ]);
         return implode(', ', $parts) ?: '';
     }
 

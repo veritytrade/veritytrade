@@ -163,20 +163,33 @@ class DashboardController extends Controller
         if ($redirect = $this->ensureCustomer()) {
             return $redirect;
         }
-        if ($invoice->user_id !== auth()->id()) {
+        if ($invoice->user_id !== (int) auth()->id()) {
             abort(403);
         }
         if (! $invoice->pdf_path || str_contains($invoice->pdf_path, '..')) {
             return back()->with('error', 'Invoice file not available.');
         }
         $path = $invoice->pdf_path;
-        if (! Storage::disk('public')->exists($path)) {
-            return back()->with('error', 'Invoice file not found.');
+
+        try {
+            $fullPath = storage_path('app/public/' . str_replace(['\\', '..'], ['/', ''], $path));
+            if (is_file($fullPath)) {
+                return response()->file($fullPath, [
+                    'Content-Type' => 'application/pdf',
+                    'Content-Disposition' => 'attachment; filename="invoice-' . preg_replace('/[^a-zA-Z0-9\-_.]/', '', $invoice->invoice_number) . '.pdf"',
+                ]);
+            }
+            if (Storage::disk('public')->exists($path)) {
+                return Storage::disk('public')->download(
+                    $path,
+                    'invoice-' . $invoice->invoice_number . '.pdf',
+                    ['Content-Type' => 'application/pdf']
+                );
+            }
+        } catch (\Throwable $e) {
+            report($e);
         }
-        return Storage::disk('public')->download(
-            $path,
-            'invoice-' . $invoice->invoice_number . '.pdf',
-            ['Content-Type' => 'application/pdf']
-        );
+
+        return back()->with('error', 'Invoice file not found.');
     }
 }
