@@ -39,13 +39,10 @@ class FilesystemManager extends BaseFilesystemManager
             $mimeDetector
         );
 
-        return (new \Illuminate\Filesystem\FilesystemAdapter(
+        return new \Illuminate\Filesystem\FilesystemAdapter(
             $this->createFlysystem($adapter, $config),
             $adapter,
             $config
-        ))->diskName($name)->shouldServeSignedUrls(
-            $config['serve'] ?? false,
-            fn () => $this->app['url'],
         );
     }
 }
