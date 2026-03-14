@@ -34,7 +34,7 @@ class RegisteredUserController extends Controller
     {
         $normalizedEmail = strtolower(trim((string) $request->input('email')));
 
-        $request->validate([
+        $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'email' => [
                 'required',
@@ -45,10 +45,18 @@ class RegisteredUserController extends Controller
                 Rule::unique('users', 'email')->whereNull('deleted_at'),
             ],
             'phone' => ['required', 'regex:/^\+?[0-9]{6,20}$/'],
+            'state' => ['required', 'string', 'max:100'],
+            'city' => ['required', 'string', 'max:100'],
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
+        ], [
+            'phone.regex' => 'Enter a valid phone number (digits only, 6–20 characters, optional + prefix).',
+            'state.required' => 'Please enter your state.',
+            'city.required' => 'Please enter your city.',
         ]);
 
-        $normalizedPhone = preg_replace('/[^\d+]/', '', (string) $request->phone);
+        $normalizedPhone = preg_replace('/[^\d+]/', '', (string) $validated['phone']);
+        $state = trim((string) $validated['state']);
+        $city = trim((string) $validated['city']);
 
         $requiresAdminApproval = feature_enabled('require_admin_approval', true);
 
@@ -60,6 +68,8 @@ class RegisteredUserController extends Controller
                 'name' => $request->name,
                 'email' => $normalizedEmail,
                 'phone' => $normalizedPhone,
+                'state' => $state,
+                'city' => $city,
                 'password' => Hash::make($request->password),
                 'is_approved' => !$requiresAdminApproval,
                 'approved_at' => !$requiresAdminApproval ? now() : null,
@@ -73,6 +83,8 @@ class RegisteredUserController extends Controller
                 'name' => $request->name,
                 'email' => $normalizedEmail,
                 'phone' => $normalizedPhone,
+                'state' => $state,
+                'city' => $city,
                 'password' => Hash::make($request->password),
                 'is_approved' => !$requiresAdminApproval,
                 'approved_at' => !$requiresAdminApproval ? now() : null,

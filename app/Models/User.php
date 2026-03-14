@@ -40,8 +40,7 @@ class User extends Authenticatable implements MustVerifyEmail
         'is_approved' => 'boolean',
         'phone' => 'encrypted',
         'address' => 'encrypted',
-        'state' => 'encrypted',
-        'city' => 'encrypted',
+        // state and city stored as plain text so they persist and display in profile + admin
     ];
 
     public function roles(): BelongsToMany

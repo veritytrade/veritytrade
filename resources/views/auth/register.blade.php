@@ -41,8 +41,21 @@
 
         <div class="mt-4">
             <x-input-label for="phone" :value="__('Phone Number')" />
-            <x-text-input id="phone" class="block mt-1 w-full" type="tel" name="phone" :value="old('phone')" required autocomplete="tel" inputmode="tel" />
+            <x-text-input id="phone" class="block mt-1 w-full" type="tel" name="phone" :value="old('phone')" required autocomplete="tel" inputmode="tel" placeholder="{{ __('Number reachable for delivery and logistics (e.g. call/WhatsApp)') }}" />
             <x-input-error :messages="$errors->get('phone')" class="mt-2" />
+        </div>
+
+        <div class="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+                <x-input-label for="state" :value="__('State')" />
+                <x-text-input id="state" class="block mt-1 w-full" type="text" name="state" :value="old('state')" required autocomplete="address-level1" maxlength="100" placeholder="e.g. Lagos" />
+                <x-input-error :messages="$errors->get('state')" class="mt-2" />
+            </div>
+            <div>
+                <x-input-label for="city" :value="__('City')" />
+                <x-text-input id="city" class="block mt-1 w-full" type="text" name="city" :value="old('city')" required autocomplete="address-level2" maxlength="100" placeholder="e.g. Ikeja" />
+                <x-input-error :messages="$errors->get('city')" class="mt-2" />
+            </div>
         </div>
 
         <!-- Password -->
