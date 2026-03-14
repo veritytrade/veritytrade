@@ -3,7 +3,6 @@
 namespace App\Http\Controllers\Public;
 
 use App\Http\Controllers\Controller;
-use App\Models\Category;
 use App\Models\Deal;
 use App\Models\HomepageHero;
 use App\Modules\Phones\Models\PhoneBrand;
@@ -17,10 +16,14 @@ class HomeController extends Controller
         $phoneBrands = collect();
         $hero = null;
 
-        try {
-            $categories = Category::where('is_active', true)->orderBy('position')->get();
-        } catch (\Throwable $e) {
-            report($e);
+        if (class_exists(\App\Models\Category::class)) {
+            try {
+                $categories = \App\Models\Category::where('is_active', true)
+                    ->orderBy('position')
+                    ->get();
+            } catch (\Throwable $e) {
+                report($e);
+            }
         }
 
         try {

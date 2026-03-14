@@ -19,7 +19,10 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        // Use custom FilesystemManager so uploads work when PHP fileinfo extension is missing
+        $this->app->singleton('filesystem', function ($app) {
+            return new \App\Filesystem\FilesystemManager($app);
+        });
     }
 
     /**
