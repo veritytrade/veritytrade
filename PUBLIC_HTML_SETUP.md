@@ -68,21 +68,25 @@ Then **delete** `public_html/setup.php`.
 
 ---
 
-## Step 5: Storage link (for images, invoices)
+## Step 5: Storage link (for images, invoices) – **required for pictures to show**
 
-The `storage:link` command creates `public/storage` → `../storage/app/public`.  
-Since we're in public_html, you need a link inside public_html.
+Deal images, order slips, hero image, and phone brand images are stored under `storage/app/public/`. The site loads them from the URL `/storage/...`, so the **web root** must have a `storage` entry that points at that folder.
 
-**Option A – File Manager:** 
-- In `public_html/`, create **Symbolic Link**
-- Link from: `storage`
-- Link to: `/home/veritytr/veritytrade/storage/app/public`
+**When the web root is public_html**, create the link **inside public_html**:
 
-**Option B – If setup.php ran:** It may have created the link in veritytrade/public. Copy or recreate for public_html.
+**Option A – Run setup.php from public_html**  
+If you copied `setup.php` into `public_html` and run it via the browser, it will create `public_html/storage` → `veritytrade/storage/app/public` automatically (if your host allows `symlink()` in PHP).
+
+**Option B – File Manager (if Option A didn’t create it)**  
+1. In **File Manager**, go to `public_html/`.  
+2. Create **Symbolic Link**: link name `storage`, target `/home/veritytr/veritytrade/storage/app/public`.  
+3. Save.
+
+**Check:** In `public_html/` you should see `storage` (symlink). Opening `https://yourdomain.com/storage/` in the browser may show 403 or a listing; the important thing is that `https://yourdomain.com/storage/deals/` (and similar paths) serve the uploaded files. If **pictures don’t show** on the site, the most common cause is that this `storage` link is missing or wrong in public_html.
 
 ---
 
 ## Summary
 
-- `public_html/` = web root (index.php, .htaccess, build, storage link)
+- `public_html/` = web root (index.php, .htaccess, build, **storage** link, images)
 - `/home/veritytr/veritytrade/` = Laravel app (app, bootstrap, config, .env, vendor, etc.)

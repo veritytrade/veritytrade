@@ -1,4 +1,20 @@
-# Quick Fix: Logo + Slow Loading
+# Quick Fix: Logo + Slow Loading + Pictures
+
+## Pictures (deals, orders, hero) not showing
+
+Uploaded images are stored in `storage/app/public/`. The site loads them from the URL `/storage/...`. When the web root is **public_html**, the browser asks the server for `https://yourdomain.com/storage/deals/xxx.jpg`, so **public_html** must have a `storage` entry that points to the real folder.
+
+**Fix:** Create a **symbolic link** in `public_html/`:
+
+- **Link name:** `storage`
+- **Target:** `/home/veritytr/veritytrade/storage/app/public`
+
+In cPanel File Manager: go to `public_html/` → Create **Symbolic Link** → link name `storage`, target the path above.  
+If you have `setup.php` in public_html, running it (with the token) may create this link automatically.
+
+See **PUBLIC_HTML_SETUP.md** Step 5 for full details.
+
+---
 
 ## Logo not showing
 
