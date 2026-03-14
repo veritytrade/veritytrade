@@ -1,6 +1,7 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Storage;
 
 /*
 |--------------------------------------------------------------------------
@@ -13,6 +14,30 @@ use App\Http\Controllers\Admin\AdminDashboardController;
 use App\Http\Controllers\LandingController;
 use App\Http\Controllers\Public\HomeController;
 use App\Http\Controllers\Customer\DashboardController as CustomerDashboardController;
+
+/*
+|--------------------------------------------------------------------------
+| Storage file serving (when symlink is missing, e.g. public_html deployment)
+|--------------------------------------------------------------------------
+*/
+Route::get('/storage/{path}', function (string $path) {
+    $path = str_replace(['..', '\\'], ['', '/'], $path);
+    $path = trim($path, '/');
+    if ($path === '' || ! Storage::disk('public')->exists($path)) {
+        abort(404);
+    }
+    $fullPath = Storage::disk('public')->path($path);
+    $mime = match (strtolower(pathinfo($path, PATHINFO_EXTENSION))) {
+        'jpg', 'jpeg' => 'image/jpeg',
+        'png' => 'image/png',
+        'gif' => 'image/gif',
+        'webp' => 'image/webp',
+        'pdf' => 'application/pdf',
+        'svg' => 'image/svg+xml',
+        default => 'application/octet-stream',
+    };
+    return response()->file($fullPath, ['Content-Type' => $mime, 'Cache-Control' => 'public, max-age=86400']);
+})->where('path', '.*')->name('storage.serve');
 
 /*
 |--------------------------------------------------------------------------

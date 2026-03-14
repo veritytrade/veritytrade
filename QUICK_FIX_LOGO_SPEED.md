@@ -2,15 +2,16 @@
 
 ## Pictures (deals, orders, hero) not showing
 
-Uploaded images are stored in `storage/app/public/`. The site loads them from the URL `/storage/...`. When the web root is **public_html**, the browser asks the server for `https://yourdomain.com/storage/deals/xxx.jpg`, so **public_html** must have a `storage` entry that points to the real folder.
+Uploaded images are stored in `storage/app/public/`. The site loads them from the URL `/storage/...`.
 
-**Fix:** Create a **symbolic link** in `public_html/`:
+**Option A – Laravel fallback (no symlink needed)**  
+The app has a route that serves storage files through Laravel. If your host blocks symlinks, images should still work: requests to `/storage/deals/xxx.jpg` are handled by the app. Just deploy the latest code and clear config cache (`php artisan config:cache` or run_artisan.php).
 
-- **Link name:** `storage`
-- **Target:** `/home/veritytr/veritytrade/storage/app/public`
+**Option B – Symbolic link (faster, recommended)**  
+When the web root is **public_html**, you can create a **symbolic link** so the server serves files directly (faster):
 
-In cPanel File Manager: go to `public_html/` → Create **Symbolic Link** → link name `storage`, target the path above.  
-If you have `setup.php` in public_html, running it (with the token) may create this link automatically.
+- In `public_html/`: link name `storage`, target `/home/veritytr/veritytrade/storage/app/public`  
+- Or run `setup.php` from public_html (with the token); it may create this link if the host allows it.
 
 See **PUBLIC_HTML_SETUP.md** Step 5 for full details.
 

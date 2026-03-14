@@ -27,13 +27,18 @@ class UserManagementController extends Controller
 
     public function registeredUsers()
     {
-        $usersQuery = User::with(['role'])->orderByDesc('id');
-        $superAdminRoleId = Role::where('name', 'super_admin')->value('id');
-        if ($superAdminRoleId) {
-            $usersQuery->where('role_id', '!=', $superAdminRoleId);
-        }
+        try {
+            $usersQuery = User::with(['role'])->orderByDesc('id');
+            $superAdminRoleId = Role::where('name', 'super_admin')->value('id');
+            if ($superAdminRoleId) {
+                $usersQuery->where('role_id', '!=', $superAdminRoleId);
+            }
 
-        $users = $usersQuery->get();
+            $users = $usersQuery->get();
+        } catch (\Throwable $e) {
+            $users = collect();
+            report($e);
+        }
 
         return view('admin.registered-users.index', compact('users'));
     }

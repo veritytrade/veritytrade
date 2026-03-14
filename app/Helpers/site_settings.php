@@ -16,7 +16,11 @@ if (!function_exists('setting_value')) {
 if (!function_exists('feature_enabled')) {
     function feature_enabled(string $key, bool $default = false): bool
     {
-        return FeatureFlag::enabled($key, $default);
+        try {
+            return FeatureFlag::enabled($key, $default);
+        } catch (\Throwable $e) {
+            return $default;
+        }
     }
 }
 

@@ -48,12 +48,15 @@
                         <tr class="hover:bg-gray-50 transition">
                             <td class="p-3 text-gray-800 font-medium">{{ $user->name }}</td>
                             <td class="p-3 text-gray-700">{{ $user->email }}</td>
-                            @php($cleanPhone = preg_match('/^\+?[0-9]{6,20}$/', (string) $user->phone) ? (string) $user->phone : '-')
+                            @php
+                                $phoneDisplay = $user->getDisplayPhone();
+                                $cleanPhone = preg_match('/^\+?[0-9]{6,20}$/', $phoneDisplay) ? $phoneDisplay : ($phoneDisplay !== '' ? $phoneDisplay : '-');
+                            @endphp
                             <td class="p-3 text-gray-700">{{ $cleanPhone }}</td>
-                            <td class="p-3 text-gray-700">{{ $user->city ?: '-' }}</td>
-                            <td class="p-3 text-gray-700">{{ $user->state ?: '-' }}</td>
+                            <td class="p-3 text-gray-700">{{ $user->getDisplayCity() ?: '-' }}</td>
+                            <td class="p-3 text-gray-700">{{ $user->getDisplayState() ?: '-' }}</td>
                             @if($showAddress)
-                                <td class="p-3 text-gray-700">{{ $user->address ?: '-' }}</td>
+                                <td class="p-3 text-gray-700">{{ $user->getDisplayAddress() ?: '-' }}</td>
                             @endif
                             <td class="p-3 text-center">
                                 <span class="px-3 py-1 rounded-full text-xs font-semibold bg-gray-100 text-gray-700">

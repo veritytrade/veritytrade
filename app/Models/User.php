@@ -95,4 +95,68 @@ class User extends Authenticatable implements MustVerifyEmail
         // Ensure old roles are removed to avoid accidental privilege carryover.
         $this->roles()->sync([$role->id]);
     }
+
+    /**
+     * Safe display value for encrypted phone (avoids 500 when decryption fails, e.g. wrong APP_KEY or legacy plain text).
+     */
+    public function getDisplayPhone(): string
+    {
+        try {
+            $v = $this->getAttributes()['phone'] ?? null;
+            if ($v === null || $v === '') {
+                return '';
+            }
+            return decrypt($v);
+        } catch (\Throwable) {
+            return '';
+        }
+    }
+
+    /**
+     * Safe display value for encrypted address.
+     */
+    public function getDisplayAddress(): string
+    {
+        try {
+            $v = $this->getAttributes()['address'] ?? null;
+            if ($v === null || $v === '') {
+                return '';
+            }
+            return decrypt($v);
+        } catch (\Throwable) {
+            return '';
+        }
+    }
+
+    /**
+     * Safe display value for encrypted city.
+     */
+    public function getDisplayCity(): string
+    {
+        try {
+            $v = $this->getAttributes()['city'] ?? null;
+            if ($v === null || $v === '') {
+                return '';
+            }
+            return decrypt($v);
+        } catch (\Throwable) {
+            return '';
+        }
+    }
+
+    /**
+     * Safe display value for encrypted state.
+     */
+    public function getDisplayState(): string
+    {
+        try {
+            $v = $this->getAttributes()['state'] ?? null;
+            if ($v === null || $v === '') {
+                return '';
+            }
+            return decrypt($v);
+        } catch (\Throwable) {
+            return '';
+        }
+    }
 }
