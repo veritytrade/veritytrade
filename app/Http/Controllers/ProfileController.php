@@ -52,17 +52,14 @@ class ProfileController extends Controller
                 'expires_at' => now()->addMinutes(15),
             ]);
 
-            $fromName = (string) site_setting('mail_from_name', config('mail.from.name'));
-            $fromAddress = (string) site_setting('mail_from_address', config('mail.from.address'));
+            $from = mail_from();
 
             try {
                 Mail::raw(
                     "Your VerityTrade verification code is: {$code}\n\nThis code expires in 15 minutes.",
-                    function ($message) use ($user, $fromAddress, $fromName): void {
+                    function ($message) use ($user, $from): void {
                         $message->to($user->email, $user->name)->subject('Verify your updated email');
-                        if ($fromAddress) {
-                            $message->from($fromAddress, $fromName ?: 'VerityTrade');
-                        }
+                        $message->from($from['address'], $from['name']);
                     }
                 );
             } catch (\Throwable $e) {

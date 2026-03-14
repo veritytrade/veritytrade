@@ -30,3 +30,22 @@ if (!function_exists('site_setting')) {
         return setting_value($key, $default);
     }
 }
+
+if (!function_exists('mail_from')) {
+    /**
+     * Return valid From address and name for sending mail (never empty; avoids SMTP rejections).
+     * Uses feature flags if set, otherwise config (.env).
+     */
+    function mail_from(): array
+    {
+        $address = (string) setting_value('mail_from_address', config('mail.from.address'));
+        $name = (string) setting_value('mail_from_name', config('mail.from.name'));
+        if (trim($address) === '') {
+            $address = (string) config('mail.from.address');
+        }
+        if (trim($name) === '') {
+            $name = (string) config('mail.from.name') ?: 'VerityTrade';
+        }
+        return ['address' => $address, 'name' => $name];
+    }
+}

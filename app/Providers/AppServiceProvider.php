@@ -49,9 +49,17 @@ class AppServiceProvider extends ServiceProvider
             return Order::findOrFail($value);
         });
 
-        $fromAddress = FeatureFlag::value('mail_from_address', config('mail.from.address'));
-        $fromName = FeatureFlag::value('mail_from_name', config('mail.from.name'));
-        Config::set('mail.from.address', $fromAddress);
-        Config::set('mail.from.name', $fromName);
+        try {
+            $fromAddress = FeatureFlag::value('mail_from_address', config('mail.from.address'));
+            $fromName = FeatureFlag::value('mail_from_name', config('mail.from.name'));
+            if (trim((string) $fromAddress) !== '') {
+                Config::set('mail.from.address', $fromAddress);
+            }
+            if (trim((string) $fromName) !== '') {
+                Config::set('mail.from.name', $fromName);
+            }
+        } catch (\Throwable $e) {
+            // Mail config falls back to .env
+        }
     }
 }
