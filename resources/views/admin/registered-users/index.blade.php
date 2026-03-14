@@ -24,7 +24,13 @@
             </div>
         @endif
 
-        @php($showAddress = feature_enabled('enable_customer_address', false))
+        @php
+            try {
+                $showAddress = feature_enabled('enable_customer_address', false);
+            } catch (\Throwable $e) {
+                $showAddress = false;
+            }
+        @endphp
 
         <div class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-x-auto">
             <table class="w-full text-sm">

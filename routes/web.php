@@ -23,10 +23,23 @@ use App\Http\Controllers\Customer\DashboardController as CustomerDashboardContro
 Route::get('/storage/{path}', function (string $path) {
     $path = str_replace(['..', '\\'], ['', '/'], $path);
     $path = trim($path, '/');
-    if ($path === '' || ! Storage::disk('public')->exists($path)) {
+    if ($path === '') {
         abort(404);
     }
-    $fullPath = Storage::disk('public')->path($path);
+
+    $fullPath = storage_path('app/public/' . $path);
+    if (! is_file($fullPath)) {
+        try {
+            if (! Storage::disk('public')->exists($path)) {
+                abort(404);
+            }
+            $fullPath = Storage::disk('public')->path($path);
+        } catch (\Throwable $e) {
+            report($e);
+            abort(404);
+        }
+    }
+
     $mime = match (strtolower(pathinfo($path, PATHINFO_EXTENSION))) {
         'jpg', 'jpeg' => 'image/jpeg',
         'png' => 'image/png',
@@ -36,6 +49,7 @@ Route::get('/storage/{path}', function (string $path) {
         'svg' => 'image/svg+xml',
         default => 'application/octet-stream',
     };
+
     return response()->file($fullPath, ['Content-Type' => $mime, 'Cache-Control' => 'public, max-age=86400']);
 })->where('path', '.*')->name('storage.serve');
 

@@ -97,16 +97,31 @@ class User extends Authenticatable implements MustVerifyEmail
     }
 
     /**
+     * Raw value from DB (avoids cast so we can detect plain text vs encrypted).
+     */
+    private function getRawAttribute(string $key): mixed
+    {
+        if (method_exists($this, 'getRawOriginal')) {
+            return $this->getRawOriginal($key);
+        }
+        return $this->getAttributes()[$key] ?? null;
+    }
+
+    /**
      * Safe display value for encrypted phone (avoids 500 when decryption fails, e.g. wrong APP_KEY or legacy plain text).
      */
     public function getDisplayPhone(): string
     {
         try {
-            $v = $this->getAttributes()['phone'] ?? null;
+            $v = $this->getRawAttribute('phone');
             if ($v === null || $v === '') {
                 return '';
             }
-            return decrypt($v);
+            $s = (string) $v;
+            if (str_starts_with($s, 'eyJ')) {
+                return decrypt($v);
+            }
+            return $s;
         } catch (\Throwable) {
             return '';
         }
@@ -118,11 +133,15 @@ class User extends Authenticatable implements MustVerifyEmail
     public function getDisplayAddress(): string
     {
         try {
-            $v = $this->getAttributes()['address'] ?? null;
+            $v = $this->getRawAttribute('address');
             if ($v === null || $v === '') {
                 return '';
             }
-            return decrypt($v);
+            $s = (string) $v;
+            if (str_starts_with($s, 'eyJ')) {
+                return decrypt($v);
+            }
+            return $s;
         } catch (\Throwable) {
             return '';
         }
@@ -134,11 +153,15 @@ class User extends Authenticatable implements MustVerifyEmail
     public function getDisplayCity(): string
     {
         try {
-            $v = $this->getAttributes()['city'] ?? null;
+            $v = $this->getRawAttribute('city');
             if ($v === null || $v === '') {
                 return '';
             }
-            return decrypt($v);
+            $s = (string) $v;
+            if (str_starts_with($s, 'eyJ')) {
+                return decrypt($v);
+            }
+            return $s;
         } catch (\Throwable) {
             return '';
         }
@@ -150,11 +173,15 @@ class User extends Authenticatable implements MustVerifyEmail
     public function getDisplayState(): string
     {
         try {
-            $v = $this->getAttributes()['state'] ?? null;
+            $v = $this->getRawAttribute('state');
             if ($v === null || $v === '') {
                 return '';
             }
-            return decrypt($v);
+            $s = (string) $v;
+            if (str_starts_with($s, 'eyJ')) {
+                return decrypt($v);
+            }
+            return $s;
         } catch (\Throwable) {
             return '';
         }
