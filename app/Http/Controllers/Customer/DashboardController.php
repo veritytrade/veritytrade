@@ -6,7 +6,6 @@ use App\Http\Controllers\Controller;
 use App\Models\Invoice;
 use App\Models\InvoiceRequest;
 use App\Models\Order;
-use App\Services\InvoiceService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -164,27 +163,51 @@ class DashboardController extends Controller
         }
     }
 
-    /** Secured invoice download – serve PDF content directly. Any exception returns friendly error instead of 500. */
-    public function downloadInvoice(Invoice $invoice, InvoiceService $invoiceService): StreamedResponse|RedirectResponse
+    /**
+     * Invoice download – minimal path to avoid 500.
+     * Uses numeric id (no route model binding), single path: storage/app/public/invoices/invoice-XXX.pdf.
+     */
+    public function downloadInvoice(int $id): StreamedResponse|RedirectResponse
     {
         try {
             if ($redirect = $this->ensureCustomer()) {
                 return $redirect;
             }
-            if ($invoice->user_id !== (int) auth()->id()) {
-                abort(403);
+
+            $userId = (int) auth()->id();
+            $invoice = Invoice::where('id', $id)->where('user_id', $userId)->first();
+            if (! $invoice) {
+                return back()->with('error', 'Invoice not found.');
             }
 
-            $invoiceNumber = (string) ($invoice->invoice_number ?? '');
-            $filename = 'invoice-' . preg_replace('/[^a-zA-Z0-9\-_.]/', '', $invoiceNumber) . '.pdf';
-            $headers = [
-                'Content-Type' => 'application/pdf',
-                'Content-Disposition' => 'attachment; filename="' . $filename . '"',
-            ];
+            $invoiceNumber = trim((string) ($invoice->invoice_number ?? ''));
+            $safe = preg_replace('/[^a-zA-Z0-9\-_.]/', '', $invoiceNumber);
+            $filename = 'invoice-' . $safe . '.pdf';
+            $dir = storage_path('app/public') . DIRECTORY_SEPARATOR . 'invoices';
+            $path = $dir . DIRECTORY_SEPARATOR . $filename;
 
-            $content = $invoiceService->getInvoicePdfContent($invoice);
-            if ($content !== null && $content !== '') {
-                return response($content, 200, $headers);
+            if (is_file($path)) {
+                $content = @file_get_contents($path);
+                if ($content !== false && $content !== '') {
+                    return response($content, 200, [
+                        'Content-Type' => 'application/pdf',
+                        'Content-Disposition' => 'attachment; filename="' . $filename . '"',
+                    ]);
+                }
+            }
+
+            $pathFromDb = $invoice->pdf_path;
+            if (is_string($pathFromDb) && $pathFromDb !== '') {
+                $altPath = $dir . DIRECTORY_SEPARATOR . basename(str_replace(['\\', '/'], DIRECTORY_SEPARATOR, $pathFromDb));
+                if (is_file($altPath)) {
+                    $content = @file_get_contents($altPath);
+                    if ($content !== false && $content !== '') {
+                        return response($content, 200, [
+                            'Content-Type' => 'application/pdf',
+                            'Content-Disposition' => 'attachment; filename="' . $filename . '"',
+                        ]);
+                    }
+                }
             }
         } catch (\Throwable $e) {
             report($e);

@@ -104,7 +104,7 @@ Route::prefix('dashboard')
         Route::post('/orders/{order}/request-invoice', [CustomerDashboardController::class, 'requestInvoice'])->name('dashboard.orders.request-invoice');
         Route::get('/tracking', [CustomerDashboardController::class, 'tracking'])->name('dashboard.tracking');
         Route::get('/invoices', [CustomerDashboardController::class, 'invoices'])->name('dashboard.invoices');
-        Route::get('/invoices/{invoice}/download', [CustomerDashboardController::class, 'downloadInvoice'])->name('dashboard.invoices.download');
+        Route::get('/invoices/{id}/download', [CustomerDashboardController::class, 'downloadInvoice'])->name('dashboard.invoices.download')->whereNumber('id');
     });
 
 /*
