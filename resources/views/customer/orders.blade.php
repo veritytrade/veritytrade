@@ -24,11 +24,7 @@
                             <a href="{{ route('dashboard.orders.edit', $order) }}" class="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-medium rounded-lg text-center">Edit</a>
                         @endif
                         @if($order->invoice)
-                            @if($order->invoice->pdf_path)
-                                <a href="{{ route('dashboard.invoices.download', $order->invoice) }}" target="_blank" rel="noopener" class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-sm font-medium rounded-lg text-center">See Invoice</a>
-                            @else
-                                <a href="{{ route('dashboard.invoices') }}" class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-sm font-medium rounded-lg text-center">See Invoice</a>
-                            @endif
+                            <a href="{{ route('dashboard.invoices.download', $order->invoice) }}" target="_blank" rel="noopener" class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-sm font-medium rounded-lg text-center">See Invoice</a>
                         @elseif(in_array($order->status, ['processing', 'shipped', 'delivered']) && $order->shipment_id)
                             @if($order->invoiceRequest?->isPending())
                                 <span class="px-4 py-2 bg-amber-50 text-amber-700 text-sm font-medium rounded-lg">Invoice requested</span>

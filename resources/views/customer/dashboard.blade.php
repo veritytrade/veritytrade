@@ -13,7 +13,7 @@
                             <p class="text-gray-500 text-xs mt-0.5">₦{{ number_format((float) ($order->total_amount_ngn ?? 0)) }} · {{ $order->customer_status_label }}</p>
                         </div>
                         <div class="flex items-center gap-2 shrink-0">
-                            @if($order->invoice?->pdf_path)
+                            @if($order->invoice)
                                 <a href="{{ route('dashboard.invoices.download', $order->invoice) }}" target="_blank" rel="noopener" class="text-xs text-green-600 hover:text-green-700 font-medium">See Invoice</a>
                             @endif
                             @if($order->shipment_id || $order->current_stage_id)

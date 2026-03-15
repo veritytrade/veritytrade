@@ -91,32 +91,65 @@ class InvoiceService
             ->first();
     }
 
+    /** Possible storage roots (can differ when config is cached or doc root differs). */
+    private function invoiceStorageRoots(): array
+    {
+        $roots = [];
+        $base = base_path('storage' . DIRECTORY_SEPARATOR . 'app' . DIRECTORY_SEPARATOR . 'public');
+        if ($base !== '') {
+            $roots[] = $base;
+        }
+        $storage = storage_path('app/public');
+        if ($storage !== '' && ! in_array($storage, $roots, true)) {
+            $roots[] = $storage;
+        }
+        return $roots;
+    }
+
     /**
      * Resolve invoice PDF to full filesystem path for streaming (admin + customer download).
-     * Uses base_path and multiple path strategies so the file is found regardless of stored path format.
+     * Tries multiple roots and path strategies so the file is found regardless of environment.
      */
     public function resolveInvoicePdfPath(Invoice $invoice): ?string
     {
         $invoiceNumber = (string) ($invoice->invoice_number ?? '');
-        $root = base_path('storage' . DIRECTORY_SEPARATOR . 'app' . DIRECTORY_SEPARATOR . 'public');
+        $safeNumber = preg_replace('/[^a-zA-Z0-9\-_.]/', '', $invoiceNumber);
         $pathsToTry = [];
         $normalized = $this->normalizeStoredPdfPath($invoice->pdf_path);
         if ($normalized !== null) {
             $pathsToTry[] = $normalized;
         }
-        $pathsToTry[] = 'invoices/invoice-' . preg_replace('/[^a-zA-Z0-9\-_.]/', '', $invoiceNumber) . '.pdf';
+        $pathsToTry[] = 'invoices/invoice-' . $safeNumber . '.pdf';
 
-        foreach (array_unique($pathsToTry) as $path) {
-            $path = ltrim(str_replace(['\\', "\0"], ['/', ''], (string) $path), '/');
-            if ($path === '' || str_contains($path, '..')) {
+        foreach ($this->invoiceStorageRoots() as $root) {
+            if (! is_dir($root)) {
                 continue;
             }
-            $fullPath = $root . DIRECTORY_SEPARATOR . str_replace('/', DIRECTORY_SEPARATOR, $path);
-            $real = @realpath($fullPath);
-            if ($real !== false && is_file($real)) {
-                $rootReal = @realpath($root);
-                if ($rootReal !== false && str_starts_with($real, $rootReal)) {
-                    return $real;
+            foreach (array_unique($pathsToTry) as $path) {
+                $path = ltrim(str_replace(['\\', "\0"], ['/', ''], (string) $path), '/');
+                if ($path === '' || str_contains($path, '..')) {
+                    continue;
+                }
+                $fullPath = $root . DIRECTORY_SEPARATOR . str_replace('/', DIRECTORY_SEPARATOR, $path);
+                $real = @realpath($fullPath);
+                if ($real !== false && is_file($real)) {
+                    $rootReal = @realpath($root);
+                    if ($rootReal !== false && str_starts_with($real, $rootReal)) {
+                        return $real;
+                    }
+                }
+            }
+            $invoicesDir = $root . DIRECTORY_SEPARATOR . 'invoices';
+            if (is_dir($invoicesDir)) {
+                $byName = $invoicesDir . DIRECTORY_SEPARATOR . 'invoice-' . $safeNumber . '.pdf';
+                if (is_file($byName)) {
+                    return $byName;
+                }
+                if ($safeNumber !== '') {
+                    $found = $this->findInvoiceFileByNumber($invoicesDir, $invoiceNumber);
+                    if ($found !== null) {
+                        return $found;
+                    }
                 }
             }
         }
@@ -136,15 +169,38 @@ class InvoiceService
             // Disk/path may throw on some setups; continue to fallbacks
         }
 
-        $invoicesDir = $root . DIRECTORY_SEPARATOR . 'invoices';
-        if (is_dir($invoicesDir)) {
-            $name = 'invoice-' . preg_replace('/[^a-zA-Z0-9\-_.]/', '', $invoiceNumber) . '.pdf';
-            $byName = $invoicesDir . DIRECTORY_SEPARATOR . $name;
-            if (is_file($byName)) {
-                return $byName;
-            }
-        }
+        return null;
+    }
 
+    /** Find a PDF in directory whose filename contains the invoice number (e.g. invoice-VT-2026-0001-vt-2026-0001.pdf). */
+    private function findInvoiceFileByNumber(string $invoicesDir, string $invoiceNumber): ?string
+    {
+        $needle = preg_replace('/[^a-zA-Z0-9\-]/', '', $invoiceNumber);
+        if ($needle === '') {
+            return null;
+        }
+        if (! @is_dir($invoicesDir) || ! ($h = @opendir($invoicesDir))) {
+            return null;
+        }
+        try {
+            while (($entry = readdir($h)) !== false) {
+                if ($entry === '.' || $entry === '..') {
+                    continue;
+                }
+                if (strlen($entry) < 4 || strtolower(substr($entry, -4)) !== '.pdf') {
+                    continue;
+                }
+                if (stripos(str_replace(['-', '_', ' '], '', $entry), $needle) !== false) {
+                    $full = $invoicesDir . DIRECTORY_SEPARATOR . $entry;
+                    if (is_file($full)) {
+                        closedir($h);
+                        return $full;
+                    }
+                }
+            }
+        } finally {
+            @closedir($h);
+        }
         return null;
     }
 
@@ -163,12 +219,13 @@ class InvoiceService
         }
 
         $invoiceNumber = (string) ($invoice->invoice_number ?? '');
+        $safeNumber = preg_replace('/[^a-zA-Z0-9\-_.]/', '', $invoiceNumber);
         $pathsToTry = [];
         $normalized = $this->normalizeStoredPdfPath($invoice->pdf_path);
         if ($normalized !== null) {
             $pathsToTry[] = $normalized;
         }
-        $pathsToTry[] = 'invoices/invoice-' . preg_replace('/[^a-zA-Z0-9\-_.]/', '', $invoiceNumber) . '.pdf';
+        $pathsToTry[] = 'invoices/invoice-' . $safeNumber . '.pdf';
 
         try {
             $disk = Storage::disk('public');
@@ -178,6 +235,18 @@ class InvoiceService
                     $content = $disk->get($path);
                     if ($content !== null && $content !== '') {
                         return $content;
+                    }
+                }
+            }
+            if ($safeNumber !== '' && $disk->exists('invoices')) {
+                $files = $disk->files('invoices');
+                $needle = preg_replace('/[^a-zA-Z0-9\-]/', '', $invoiceNumber);
+                foreach ($files as $f) {
+                    if (stripos(str_replace(['-', '_', ' '], '', basename($f)), $needle) !== false) {
+                        $content = $disk->get($f);
+                        if ($content !== null && $content !== '') {
+                            return $content;
+                        }
                     }
                 }
             }
