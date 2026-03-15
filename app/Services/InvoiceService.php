@@ -205,20 +205,12 @@ class InvoiceService
     }
 
     /**
-     * Get invoice PDF raw content for download (avoids response()->file() which can throw on some hosts).
-     * Tries resolved path first, then Storage::get with canonical/normalized paths.
+     * Get invoice PDF raw content for download.
+     * Tries Storage::get() first (same API as when writing), then filesystem resolution.
      */
     public function getInvoicePdfContent(Invoice $invoice): ?string
     {
-        $resolved = $this->resolveInvoicePdfPath($invoice);
-        if ($resolved !== null && is_file($resolved)) {
-            $content = @file_get_contents($resolved);
-            if ($content !== false && $content !== '') {
-                return $content;
-            }
-        }
-
-        $invoiceNumber = (string) ($invoice->invoice_number ?? '');
+        $invoiceNumber = trim((string) ($invoice->invoice_number ?? ''));
         $safeNumber = preg_replace('/[^a-zA-Z0-9\-_.]/', '', $invoiceNumber);
         $pathsToTry = [];
         $normalized = $this->normalizeStoredPdfPath($invoice->pdf_path);
@@ -231,27 +223,61 @@ class InvoiceService
             $disk = Storage::disk('public');
             foreach (array_unique($pathsToTry) as $path) {
                 $path = ltrim(str_replace(['\\', "\0"], ['/', ''], (string) $path), '/');
-                if ($path !== '' && ! str_contains($path, '..') && $disk->exists($path)) {
+                if ($path === '' || str_contains($path, '..')) {
+                    continue;
+                }
+                try {
                     $content = $disk->get($path);
                     if ($content !== null && $content !== '') {
                         return $content;
                     }
+                } catch (\Throwable $e) {
+                    continue;
                 }
             }
-            if ($safeNumber !== '' && $disk->exists('invoices')) {
-                $files = $disk->files('invoices');
-                $needle = preg_replace('/[^a-zA-Z0-9\-]/', '', $invoiceNumber);
-                foreach ($files as $f) {
-                    if (stripos(str_replace(['-', '_', ' '], '', basename($f)), $needle) !== false) {
-                        $content = $disk->get($f);
-                        if ($content !== null && $content !== '') {
-                            return $content;
+            if ($safeNumber !== '') {
+                try {
+                    $files = $disk->files('invoices');
+                    $needle = preg_replace('/[^a-zA-Z0-9\-]/', '', $invoiceNumber);
+                    foreach ($files as $f) {
+                        $base = basename($f);
+                        if (strtolower(substr($base, -4)) === '.pdf' && stripos(str_replace(['-', '_', ' '], '', $base), $needle) !== false) {
+                            $content = $disk->get($f);
+                            if ($content !== null && $content !== '') {
+                                return $content;
+                            }
                         }
+                    }
+                } catch (\Throwable $e) {
+                    // ignore
+                }
+            }
+        } catch (\Throwable $e) {
+            // ignore
+        }
+
+        try {
+            $disk = Storage::disk('public');
+            if (method_exists($disk, 'path') && $safeNumber !== '') {
+                $relPath = 'invoices/invoice-' . $safeNumber . '.pdf';
+                $fullPath = $disk->path($relPath);
+                if (is_file($fullPath)) {
+                    $content = @file_get_contents($fullPath);
+                    if ($content !== false && $content !== '') {
+                        return $content;
                     }
                 }
             }
         } catch (\Throwable $e) {
             // ignore
+        }
+
+        $resolved = $this->resolveInvoicePdfPath($invoice);
+        if ($resolved !== null && is_file($resolved)) {
+            $content = @file_get_contents($resolved);
+            if ($content !== false && $content !== '') {
+                return $content;
+            }
         }
 
         return null;
