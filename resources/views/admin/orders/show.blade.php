@@ -106,8 +106,8 @@
                 @csrf
                 <button type="submit" class="inline-flex items-center min-h-[44px] px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg">Generate Invoice ({{ $uninvoicedOrders->count() }} item{{ $uninvoicedOrders->count() > 1 ? 's' : '' }})</button>
             </form>
-        @elseif($order->invoice && $order->invoice->pdf_path)
-            <a href="{{ storage_asset($order->invoice->pdf_path) }}" target="_blank" rel="noopener" class="inline-flex items-center min-h-[44px] px-4 py-2 bg-green-600 hover:bg-green-700 text-white font-medium rounded-lg">Download Invoice</a>
+        @elseif($order->invoice)
+            <a href="{{ route('admin.orders.invoice-download', $order) }}" target="_blank" rel="noopener" class="inline-flex items-center min-h-[44px] px-4 py-2 bg-green-600 hover:bg-green-700 text-white font-medium rounded-lg">Download Invoice</a>
         @endif
         <form method="POST" action="{{ route('admin.orders.destroy', $order) }}" class="inline" onsubmit="return confirm('Delete this order? This cannot be undone.');">
             @csrf

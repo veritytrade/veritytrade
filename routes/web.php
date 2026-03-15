@@ -32,7 +32,8 @@ Route::get('/_f/{path}', function (string $path) {
         abort(404);
     }
 
-    $root = storage_path('app/public');
+    // Use base_path so storage root is correct when config was cached elsewhere
+    $root = base_path('storage' . DIRECTORY_SEPARATOR . 'app' . DIRECTORY_SEPARATOR . 'public');
     $fullPath = $root . DIRECTORY_SEPARATOR . str_replace('/', DIRECTORY_SEPARATOR, $path);
     $real = @realpath($fullPath);
     if ($real === false || ! is_file($real)) {
@@ -283,6 +284,7 @@ Route::prefix('admin')
         });
         Route::middleware('permission:view_tracking')->group(function () {
             Route::get('/orders/{order}', [\App\Http\Controllers\Admin\OrderController::class, 'show'])->name('admin.orders.show');
+            Route::get('/orders/{order}/invoice-download', [\App\Http\Controllers\Admin\OrderController::class, 'downloadInvoice'])->name('admin.orders.invoice-download');
             Route::post('/orders/{order}/approve', [\App\Http\Controllers\Admin\OrderController::class, 'approve'])->name('admin.orders.approve')->middleware('permission:approve_orders');
             Route::post('/orders/{order}/generate-invoice', [\App\Http\Controllers\Admin\OrderController::class, 'generateInvoice'])->name('admin.orders.generate-invoice')->middleware('permission:generate_invoices');
         });

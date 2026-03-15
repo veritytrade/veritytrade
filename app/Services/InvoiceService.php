@@ -91,6 +91,58 @@ class InvoiceService
             ->first();
     }
 
+    /**
+     * Resolve invoice PDF to full filesystem path for streaming (admin + customer download).
+     * Uses base_path and multiple path strategies so the file is found regardless of stored path format.
+     */
+    public function resolveInvoicePdfPath(Invoice $invoice): ?string
+    {
+        $root = base_path('storage' . DIRECTORY_SEPARATOR . 'app' . DIRECTORY_SEPARATOR . 'public');
+        $pathsToTry = [];
+        $normalized = $this->normalizeStoredPdfPath($invoice->pdf_path);
+        if ($normalized !== null) {
+            $pathsToTry[] = $normalized;
+        }
+        $pathsToTry[] = 'invoices/invoice-' . preg_replace('/[^a-zA-Z0-9\-_.]/', '', $invoice->invoice_number) . '.pdf';
+
+        foreach (array_unique($pathsToTry) as $path) {
+            $path = ltrim(str_replace(['\\', "\0"], ['/', ''], (string) $path), '/');
+            if ($path === '' || str_contains($path, '..')) {
+                continue;
+            }
+            $fullPath = $root . DIRECTORY_SEPARATOR . str_replace('/', DIRECTORY_SEPARATOR, $path);
+            $real = @realpath($fullPath);
+            if ($real !== false && is_file($real)) {
+                $rootReal = @realpath($root);
+                if ($rootReal !== false && str_starts_with($real, $rootReal)) {
+                    return $real;
+                }
+            }
+        }
+
+        $disk = Storage::disk('public');
+        foreach ($pathsToTry as $path) {
+            $path = ltrim(str_replace(['\\', "\0"], ['/', ''], (string) $path), '/');
+            if (($path !== '' && ! str_contains($path, '..')) && $disk->exists($path) && method_exists($disk, 'path')) {
+                $fullPath = $disk->path($path);
+                if (is_file($fullPath)) {
+                    return $fullPath;
+                }
+            }
+        }
+
+        $invoicesDir = $root . DIRECTORY_SEPARATOR . 'invoices';
+        if (is_dir($invoicesDir)) {
+            $name = 'invoice-' . preg_replace('/[^a-zA-Z0-9\-_.]/', '', $invoice->invoice_number) . '.pdf';
+            $byName = $invoicesDir . DIRECTORY_SEPARATOR . $name;
+            if (is_file($byName)) {
+                return $byName;
+            }
+        }
+
+        return null;
+    }
+
     /** Build invoice view data (reusable for HTML preview and PDF) */
     public function buildPreviewData(): array
     {

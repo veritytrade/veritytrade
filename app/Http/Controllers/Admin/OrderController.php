@@ -14,6 +14,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rules\File;
 use Illuminate\View\View;
+use Symfony\Component\HttpFoundation\Response;
 
 class OrderController extends Controller
 {
@@ -242,6 +243,24 @@ class OrderController extends Controller
             ? 'Invoice ' . $invoice->invoice_number . ' regenerated. PDF updated; customer can download the new file.'
             : 'Invoice ' . $invoice->invoice_number . ' generated for ' . $orders->count() . ' item(s). Customer can download from their dashboard.';
         return back()->with('success', $message);
+    }
+
+    /** Download invoice PDF for this order (same file resolution as customer download). */
+    public function downloadInvoice(Order $order, InvoiceService $invoiceService): Response|RedirectResponse
+    {
+        if (! $order->invoice_id || ! $order->invoice) {
+            return back()->with('error', 'No invoice for this order.');
+        }
+        $invoice = $order->invoice;
+        $resolved = $invoiceService->resolveInvoicePdfPath($invoice);
+        if ($resolved === null) {
+            return back()->with('error', 'Invoice file not found.');
+        }
+        $filename = 'invoice-' . preg_replace('/[^a-zA-Z0-9\-_.]/', '', $invoice->invoice_number) . '.pdf';
+        return response()->file($resolved, [
+            'Content-Type' => 'application/pdf',
+            'Content-Disposition' => 'attachment; filename="' . $filename . '"',
+        ]);
     }
 
     public function assignShipment(Request $request, Order $order): RedirectResponse

@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Invoice;
 use App\Models\InvoiceRequest;
 use App\Models\Order;
+use App\Services\InvoiceService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -157,58 +158,8 @@ class DashboardController extends Controller
         return view('customer.invoices', compact('invoices'));
     }
 
-    /**
-     * Normalize stored pdf_path to a relative path (no leading slash, forward slashes).
-     * Handles paths stored as absolute (e.g. from Windows or different server).
-     */
-    private function normalizeInvoicePdfPath(?string $raw): ?string
-    {
-        if ($raw === null || $raw === '' || str_contains($raw, '..')) {
-            return null;
-        }
-        $path = str_replace(['\\', "\0"], ['/', ''], trim((string) $raw));
-        $path = ltrim($path, '/');
-        foreach (['storage/app/public/', 'app/public/'] as $needle) {
-            $pos = stripos($path, $needle);
-            if ($pos !== false) {
-                $path = substr($path, $pos + strlen($needle));
-                break;
-            }
-        }
-        return $path !== '' ? $path : null;
-    }
-
-    /** Canonical path for an invoice PDF (same as InvoiceService when generating). */
-    private function canonicalInvoicePdfPath(string $invoiceNumber): string
-    {
-        $safe = preg_replace('/[^a-zA-Z0-9\-_.]/', '', $invoiceNumber);
-        return 'invoices/invoice-' . $safe . '.pdf';
-    }
-
-    /**
-     * Resolve full filesystem path if file exists under storage/app/public.
-     * Uses base_path() so path is correct even when config is cached from another environment.
-     */
-    private function resolveInvoiceFile(string $root, string $relativePath): ?string
-    {
-        $relativePath = ltrim(str_replace(['\\', "\0"], ['/', ''], $relativePath), '/');
-        if ($relativePath === '' || str_contains($relativePath, '..')) {
-            return null;
-        }
-        $fullPath = $root . DIRECTORY_SEPARATOR . str_replace('/', DIRECTORY_SEPARATOR, $relativePath);
-        $real = @realpath($fullPath);
-        if ($real === false || ! is_file($real)) {
-            return null;
-        }
-        $rootReal = @realpath($root);
-        if ($rootReal === false || ! str_starts_with($real, $rootReal)) {
-            return null;
-        }
-        return $real;
-    }
-
-    /** Secured invoice download – try multiple path strategies so customer can always get the PDF. */
-    public function downloadInvoice(Invoice $invoice): StreamedResponse|RedirectResponse
+    /** Secured invoice download – uses same file resolution as admin (InvoiceService). */
+    public function downloadInvoice(Invoice $invoice, InvoiceService $invoiceService): StreamedResponse|RedirectResponse
     {
         if ($redirect = $this->ensureCustomer()) {
             return $redirect;
@@ -217,60 +168,15 @@ class DashboardController extends Controller
             abort(403);
         }
 
+        $resolved = $invoiceService->resolveInvoicePdfPath($invoice);
+        if ($resolved === null) {
+            return back()->with('error', 'Invoice file not found.');
+        }
+
         $filename = 'invoice-' . preg_replace('/[^a-zA-Z0-9\-_.]/', '', $invoice->invoice_number) . '.pdf';
-        $headers = [
+        return response()->file($resolved, [
             'Content-Type' => 'application/pdf',
             'Content-Disposition' => 'attachment; filename="' . $filename . '"',
-        ];
-
-        // Use base_path so we're not affected by cached config (e.g. from different server)
-        $root = base_path('storage' . DIRECTORY_SEPARATOR . 'app' . DIRECTORY_SEPARATOR . 'public');
-
-        $pathsToTry = [];
-        $normalized = $this->normalizeInvoicePdfPath($invoice->pdf_path);
-        if ($normalized !== null) {
-            $pathsToTry[] = $normalized;
-        }
-        $pathsToTry[] = $this->canonicalInvoicePdfPath($invoice->invoice_number);
-
-        try {
-            foreach (array_unique($pathsToTry) as $path) {
-                $resolved = $this->resolveInvoiceFile($root, $path);
-                if ($resolved !== null) {
-                    return response()->file($resolved, $headers);
-                }
-            }
-
-            // Fallback: Storage disk (in case file is elsewhere, e.g. different root when written)
-            $disk = Storage::disk('public');
-            foreach ($pathsToTry as $path) {
-                if ($disk->exists($path)) {
-                    $content = $disk->get($path);
-                    if ($content !== null && $content !== '') {
-                        return response($content, 200, $headers);
-                    }
-                    if (method_exists($disk, 'path')) {
-                        $fullPath = $disk->path($path);
-                        if (is_file($fullPath)) {
-                            return response()->file($fullPath, $headers);
-                        }
-                    }
-                }
-            }
-
-            // Last resort: look for file by name in invoices directory
-            $invoicesDir = $root . DIRECTORY_SEPARATOR . 'invoices';
-            if (is_dir($invoicesDir)) {
-                $canonicalName = 'invoice-' . preg_replace('/[^a-zA-Z0-9\-_.]/', '', $invoice->invoice_number) . '.pdf';
-                $byName = $invoicesDir . DIRECTORY_SEPARATOR . $canonicalName;
-                if (is_file($byName)) {
-                    return response()->file($byName, $headers);
-                }
-            }
-        } catch (\Throwable $e) {
-            report($e);
-        }
-
-        return back()->with('error', 'Invoice file not found.');
+        ]);
     }
 }
