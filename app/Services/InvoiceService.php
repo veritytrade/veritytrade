@@ -121,15 +121,19 @@ class InvoiceService
             }
         }
 
-        $disk = Storage::disk('public');
-        foreach ($pathsToTry as $path) {
-            $path = ltrim(str_replace(['\\', "\0"], ['/', ''], (string) $path), '/');
-            if (($path !== '' && ! str_contains($path, '..')) && $disk->exists($path) && method_exists($disk, 'path')) {
-                $fullPath = $disk->path($path);
-                if (is_file($fullPath)) {
-                    return $fullPath;
+        try {
+            $disk = Storage::disk('public');
+            foreach ($pathsToTry as $path) {
+                $path = ltrim(str_replace(['\\', "\0"], ['/', ''], (string) $path), '/');
+                if (($path !== '' && ! str_contains($path, '..')) && $disk->exists($path) && method_exists($disk, 'path')) {
+                    $fullPath = $disk->path($path);
+                    if (is_file($fullPath)) {
+                        return $fullPath;
+                    }
                 }
             }
+        } catch (\Throwable $e) {
+            // Disk/path may throw on some setups; continue to fallbacks
         }
 
         $invoicesDir = $root . DIRECTORY_SEPARATOR . 'invoices';
@@ -139,6 +143,46 @@ class InvoiceService
             if (is_file($byName)) {
                 return $byName;
             }
+        }
+
+        return null;
+    }
+
+    /**
+     * Get invoice PDF raw content for download (avoids response()->file() which can throw on some hosts).
+     * Tries resolved path first, then Storage::get with canonical/normalized paths.
+     */
+    public function getInvoicePdfContent(Invoice $invoice): ?string
+    {
+        $resolved = $this->resolveInvoicePdfPath($invoice);
+        if ($resolved !== null && is_file($resolved)) {
+            $content = @file_get_contents($resolved);
+            if ($content !== false && $content !== '') {
+                return $content;
+            }
+        }
+
+        $invoiceNumber = (string) ($invoice->invoice_number ?? '');
+        $pathsToTry = [];
+        $normalized = $this->normalizeStoredPdfPath($invoice->pdf_path);
+        if ($normalized !== null) {
+            $pathsToTry[] = $normalized;
+        }
+        $pathsToTry[] = 'invoices/invoice-' . preg_replace('/[^a-zA-Z0-9\-_.]/', '', $invoiceNumber) . '.pdf';
+
+        try {
+            $disk = Storage::disk('public');
+            foreach (array_unique($pathsToTry) as $path) {
+                $path = ltrim(str_replace(['\\', "\0"], ['/', ''], (string) $path), '/');
+                if ($path !== '' && ! str_contains($path, '..') && $disk->exists($path)) {
+                    $content = $disk->get($path);
+                    if ($content !== null && $content !== '') {
+                        return $content;
+                    }
+                }
+            }
+        } catch (\Throwable $e) {
+            // ignore
         }
 
         return null;

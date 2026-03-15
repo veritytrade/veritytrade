@@ -245,28 +245,28 @@ class OrderController extends Controller
         return back()->with('success', $message);
     }
 
-    /** Download invoice PDF for this order (same file resolution as customer download). */
+    /** Download invoice PDF for this order (serve content directly like customer download). */
     public function downloadInvoice(Order $order, InvoiceService $invoiceService): Response|RedirectResponse
     {
         if (! $order->invoice_id || ! $order->invoice) {
             return back()->with('error', 'No invoice for this order.');
         }
         $invoice = $order->invoice;
+        $invoiceNumber = (string) ($invoice->invoice_number ?? '');
+        $filename = 'invoice-' . preg_replace('/[^a-zA-Z0-9\-_.]/', '', $invoiceNumber) . '.pdf';
+        $headers = [
+            'Content-Type' => 'application/pdf',
+            'Content-Disposition' => 'attachment; filename="' . $filename . '"',
+        ];
         try {
-            $resolved = $invoiceService->resolveInvoicePdfPath($invoice);
-            if ($resolved === null || ! is_file($resolved)) {
-                return back()->with('error', 'Invoice file not found.');
+            $content = $invoiceService->getInvoicePdfContent($invoice);
+            if ($content !== null && $content !== '') {
+                return response($content, 200, $headers);
             }
-            $invoiceNumber = (string) ($invoice->invoice_number ?? '');
-            $filename = 'invoice-' . preg_replace('/[^a-zA-Z0-9\-_.]/', '', $invoiceNumber) . '.pdf';
-            return response()->file($resolved, [
-                'Content-Type' => 'application/pdf',
-                'Content-Disposition' => 'attachment; filename="' . $filename . '"',
-            ]);
         } catch (\Throwable $e) {
             report($e);
-            return back()->with('error', 'Unable to load invoice. Please try again.');
         }
+        return back()->with('error', 'Invoice file not found.');
     }
 
     public function assignShipment(Request $request, Order $order): RedirectResponse
