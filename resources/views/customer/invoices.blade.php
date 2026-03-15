@@ -6,14 +6,13 @@
                 <div>
                     <div class="font-semibold text-gray-800">{{ $invoice->invoice_number }}</div>
                     <div class="text-gray-500">{{ optional($invoice->created_at)->format('M d, Y h:i A') }}</div>
+                    @if($invoice->updated_at && $invoice->updated_at->gt($invoice->created_at))
+                        <div class="text-xs text-gray-400">Updated {{ $invoice->updated_at->format('M d, Y') }}</div>
+                    @endif
                 </div>
                 <div class="text-right">
                     <div class="font-semibold text-green-700">NGN {{ number_format((float) $invoice->amount) }}</div>
-                    @if($invoice->pdf_path)
-                        <a href="{{ route('dashboard.invoices.download', $invoice) }}" class="text-blue-600 hover:underline">Download</a>
-                    @else
-                        <span class="text-gray-400">No PDF</span>
-                    @endif
+                    <a href="{{ route('dashboard.invoices.download', $invoice) }}" class="text-blue-600 hover:underline">Download</a>
                 </div>
             </div>
         @empty

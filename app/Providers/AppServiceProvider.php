@@ -49,6 +49,9 @@ class AppServiceProvider extends ServiceProvider
             return Order::findOrFail($value);
         });
 
+        // Ensure public disk uses current runtime path (avoids wrong path when config was cached elsewhere)
+        Config::set('filesystems.disks.public.root', storage_path('app/public'));
+
         try {
             $fromAddress = FeatureFlag::value('mail_from_address', config('mail.from.address'));
             $fromName = FeatureFlag::value('mail_from_name', config('mail.from.name'));

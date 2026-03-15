@@ -168,7 +168,6 @@ class DashboardController extends Controller
         }
         $path = str_replace(['\\', "\0"], ['/', ''], trim((string) $raw));
         $path = ltrim($path, '/');
-        // If stored as absolute path, keep only the part under storage/app/public
         foreach (['storage/app/public/', 'app/public/'] as $needle) {
             $pos = stripos($path, $needle);
             if ($pos !== false) {
@@ -179,7 +178,36 @@ class DashboardController extends Controller
         return $path !== '' ? $path : null;
     }
 
-    /** Secured invoice download – try direct filesystem path first (same as _f route), then Storage. */
+    /** Canonical path for an invoice PDF (same as InvoiceService when generating). */
+    private function canonicalInvoicePdfPath(string $invoiceNumber): string
+    {
+        $safe = preg_replace('/[^a-zA-Z0-9\-_.]/', '', $invoiceNumber);
+        return 'invoices/invoice-' . $safe . '.pdf';
+    }
+
+    /**
+     * Resolve full filesystem path if file exists under storage/app/public.
+     * Uses base_path() so path is correct even when config is cached from another environment.
+     */
+    private function resolveInvoiceFile(string $root, string $relativePath): ?string
+    {
+        $relativePath = ltrim(str_replace(['\\', "\0"], ['/', ''], $relativePath), '/');
+        if ($relativePath === '' || str_contains($relativePath, '..')) {
+            return null;
+        }
+        $fullPath = $root . DIRECTORY_SEPARATOR . str_replace('/', DIRECTORY_SEPARATOR, $relativePath);
+        $real = @realpath($fullPath);
+        if ($real === false || ! is_file($real)) {
+            return null;
+        }
+        $rootReal = @realpath($root);
+        if ($rootReal === false || ! str_starts_with($real, $rootReal)) {
+            return null;
+        }
+        return $real;
+    }
+
+    /** Secured invoice download – try multiple path strategies so customer can always get the PDF. */
     public function downloadInvoice(Invoice $invoice): StreamedResponse|RedirectResponse
     {
         if ($redirect = $this->ensureCustomer()) {
@@ -188,10 +216,6 @@ class DashboardController extends Controller
         if ($invoice->user_id !== (int) auth()->id()) {
             abort(403);
         }
-        $path = $this->normalizeInvoicePdfPath($invoice->pdf_path);
-        if ($path === null) {
-            return back()->with('error', 'Invoice file not available.');
-        }
 
         $filename = 'invoice-' . preg_replace('/[^a-zA-Z0-9\-_.]/', '', $invoice->invoice_number) . '.pdf';
         $headers = [
@@ -199,38 +223,49 @@ class DashboardController extends Controller
             'Content-Disposition' => 'attachment; filename="' . $filename . '"',
         ];
 
+        // Use base_path so we're not affected by cached config (e.g. from different server)
+        $root = base_path('storage' . DIRECTORY_SEPARATOR . 'app' . DIRECTORY_SEPARATOR . 'public');
+
+        $pathsToTry = [];
+        $normalized = $this->normalizeInvoicePdfPath($invoice->pdf_path);
+        if ($normalized !== null) {
+            $pathsToTry[] = $normalized;
+        }
+        $pathsToTry[] = $this->canonicalInvoicePdfPath($invoice->invoice_number);
+
         try {
-            // 1) Direct filesystem path – same logic as _f route (works when Storage adapter differs)
-            $root = storage_path('app/public');
-            $fullPath = $root . DIRECTORY_SEPARATOR . str_replace('/', DIRECTORY_SEPARATOR, $path);
-            $real = @realpath($fullPath);
-            if ($real !== false && is_file($real)) {
-                $rootReal = @realpath($root);
-                if ($rootReal !== false && str_starts_with($real, $rootReal)) {
-                    return response()->file($real, $headers);
+            foreach (array_unique($pathsToTry) as $path) {
+                $resolved = $this->resolveInvoiceFile($root, $path);
+                if ($resolved !== null) {
+                    return response()->file($resolved, $headers);
                 }
             }
 
-            // 2) Read via Storage disk (same as put())
+            // Fallback: Storage disk (in case file is elsewhere, e.g. different root when written)
             $disk = Storage::disk('public');
-            if ($disk->exists($path)) {
-                $content = $disk->get($path);
-                if ($content !== null && $content !== '') {
-                    return response($content, 200, $headers);
+            foreach ($pathsToTry as $path) {
+                if ($disk->exists($path)) {
+                    $content = $disk->get($path);
+                    if ($content !== null && $content !== '') {
+                        return response($content, 200, $headers);
+                    }
+                    if (method_exists($disk, 'path')) {
+                        $fullPath = $disk->path($path);
+                        if (is_file($fullPath)) {
+                            return response()->file($fullPath, $headers);
+                        }
+                    }
                 }
             }
 
-            // 3) Disk path() + file response
-            if (method_exists($disk, 'path')) {
-                $fullPath = $disk->path($path);
-                if (is_file($fullPath)) {
-                    return response()->file($fullPath, $headers);
+            // Last resort: look for file by name in invoices directory
+            $invoicesDir = $root . DIRECTORY_SEPARATOR . 'invoices';
+            if (is_dir($invoicesDir)) {
+                $canonicalName = 'invoice-' . preg_replace('/[^a-zA-Z0-9\-_.]/', '', $invoice->invoice_number) . '.pdf';
+                $byName = $invoicesDir . DIRECTORY_SEPARATOR . $canonicalName;
+                if (is_file($byName)) {
+                    return response()->file($byName, $headers);
                 }
-            }
-
-            // 4) Stream download
-            if ($disk->exists($path)) {
-                return $disk->download($path, $filename, ['Content-Type' => 'application/pdf']);
             }
         } catch (\Throwable $e) {
             report($e);
