@@ -32,6 +32,24 @@ class InvoiceService
     protected const COPYRIGHT = 'Verity Trade Global Limited';
     protected const QR_BASE_URL = 'https://veritytrade.ng/connect/';
 
+    /** Normalize stored pdf_path to relative path (invoices/xxx.pdf) for consistent read/write. */
+    protected function normalizeStoredPdfPath(?string $raw): ?string
+    {
+        if ($raw === null || $raw === '' || str_contains($raw, '..')) {
+            return null;
+        }
+        $path = str_replace(['\\', "\0"], ['/', ''], trim((string) $raw));
+        $path = ltrim($path, '/');
+        foreach (['storage/app/public/', 'app/public/'] as $needle) {
+            $pos = stripos($path, $needle);
+            if ($pos !== false) {
+                $path = substr($path, $pos + strlen($needle));
+                break;
+            }
+        }
+        return $path !== '' ? $path : null;
+    }
+
     /** Get uninvoiced orders in a shipment for a customer */
     public function getUninvoicedOrdersForShipment(int $shipmentId, int $userId): Collection
     {
@@ -277,12 +295,11 @@ class InvoiceService
         $pdf = Pdf::loadHTML($html);
         $pdf->setPaper('a4', 'portrait');
 
-        $path = $invoice->pdf_path;
-        if (! $path || str_contains($path, '..')) {
+        $path = $this->normalizeStoredPdfPath($invoice->pdf_path);
+        if ($path === null) {
             $dir = 'invoices';
             $filename = 'invoice-' . preg_replace('/[^a-zA-Z0-9\-_.]/', '', $invoice->invoice_number) . '.pdf';
             $path = $dir . '/' . $filename;
-            $invoice->pdf_path = $path;
         }
         $path = ltrim(str_replace('\\', '/', (string) $path), '/');
         $invoice->pdf_path = $path;

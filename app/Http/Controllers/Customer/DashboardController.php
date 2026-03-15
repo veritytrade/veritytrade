@@ -157,7 +157,29 @@ class DashboardController extends Controller
         return view('customer.invoices', compact('invoices'));
     }
 
-    /** Secured invoice download – read via same Storage disk used when writing PDFs */
+    /**
+     * Normalize stored pdf_path to a relative path (no leading slash, forward slashes).
+     * Handles paths stored as absolute (e.g. from Windows or different server).
+     */
+    private function normalizeInvoicePdfPath(?string $raw): ?string
+    {
+        if ($raw === null || $raw === '' || str_contains($raw, '..')) {
+            return null;
+        }
+        $path = str_replace(['\\', "\0"], ['/', ''], trim((string) $raw));
+        $path = ltrim($path, '/');
+        // If stored as absolute path, keep only the part under storage/app/public
+        foreach (['storage/app/public/', 'app/public/'] as $needle) {
+            $pos = stripos($path, $needle);
+            if ($pos !== false) {
+                $path = substr($path, $pos + strlen($needle));
+                break;
+            }
+        }
+        return $path !== '' ? $path : null;
+    }
+
+    /** Secured invoice download – try direct filesystem path first (same as _f route), then Storage. */
     public function downloadInvoice(Invoice $invoice): StreamedResponse|RedirectResponse
     {
         if ($redirect = $this->ensureCustomer()) {
@@ -166,12 +188,11 @@ class DashboardController extends Controller
         if ($invoice->user_id !== (int) auth()->id()) {
             abort(403);
         }
-        $rawPath = $invoice->pdf_path;
-        if (! $rawPath || str_contains($rawPath, '..')) {
+        $path = $this->normalizeInvoicePdfPath($invoice->pdf_path);
+        if ($path === null) {
             return back()->with('error', 'Invoice file not available.');
         }
 
-        $path = ltrim(str_replace(['\\', "\0"], ['/', ''], (string) $rawPath), '/');
         $filename = 'invoice-' . preg_replace('/[^a-zA-Z0-9\-_.]/', '', $invoice->invoice_number) . '.pdf';
         $headers = [
             'Content-Type' => 'application/pdf',
@@ -179,9 +200,19 @@ class DashboardController extends Controller
         ];
 
         try {
-            $disk = Storage::disk('public');
+            // 1) Direct filesystem path – same logic as _f route (works when Storage adapter differs)
+            $root = storage_path('app/public');
+            $fullPath = $root . DIRECTORY_SEPARATOR . str_replace('/', DIRECTORY_SEPARATOR, $path);
+            $real = @realpath($fullPath);
+            if ($real !== false && is_file($real)) {
+                $rootReal = @realpath($root);
+                if ($rootReal !== false && str_starts_with($real, $rootReal)) {
+                    return response()->file($real, $headers);
+                }
+            }
 
-            // 1) Read content via same disk as put() – most reliable
+            // 2) Read via Storage disk (same as put())
+            $disk = Storage::disk('public');
             if ($disk->exists($path)) {
                 $content = $disk->get($path);
                 if ($content !== null && $content !== '') {
@@ -189,7 +220,7 @@ class DashboardController extends Controller
                 }
             }
 
-            // 2) Try path() + file response if get() failed
+            // 3) Disk path() + file response
             if (method_exists($disk, 'path')) {
                 $fullPath = $disk->path($path);
                 if (is_file($fullPath)) {
@@ -197,18 +228,7 @@ class DashboardController extends Controller
                 }
             }
 
-            // 3) Direct path under storage/app/public
-            $root = storage_path('app/public');
-            $fullPath = $root . DIRECTORY_SEPARATOR . str_replace('/', DIRECTORY_SEPARATOR, $path);
-            $real = @realpath($fullPath);
-            if ($real !== false && is_file($real)) {
-                $rootReal = realpath($root);
-                if ($rootReal !== false && str_starts_with($real, $rootReal)) {
-                    return response()->file($real, $headers);
-                }
-            }
-
-            // 4) Stream download as last resort
+            // 4) Stream download
             if ($disk->exists($path)) {
                 return $disk->download($path, $filename, ['Content-Type' => 'application/pdf']);
             }
