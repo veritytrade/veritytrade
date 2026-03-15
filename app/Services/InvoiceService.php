@@ -205,67 +205,78 @@ class InvoiceService
     }
 
     /**
+     * Absolute path to the directory where invoice PDFs are stored.
+     * Must match the public disk root (storage_path('app/public')) so read matches write.
+     */
+    public static function invoiceStorageRoot(): string
+    {
+        return rtrim(storage_path('app/public'), DIRECTORY_SEPARATOR . '/');
+    }
+
+    /**
+     * Build relative path for an invoice PDF (invoices/invoice-XXX.pdf).
+     */
+    public static function invoiceRelativePath(string $invoiceNumber): string
+    {
+        $safe = preg_replace('/[^a-zA-Z0-9\-_.]/', '', trim($invoiceNumber));
+        return 'invoices/invoice-' . $safe . '.pdf';
+    }
+
+    /**
      * Get invoice PDF raw content for download.
-     * Tries Storage::get() first (same API as when writing), then filesystem resolution.
+     * Primary: direct read from storage_path('app/public') so it always matches where we write.
+     * Fallbacks: Storage::get(), then resolveInvoicePdfPath.
      */
     public function getInvoicePdfContent(Invoice $invoice): ?string
     {
         $invoiceNumber = trim((string) ($invoice->invoice_number ?? ''));
-        $safeNumber = preg_replace('/[^a-zA-Z0-9\-_.]/', '', $invoiceNumber);
+        $root = self::invoiceStorageRoot();
         $pathsToTry = [];
         $normalized = $this->normalizeStoredPdfPath($invoice->pdf_path);
         if ($normalized !== null) {
             $pathsToTry[] = $normalized;
         }
-        $pathsToTry[] = 'invoices/invoice-' . $safeNumber . '.pdf';
+        $pathsToTry[] = self::invoiceRelativePath($invoiceNumber);
+
+        foreach (array_unique($pathsToTry) as $rel) {
+            $rel = ltrim(str_replace(['\\', "\0"], ['/', ''], (string) $rel), '/');
+            if ($rel === '' || str_contains($rel, '..')) {
+                continue;
+            }
+            $full = $root . DIRECTORY_SEPARATOR . str_replace('/', DIRECTORY_SEPARATOR, $rel);
+            if (is_file($full)) {
+                $content = @file_get_contents($full);
+                if ($content !== false && $content !== '') {
+                    return $content;
+                }
+            }
+        }
+
+        $invoicesDir = $root . DIRECTORY_SEPARATOR . 'invoices';
+        if (is_dir($invoicesDir) && $invoiceNumber !== '') {
+            $found = $this->findInvoiceFileByNumber($invoicesDir, $invoiceNumber);
+            if ($found !== null && is_file($found)) {
+                $content = @file_get_contents($found);
+                if ($content !== false && $content !== '') {
+                    return $content;
+                }
+            }
+        }
 
         try {
             $disk = Storage::disk('public');
-            foreach (array_unique($pathsToTry) as $path) {
-                $path = ltrim(str_replace(['\\', "\0"], ['/', ''], (string) $path), '/');
-                if ($path === '' || str_contains($path, '..')) {
+            foreach ($pathsToTry as $rel) {
+                $rel = ltrim(str_replace(['\\', "\0"], ['/', ''], (string) $rel), '/');
+                if ($rel === '' || str_contains($rel, '..')) {
                     continue;
                 }
                 try {
-                    $content = $disk->get($path);
+                    $content = $disk->get($rel);
                     if ($content !== null && $content !== '') {
                         return $content;
                     }
                 } catch (\Throwable $e) {
                     continue;
-                }
-            }
-            if ($safeNumber !== '') {
-                try {
-                    $files = $disk->files('invoices');
-                    $needle = preg_replace('/[^a-zA-Z0-9\-]/', '', $invoiceNumber);
-                    foreach ($files as $f) {
-                        $base = basename($f);
-                        if (strtolower(substr($base, -4)) === '.pdf' && stripos(str_replace(['-', '_', ' '], '', $base), $needle) !== false) {
-                            $content = $disk->get($f);
-                            if ($content !== null && $content !== '') {
-                                return $content;
-                            }
-                        }
-                    }
-                } catch (\Throwable $e) {
-                    // ignore
-                }
-            }
-        } catch (\Throwable $e) {
-            // ignore
-        }
-
-        try {
-            $disk = Storage::disk('public');
-            if (method_exists($disk, 'path') && $safeNumber !== '') {
-                $relPath = 'invoices/invoice-' . $safeNumber . '.pdf';
-                $fullPath = $disk->path($relPath);
-                if (is_file($fullPath)) {
-                    $content = @file_get_contents($fullPath);
-                    if ($content !== false && $content !== '') {
-                        return $content;
-                    }
                 }
             }
         } catch (\Throwable $e) {
@@ -489,20 +500,23 @@ class InvoiceService
 
         $path = $this->normalizeStoredPdfPath($invoice->pdf_path);
         if ($path === null) {
-            $dir = 'invoices';
-            $filename = 'invoice-' . preg_replace('/[^a-zA-Z0-9\-_.]/', '', $invoice->invoice_number) . '.pdf';
-            $path = $dir . '/' . $filename;
+            $path = self::invoiceRelativePath((string) $invoice->invoice_number);
         }
         $path = ltrim(str_replace('\\', '/', (string) $path), '/');
         $invoice->pdf_path = $path;
 
-        $disk = Storage::disk('public');
-        if (! $disk->exists('invoices')) {
-            $disk->makeDirectory('invoices');
+        $root = self::invoiceStorageRoot();
+        $invoicesDir = $root . DIRECTORY_SEPARATOR . 'invoices';
+        if (! is_dir($invoicesDir)) {
+            @mkdir($invoicesDir, 0755, true);
         }
-        $written = $disk->put($path, $pdf->output());
-        if (! $written) {
-            throw new \RuntimeException('Failed to write invoice PDF to storage: ' . $path);
+        $fullPath = $root . DIRECTORY_SEPARATOR . str_replace('/', DIRECTORY_SEPARATOR, $path);
+        $written = @file_put_contents($fullPath, $pdf->output());
+        if ($written === false) {
+            $written = Storage::disk('public')->put($path, $pdf->output());
+            if (! $written) {
+                throw new \RuntimeException('Failed to write invoice PDF to storage: ' . $path);
+            }
         }
 
         $invoice->amount = $grandTotal;
@@ -587,17 +601,21 @@ class InvoiceService
         $pdf = Pdf::loadHTML($html);
         $pdf->setPaper('a4', 'portrait');
 
-        $dir = 'invoices';
-        $filename = 'invoice-' . preg_replace('/[^a-zA-Z0-9\-_.]/', '', $invoice->invoice_number) . '.pdf';
-        $path = $dir . '/' . $filename;
+        $path = self::invoiceRelativePath((string) $invoice->invoice_number);
+        $path = ltrim(str_replace('\\', '/', $path), '/');
 
-        $disk = Storage::disk('public');
-        if (! $disk->exists($dir)) {
-            $disk->makeDirectory($dir);
+        $root = self::invoiceStorageRoot();
+        $invoicesDir = $root . DIRECTORY_SEPARATOR . 'invoices';
+        if (! is_dir($invoicesDir)) {
+            @mkdir($invoicesDir, 0755, true);
         }
-        $written = $disk->put($path, $pdf->output());
-        if (! $written) {
-            throw new \RuntimeException('Failed to write invoice PDF to storage: ' . $path);
+        $fullPath = $root . DIRECTORY_SEPARATOR . str_replace('/', DIRECTORY_SEPARATOR, $path);
+        $written = @file_put_contents($fullPath, $pdf->output());
+        if ($written === false) {
+            $written = Storage::disk('public')->put($path, $pdf->output());
+            if (! $written) {
+                throw new \RuntimeException('Failed to write invoice PDF to storage: ' . $path);
+            }
         }
 
         $invoice->amount = $grandTotal;
