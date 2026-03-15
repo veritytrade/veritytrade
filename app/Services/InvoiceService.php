@@ -284,9 +284,17 @@ class InvoiceService
             $path = $dir . '/' . $filename;
             $invoice->pdf_path = $path;
         }
-        $path = ltrim(str_replace('\\', '/', $path), '/');
+        $path = ltrim(str_replace('\\', '/', (string) $path), '/');
         $invoice->pdf_path = $path;
-        Storage::disk('public')->put($path, $pdf->output());
+
+        $disk = Storage::disk('public');
+        if (! $disk->exists('invoices')) {
+            $disk->makeDirectory('invoices');
+        }
+        $written = $disk->put($path, $pdf->output());
+        if (! $written) {
+            throw new \RuntimeException('Failed to write invoice PDF to storage: ' . $path);
+        }
 
         $invoice->amount = $grandTotal;
         $invoice->details_json = [
@@ -374,7 +382,14 @@ class InvoiceService
         $filename = 'invoice-' . preg_replace('/[^a-zA-Z0-9\-_.]/', '', $invoice->invoice_number) . '.pdf';
         $path = $dir . '/' . $filename;
 
-        Storage::disk('public')->put($path, $pdf->output());
+        $disk = Storage::disk('public');
+        if (! $disk->exists($dir)) {
+            $disk->makeDirectory($dir);
+        }
+        $written = $disk->put($path, $pdf->output());
+        if (! $written) {
+            throw new \RuntimeException('Failed to write invoice PDF to storage: ' . $path);
+        }
 
         $invoice->amount = $grandTotal;
         $invoice->details_json = [

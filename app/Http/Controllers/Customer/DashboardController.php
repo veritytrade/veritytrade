@@ -157,7 +157,7 @@ class DashboardController extends Controller
         return view('customer.invoices', compact('invoices'));
     }
 
-    /** Secured invoice download – use same disk root as where PDFs are written */
+    /** Secured invoice download – read via same Storage disk used when writing PDFs */
     public function downloadInvoice(Invoice $invoice): StreamedResponse|RedirectResponse
     {
         if ($redirect = $this->ensureCustomer()) {
@@ -171,7 +171,7 @@ class DashboardController extends Controller
             return back()->with('error', 'Invoice file not available.');
         }
 
-        $path = ltrim(str_replace(['\\', "\0"], ['/', ''], $rawPath), '/');
+        $path = ltrim(str_replace(['\\', "\0"], ['/', ''], (string) $rawPath), '/');
         $filename = 'invoice-' . preg_replace('/[^a-zA-Z0-9\-_.]/', '', $invoice->invoice_number) . '.pdf';
         $headers = [
             'Content-Type' => 'application/pdf',
@@ -179,15 +179,25 @@ class DashboardController extends Controller
         ];
 
         try {
-            // Prefer the disk's path so we read from the same place PDFs are written
-            $adapter = Storage::disk('public');
-            if (method_exists($adapter, 'path') && $adapter->exists($path)) {
-                $fullPath = $adapter->path($path);
+            $disk = Storage::disk('public');
+
+            // 1) Read content via same disk as put() – most reliable
+            if ($disk->exists($path)) {
+                $content = $disk->get($path);
+                if ($content !== null && $content !== '') {
+                    return response($content, 200, $headers);
+                }
+            }
+
+            // 2) Try path() + file response if get() failed
+            if (method_exists($disk, 'path')) {
+                $fullPath = $disk->path($path);
                 if (is_file($fullPath)) {
                     return response()->file($fullPath, $headers);
                 }
             }
 
+            // 3) Direct path under storage/app/public
             $root = storage_path('app/public');
             $fullPath = $root . DIRECTORY_SEPARATOR . str_replace('/', DIRECTORY_SEPARATOR, $path);
             $real = @realpath($fullPath);
@@ -198,8 +208,9 @@ class DashboardController extends Controller
                 }
             }
 
-            if (Storage::disk('public')->exists($path)) {
-                return Storage::disk('public')->download($path, $filename, ['Content-Type' => 'application/pdf']);
+            // 4) Stream download as last resort
+            if ($disk->exists($path)) {
+                return $disk->download($path, $filename, ['Content-Type' => 'application/pdf']);
             }
         } catch (\Throwable $e) {
             report($e);
