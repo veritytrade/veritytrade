@@ -125,7 +125,7 @@ class InvoiceService
                 $real = @realpath($fullPath);
                 if ($real !== false && is_file($real)) {
                     $rootReal = @realpath($root);
-                    if ($rootReal !== false && str_starts_with($real, $rootReal)) {
+                    if ($rootReal !== false && substr($real, 0, strlen($rootReal)) === $rootReal) {
                         return $real;
                     }
                 }
@@ -201,13 +201,18 @@ class InvoiceService
      */
     public static function invoiceStorageRoot(): string
     {
-        $fromFile = dirname(__DIR__, 2) . DIRECTORY_SEPARATOR . 'storage' . DIRECTORY_SEPARATOR . 'app' . DIRECTORY_SEPARATOR . 'public';
-        $resolved = @realpath($fromFile);
-        if ($resolved !== false && is_dir($resolved)) {
-            return rtrim($resolved, DIRECTORY_SEPARATOR . '/');
-        }
-        if (is_dir($fromFile)) {
-            return rtrim($fromFile, DIRECTORY_SEPARATOR . '/');
+        try {
+            $base = dirname(dirname(__DIR__));
+            $fromFile = $base . DIRECTORY_SEPARATOR . 'storage' . DIRECTORY_SEPARATOR . 'app' . DIRECTORY_SEPARATOR . 'public';
+            $resolved = @realpath($fromFile);
+            if ($resolved !== false && is_dir($resolved)) {
+                return rtrim($resolved, DIRECTORY_SEPARATOR . '/');
+            }
+            if (is_dir($fromFile)) {
+                return rtrim($fromFile, DIRECTORY_SEPARATOR . '/');
+            }
+        } catch (\Throwable $e) {
+            // fall through to Laravel helper
         }
         return rtrim(storage_path('app/public'), DIRECTORY_SEPARATOR . '/');
     }
@@ -216,19 +221,32 @@ class InvoiceService
     public static function invoiceStorageRoots(): array
     {
         $roots = [];
-        $fromFile = dirname(__DIR__, 2) . DIRECTORY_SEPARATOR . 'storage' . DIRECTORY_SEPARATOR . 'app' . DIRECTORY_SEPARATOR . 'public';
-        foreach ([$fromFile, @realpath($fromFile)] as $p) {
-            if ($p !== false && $p !== '' && is_dir($p) && ! in_array($p, $roots, true)) {
-                $roots[] = rtrim($p, DIRECTORY_SEPARATOR . '/');
+        try {
+            $base = dirname(dirname(__DIR__));
+            $fromFile = $base . DIRECTORY_SEPARATOR . 'storage' . DIRECTORY_SEPARATOR . 'app' . DIRECTORY_SEPARATOR . 'public';
+            foreach ([$fromFile, @realpath($fromFile)] as $p) {
+                if ($p !== false && $p !== '' && is_dir($p) && ! in_array($p, $roots, true)) {
+                    $roots[] = rtrim($p, DIRECTORY_SEPARATOR . '/');
+                }
             }
+        } catch (\Throwable $e) {
+            // continue with Laravel paths
         }
-        $sp = storage_path('app/public');
-        if ($sp !== '' && ! in_array($sp, $roots, true)) {
-            $roots[] = rtrim($sp, DIRECTORY_SEPARATOR . '/');
+        try {
+            $sp = storage_path('app/public');
+            if ($sp !== '' && is_dir($sp) && ! in_array($sp, $roots, true)) {
+                $roots[] = rtrim($sp, DIRECTORY_SEPARATOR . '/');
+            }
+        } catch (\Throwable $e) {
+            // skip
         }
-        $bp = base_path('storage' . DIRECTORY_SEPARATOR . 'app' . DIRECTORY_SEPARATOR . 'public');
-        if ($bp !== '' && ! in_array($bp, $roots, true)) {
-            $roots[] = rtrim($bp, DIRECTORY_SEPARATOR . '/');
+        try {
+            $bp = base_path('storage' . DIRECTORY_SEPARATOR . 'app' . DIRECTORY_SEPARATOR . 'public');
+            if ($bp !== '' && is_dir($bp) && ! in_array($bp, $roots, true)) {
+                $roots[] = rtrim($bp, DIRECTORY_SEPARATOR . '/');
+            }
+        } catch (\Throwable $e) {
+            // skip
         }
         return array_values(array_unique($roots));
     }
@@ -245,70 +263,83 @@ class InvoiceService
     /**
      * Get invoice PDF raw content for download.
      * Tries every possible storage root (codebase-relative first so veritytrade/storage/... is found).
+     * Wrapped in try-catch so failures return null instead of 500.
      */
     public function getInvoicePdfContent(Invoice $invoice): ?string
     {
-        $invoiceNumber = trim((string) ($invoice->invoice_number ?? ''));
-        $pathsToTry = [];
-        $normalized = $this->normalizeStoredPdfPath($invoice->pdf_path);
-        if ($normalized !== null) {
-            $pathsToTry[] = $normalized;
-        }
-        $pathsToTry[] = self::invoiceRelativePath($invoiceNumber);
-        $pathsToTry = array_unique($pathsToTry);
-
-        foreach (self::invoiceStorageRoots() as $root) {
-            foreach ($pathsToTry as $rel) {
-                $rel = ltrim(str_replace(['\\', "\0"], ['/', ''], (string) $rel), '/');
-                if ($rel === '' || str_contains($rel, '..')) {
-                    continue;
-                }
-                $full = $root . DIRECTORY_SEPARATOR . str_replace('/', DIRECTORY_SEPARATOR, $rel);
-                if (is_file($full)) {
-                    $content = @file_get_contents($full);
-                    if ($content !== false && $content !== '') {
-                        return $content;
-                    }
-                }
-            }
-            $invoicesDir = $root . DIRECTORY_SEPARATOR . 'invoices';
-            if (is_dir($invoicesDir) && $invoiceNumber !== '') {
-                $found = $this->findInvoiceFileByNumber($invoicesDir, $invoiceNumber);
-                if ($found !== null && is_file($found)) {
-                    $content = @file_get_contents($found);
-                    if ($content !== false && $content !== '') {
-                        return $content;
-                    }
-                }
-            }
-        }
-
         try {
-            $disk = Storage::disk('public');
-            foreach ($pathsToTry as $rel) {
-                $rel = ltrim(str_replace(['\\', "\0"], ['/', ''], (string) $rel), '/');
-                if ($rel === '' || str_contains($rel, '..')) {
+            $invoiceNumber = trim((string) ($invoice->invoice_number ?? ''));
+            $pathsToTry = [];
+            $normalized = $this->normalizeStoredPdfPath($invoice->pdf_path);
+            if ($normalized !== null) {
+                $pathsToTry[] = $normalized;
+            }
+            $pathsToTry[] = self::invoiceRelativePath($invoiceNumber);
+            $pathsToTry = array_unique($pathsToTry);
+
+            $roots = self::invoiceStorageRoots();
+            if ($roots === []) {
+                $roots = [rtrim(storage_path('app/public'), DIRECTORY_SEPARATOR . '/')];
+            }
+
+            foreach ($roots as $root) {
+                if (! is_dir($root)) {
                     continue;
                 }
-                try {
-                    $content = $disk->get($rel);
-                    if ($content !== null && $content !== '') {
-                        return $content;
+                foreach ($pathsToTry as $rel) {
+                    $rel = ltrim(str_replace(['\\', "\0"], ['/', ''], (string) $rel), '/');
+                    if ($rel === '' || strpos($rel, '..') !== false) {
+                        continue;
                     }
-                } catch (\Throwable $e) {
-                    continue;
+                    $full = $root . DIRECTORY_SEPARATOR . str_replace('/', DIRECTORY_SEPARATOR, $rel);
+                    if (is_file($full)) {
+                        $content = @file_get_contents($full);
+                        if ($content !== false && $content !== '') {
+                            return $content;
+                        }
+                    }
+                }
+                $invoicesDir = $root . DIRECTORY_SEPARATOR . 'invoices';
+                if (is_dir($invoicesDir) && $invoiceNumber !== '') {
+                    $found = $this->findInvoiceFileByNumber($invoicesDir, $invoiceNumber);
+                    if ($found !== null && is_file($found)) {
+                        $content = @file_get_contents($found);
+                        if ($content !== false && $content !== '') {
+                            return $content;
+                        }
+                    }
+                }
+            }
+
+            try {
+                $disk = Storage::disk('public');
+                foreach ($pathsToTry as $rel) {
+                    $rel = ltrim(str_replace(['\\', "\0"], ['/', ''], (string) $rel), '/');
+                    if ($rel === '' || strpos($rel, '..') !== false) {
+                        continue;
+                    }
+                    try {
+                        $content = $disk->get($rel);
+                        if ($content !== null && $content !== '') {
+                            return $content;
+                        }
+                    } catch (\Throwable $e) {
+                        continue;
+                    }
+                }
+            } catch (\Throwable $e) {
+                // ignore
+            }
+
+            $resolved = $this->resolveInvoicePdfPath($invoice);
+            if ($resolved !== null && is_file($resolved)) {
+                $content = @file_get_contents($resolved);
+                if ($content !== false && $content !== '') {
+                    return $content;
                 }
             }
         } catch (\Throwable $e) {
-            // ignore
-        }
-
-        $resolved = $this->resolveInvoicePdfPath($invoice);
-        if ($resolved !== null && is_file($resolved)) {
-            $content = @file_get_contents($resolved);
-            if ($content !== false && $content !== '') {
-                return $content;
-            }
+            report($e);
         }
 
         return null;

@@ -164,30 +164,31 @@ class DashboardController extends Controller
         }
     }
 
-    /** Secured invoice download – serve PDF content directly to avoid response()->file() issues on some hosts. */
+    /** Secured invoice download – serve PDF content directly. Any exception returns friendly error instead of 500. */
     public function downloadInvoice(Invoice $invoice, InvoiceService $invoiceService): StreamedResponse|RedirectResponse
     {
-        if ($redirect = $this->ensureCustomer()) {
-            return $redirect;
-        }
-        if ($invoice->user_id !== (int) auth()->id()) {
-            abort(403);
-        }
-
-        $invoiceNumber = (string) ($invoice->invoice_number ?? '');
-        $filename = 'invoice-' . preg_replace('/[^a-zA-Z0-9\-_.]/', '', $invoiceNumber) . '.pdf';
-        $headers = [
-            'Content-Type' => 'application/pdf',
-            'Content-Disposition' => 'attachment; filename="' . $filename . '"',
-        ];
-
         try {
+            if ($redirect = $this->ensureCustomer()) {
+                return $redirect;
+            }
+            if ($invoice->user_id !== (int) auth()->id()) {
+                abort(403);
+            }
+
+            $invoiceNumber = (string) ($invoice->invoice_number ?? '');
+            $filename = 'invoice-' . preg_replace('/[^a-zA-Z0-9\-_.]/', '', $invoiceNumber) . '.pdf';
+            $headers = [
+                'Content-Type' => 'application/pdf',
+                'Content-Disposition' => 'attachment; filename="' . $filename . '"',
+            ];
+
             $content = $invoiceService->getInvoicePdfContent($invoice);
             if ($content !== null && $content !== '') {
                 return response($content, 200, $headers);
             }
         } catch (\Throwable $e) {
             report($e);
+            return back()->with('error', 'Unable to load invoice. Please try again later.');
         }
 
         return back()->with('error', 'Invoice file not found.');
