@@ -102,6 +102,7 @@
             <div>
                 <x-input-label for="state" :value="__('State (Nigeria)')" />
                 <input id="state" name="state" type="text"
+                       value="{{ old('state', $user->getDisplayState()) }}"
                        class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
                        list="ng_states"
                        x-model="state"
@@ -119,6 +120,7 @@
             <div>
                 <x-input-label for="city" :value="__('City')" />
                 <input id="city" name="city" type="text"
+                       value="{{ old('city', $user->getDisplayCity()) }}"
                        class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
                        :list="cities.length ? 'ng_cities' : null"
                        x-model="city"

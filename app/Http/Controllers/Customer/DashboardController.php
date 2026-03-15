@@ -157,7 +157,7 @@ class DashboardController extends Controller
         return view('customer.invoices', compact('invoices'));
     }
 
-    /** Secured invoice download – prevents direct file URLs that could be guessed */
+    /** Secured invoice download – use same disk root as where PDFs are written */
     public function downloadInvoice(Invoice $invoice): StreamedResponse|RedirectResponse
     {
         if ($redirect = $this->ensureCustomer()) {
@@ -179,6 +179,15 @@ class DashboardController extends Controller
         ];
 
         try {
+            // Prefer the disk's path so we read from the same place PDFs are written
+            $adapter = Storage::disk('public');
+            if (method_exists($adapter, 'path') && $adapter->exists($path)) {
+                $fullPath = $adapter->path($path);
+                if (is_file($fullPath)) {
+                    return response()->file($fullPath, $headers);
+                }
+            }
+
             $root = storage_path('app/public');
             $fullPath = $root . DIRECTORY_SEPARATOR . str_replace('/', DIRECTORY_SEPARATOR, $path);
             $real = @realpath($fullPath);

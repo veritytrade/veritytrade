@@ -280,10 +280,12 @@ class InvoiceService
         $path = $invoice->pdf_path;
         if (! $path || str_contains($path, '..')) {
             $dir = 'invoices';
-            $filename = 'invoice-' . $invoice->invoice_number . '.pdf';
+            $filename = 'invoice-' . preg_replace('/[^a-zA-Z0-9\-_.]/', '', $invoice->invoice_number) . '.pdf';
             $path = $dir . '/' . $filename;
             $invoice->pdf_path = $path;
         }
+        $path = ltrim(str_replace('\\', '/', $path), '/');
+        $invoice->pdf_path = $path;
         Storage::disk('public')->put($path, $pdf->output());
 
         $invoice->amount = $grandTotal;
@@ -369,8 +371,7 @@ class InvoiceService
         $pdf->setPaper('a4', 'portrait');
 
         $dir = 'invoices';
-        $slug = Str::slug($invoice->invoice_number . '-' . $first->id);
-        $filename = 'invoice-' . $invoice->invoice_number . '.pdf';
+        $filename = 'invoice-' . preg_replace('/[^a-zA-Z0-9\-_.]/', '', $invoice->invoice_number) . '.pdf';
         $path = $dir . '/' . $filename;
 
         Storage::disk('public')->put($path, $pdf->output());
