@@ -97,13 +97,14 @@ class InvoiceService
      */
     public function resolveInvoicePdfPath(Invoice $invoice): ?string
     {
+        $invoiceNumber = (string) ($invoice->invoice_number ?? '');
         $root = base_path('storage' . DIRECTORY_SEPARATOR . 'app' . DIRECTORY_SEPARATOR . 'public');
         $pathsToTry = [];
         $normalized = $this->normalizeStoredPdfPath($invoice->pdf_path);
         if ($normalized !== null) {
             $pathsToTry[] = $normalized;
         }
-        $pathsToTry[] = 'invoices/invoice-' . preg_replace('/[^a-zA-Z0-9\-_.]/', '', $invoice->invoice_number) . '.pdf';
+        $pathsToTry[] = 'invoices/invoice-' . preg_replace('/[^a-zA-Z0-9\-_.]/', '', $invoiceNumber) . '.pdf';
 
         foreach (array_unique($pathsToTry) as $path) {
             $path = ltrim(str_replace(['\\', "\0"], ['/', ''], (string) $path), '/');
@@ -133,7 +134,7 @@ class InvoiceService
 
         $invoicesDir = $root . DIRECTORY_SEPARATOR . 'invoices';
         if (is_dir($invoicesDir)) {
-            $name = 'invoice-' . preg_replace('/[^a-zA-Z0-9\-_.]/', '', $invoice->invoice_number) . '.pdf';
+            $name = 'invoice-' . preg_replace('/[^a-zA-Z0-9\-_.]/', '', $invoiceNumber) . '.pdf';
             $byName = $invoicesDir . DIRECTORY_SEPARATOR . $name;
             if (is_file($byName)) {
                 return $byName;

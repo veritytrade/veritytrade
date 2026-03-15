@@ -151,11 +151,17 @@ class DashboardController extends Controller
             return $redirect;
         }
 
-        $invoices = Invoice::where('user_id', auth()->id())
-            ->latest('id')
-            ->paginate(20);
+        try {
+            $invoices = Invoice::where('user_id', auth()->id())
+                ->latest('id')
+                ->paginate(20);
 
-        return view('customer.invoices', compact('invoices'));
+            return view('customer.invoices', compact('invoices'));
+        } catch (\Throwable $e) {
+            report($e);
+            $invoices = new \Illuminate\Pagination\LengthAwarePaginator([], 0, 20);
+            return view('customer.invoices', compact('invoices'))->with('error', 'Unable to load invoices. Please try again.');
+        }
     }
 
     /** Secured invoice download – uses same file resolution as admin (InvoiceService). */
@@ -168,15 +174,21 @@ class DashboardController extends Controller
             abort(403);
         }
 
-        $resolved = $invoiceService->resolveInvoicePdfPath($invoice);
-        if ($resolved === null) {
-            return back()->with('error', 'Invoice file not found.');
-        }
+        try {
+            $resolved = $invoiceService->resolveInvoicePdfPath($invoice);
+            if ($resolved === null || ! is_file($resolved)) {
+                return back()->with('error', 'Invoice file not found.');
+            }
 
-        $filename = 'invoice-' . preg_replace('/[^a-zA-Z0-9\-_.]/', '', $invoice->invoice_number) . '.pdf';
-        return response()->file($resolved, [
-            'Content-Type' => 'application/pdf',
-            'Content-Disposition' => 'attachment; filename="' . $filename . '"',
-        ]);
+            $invoiceNumber = (string) ($invoice->invoice_number ?? '');
+            $filename = 'invoice-' . preg_replace('/[^a-zA-Z0-9\-_.]/', '', $invoiceNumber) . '.pdf';
+            return response()->file($resolved, [
+                'Content-Type' => 'application/pdf',
+                'Content-Disposition' => 'attachment; filename="' . $filename . '"',
+            ]);
+        } catch (\Throwable $e) {
+            report($e);
+            return back()->with('error', 'Unable to load invoice. Please try again or contact support.');
+        }
     }
 }
