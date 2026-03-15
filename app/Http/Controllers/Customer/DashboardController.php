@@ -166,25 +166,31 @@ class DashboardController extends Controller
         if ($invoice->user_id !== (int) auth()->id()) {
             abort(403);
         }
-        if (! $invoice->pdf_path || str_contains($invoice->pdf_path, '..')) {
+        $rawPath = $invoice->pdf_path;
+        if (! $rawPath || str_contains($rawPath, '..')) {
             return back()->with('error', 'Invoice file not available.');
         }
-        $path = $invoice->pdf_path;
+
+        $path = ltrim(str_replace(['\\', "\0"], ['/', ''], $rawPath), '/');
+        $filename = 'invoice-' . preg_replace('/[^a-zA-Z0-9\-_.]/', '', $invoice->invoice_number) . '.pdf';
+        $headers = [
+            'Content-Type' => 'application/pdf',
+            'Content-Disposition' => 'attachment; filename="' . $filename . '"',
+        ];
 
         try {
-            $fullPath = storage_path('app/public/' . str_replace(['\\', '..'], ['/', ''], $path));
-            if (is_file($fullPath)) {
-                return response()->file($fullPath, [
-                    'Content-Type' => 'application/pdf',
-                    'Content-Disposition' => 'attachment; filename="invoice-' . preg_replace('/[^a-zA-Z0-9\-_.]/', '', $invoice->invoice_number) . '.pdf"',
-                ]);
+            $root = storage_path('app/public');
+            $fullPath = $root . DIRECTORY_SEPARATOR . str_replace('/', DIRECTORY_SEPARATOR, $path);
+            $real = @realpath($fullPath);
+            if ($real !== false && is_file($real)) {
+                $rootReal = realpath($root);
+                if ($rootReal !== false && str_starts_with($real, $rootReal)) {
+                    return response()->file($real, $headers);
+                }
             }
+
             if (Storage::disk('public')->exists($path)) {
-                return Storage::disk('public')->download(
-                    $path,
-                    'invoice-' . $invoice->invoice_number . '.pdf',
-                    ['Content-Type' => 'application/pdf']
-                );
+                return Storage::disk('public')->download($path, $filename, ['Content-Type' => 'application/pdf']);
             }
         } catch (\Throwable $e) {
             report($e);
