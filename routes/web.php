@@ -180,6 +180,7 @@ Route::prefix('admin')
         });
 
         Route::middleware('permission:generate_invoices')->group(function () {
+            Route::get('/invoices', [\App\Http\Controllers\Admin\InvoiceSettingsController::class, 'index'])->name('admin.invoices.index');
             Route::get('/invoice-settings', [\App\Http\Controllers\Admin\InvoiceSettingsController::class, 'edit'])->name('admin.invoice-settings.edit');
             Route::get('/invoice-settings/preview', [\App\Http\Controllers\Admin\InvoiceSettingsController::class, 'preview'])->name('admin.invoice-settings.preview');
             Route::get('/invoice-settings/preview-html', [\App\Http\Controllers\Admin\InvoiceSettingsController::class, 'previewHtml'])->name('admin.invoice-settings.preview-html');

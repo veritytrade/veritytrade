@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\Invoice;
 use App\Models\InvoiceRequest;
 use App\Models\Order;
 use App\Models\User;
@@ -14,6 +15,36 @@ use Symfony\Component\HttpFoundation\Response;
 
 class InvoiceSettingsController extends Controller
 {
+    /**
+     * Admin Invoices Center – list of all invoices (like big platforms), read-only.
+     * Filters by customer email and invoice number; does not change any generation logic.
+     */
+    public function index(Request $request): View
+    {
+        $query = Invoice::with(['user', 'orders.shipment'])->latest('id');
+
+        $customerEmail = trim((string) $request->query('email', ''));
+        $invoiceNumber = trim((string) $request->query('invoice_number', ''));
+
+        if ($customerEmail !== '') {
+            $query->whereHas('user', function ($q) use ($customerEmail) {
+                $q->where('email', 'like', '%' . $customerEmail . '%');
+            });
+        }
+
+        if ($invoiceNumber !== '') {
+            $query->where('invoice_number', 'like', '%' . $invoiceNumber . '%');
+        }
+
+        $invoices = $query->paginate(20)->withQueryString();
+
+        return view('admin.invoices.index', [
+            'invoices' => $invoices,
+            'customerEmail' => $customerEmail,
+            'invoiceNumber' => $invoiceNumber,
+        ]);
+    }
+
     public function generateIndex(Request $request): RedirectResponse
     {
         $params = [];
