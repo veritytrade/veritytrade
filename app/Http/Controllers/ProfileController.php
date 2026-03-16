@@ -94,12 +94,21 @@ class ProfileController extends Controller
         }
 
         $code = str_pad((string) random_int(0, 999999), 6, '0', STR_PAD_LEFT);
-        AccountDeletionOtp::where('user_id', $user->id)->whereNull('used_at')->update(['used_at' => now()]);
-        AccountDeletionOtp::create([
-            'user_id' => $user->id,
-            'code_hash' => Hash::make($code),
-            'expires_at' => now()->addMinutes(15),
-        ]);
+        try {
+            AccountDeletionOtp::where('user_id', $user->id)->whereNull('used_at')->update(['used_at' => now()]);
+            AccountDeletionOtp::create([
+                'user_id' => $user->id,
+                'code_hash' => Hash::make($code),
+                'expires_at' => now()->addMinutes(15),
+            ]);
+        } catch (\Throwable $e) {
+            Log::error('Account deletion OTP table missing or not migrated.', [
+                'user_id' => $user->id,
+                'error' => $e->getMessage(),
+            ]);
+            return Redirect::route('profile.edit')
+                ->with('error', 'Account deletion is temporarily unavailable. Please contact support.');
+        }
 
         $from = mail_from();
         try {

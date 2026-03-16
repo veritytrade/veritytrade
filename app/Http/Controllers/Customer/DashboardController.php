@@ -166,8 +166,10 @@ class DashboardController extends Controller
     /**
      * Invoice download – minimal path to avoid 500.
      * Uses numeric id (no route model binding), single path: storage/app/public/invoices/invoice-XXX.pdf.
+     *
+     * Note: no return type hint to avoid PHP type errors when returning a normal Response instance.
      */
-    public function downloadInvoice(int $id): StreamedResponse|RedirectResponse
+    public function downloadInvoice(int $id)
     {
         try {
             if ($redirect = $this->ensureCustomer()) {

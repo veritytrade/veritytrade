@@ -91,12 +91,6 @@ class InvoiceService
             ->first();
     }
 
-    /** Instance alias so resolveInvoicePdfPath uses same roots as getInvoicePdfContent. */
-    private function invoiceStorageRoots(): array
-    {
-        return self::invoiceStorageRoots();
-    }
-
     /**
      * Resolve invoice PDF to full filesystem path for streaming (admin + customer download).
      * Tries multiple roots and path strategies so the file is found regardless of environment.
@@ -112,7 +106,7 @@ class InvoiceService
         }
         $pathsToTry[] = 'invoices/invoice-' . $safeNumber . '.pdf';
 
-        foreach ($this->invoiceStorageRoots() as $root) {
+        foreach (self::invoiceStorageRoots() as $root) {
             if (! is_dir($root)) {
                 continue;
             }
