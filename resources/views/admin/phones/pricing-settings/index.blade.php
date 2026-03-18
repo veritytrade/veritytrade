@@ -6,7 +6,10 @@
                     <h2 class="text-xl md:text-2xl font-bold text-green-800">Phone Pricing Settings</h2>
                     <p class="text-sm text-gray-500 mt-1">Logistics (CNY), exchange rate, profit margin (NGN) and rounding. Formula: (CNY + logistics) × rate + margin, then round. Only one active setting is used.</p>
                 </div>
-                <a href="{{ route('admin.phones.pricing-settings.create') }}" class="bg-green-600 hover:bg-green-700 text-white px-6 py-2.5 rounded-lg font-medium whitespace-nowrap">+ Add Setting</a>
+                <div class="flex flex-wrap gap-3">
+                    <a href="{{ route('admin.phones.brands.index') }}" class="inline-flex items-center justify-center min-h-[44px] bg-gray-200 hover:bg-gray-300 text-gray-800 px-4 py-2.5 rounded-lg font-medium whitespace-nowrap">← Brands</a>
+                    <a href="{{ route('admin.phones.pricing-settings.create') }}" class="inline-flex items-center justify-center min-h-[44px] bg-green-600 hover:bg-green-700 text-white px-6 py-2.5 rounded-lg font-medium whitespace-nowrap">+ Add Setting</a>
+                </div>
             </div>
         </div>
 
@@ -55,8 +58,5 @@
             </table>
         </div>
 
-        <p class="mt-4 text-sm text-gray-500">
-            <a href="{{ route('admin.phones.brands.index') }}" class="text-green-600 hover:text-green-800">← Back to Brands</a>
-        </p>
     </div>
 </x-admin-layout>
