@@ -22,13 +22,14 @@
         @endif
 
         <div class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-            <table class="min-w-full divide-y divide-gray-200">
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200">
                 <thead class="bg-gray-50">
                     <tr>
                         <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Name</th>
                         <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Slug</th>
                         <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
-                        <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Actions</th>
+                        <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase whitespace-nowrap">Actions</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-200">
@@ -46,7 +47,7 @@
                                     {{ $brand->is_active ? 'Active' : 'Inactive' }}
                                 </span>
                             </td>
-                            <td class="px-4 py-3 text-right text-sm space-x-2">
+                            <td class="px-4 py-3 text-right text-sm space-x-2 whitespace-nowrap">
                                 <a href="{{ route('admin.phones.models.index', $brand) }}" class="text-green-600 hover:text-green-800 font-medium">Models</a>
                                 <a href="{{ route('admin.phones.brands.edit', $brand) }}" class="text-green-600 hover:text-green-800">Edit</a>
                                 <form action="{{ route('admin.phones.brands.destroy', $brand) }}" method="POST" class="inline" onsubmit="return confirm('Delete this brand and all its models?');">
@@ -65,7 +66,8 @@
                         </tr>
                     @endforelse
                 </tbody>
-            </table>
+                </table>
+            </div>
         </div>
 
     </div>
