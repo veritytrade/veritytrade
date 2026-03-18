@@ -91,6 +91,28 @@
                     Generate Invoices →
                 </a>
             </div>
+            @if(auth()->user()?->hasPermission('assign_shipment') && ($ordersWithoutShipment ?? 0) > 0)
+                {{-- Orders Without Shipment --}}
+                <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4 md:p-6 hover:shadow-md transition">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm text-gray-500 mb-1">Orders Without Shipment</p>
+                            <p class="text-2xl md:text-3xl font-bold text-blue-700">
+                                {{ $ordersWithoutShipment }}
+                            </p>
+                        </div>
+                        <div class="bg-blue-100 p-3 rounded-lg">
+                            <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l3-8H6.4M7 13L5.4 5M7 13l-2 7h14M10 17h4"/>
+                            </svg>
+                        </div>
+                    </div>
+                    <a href="{{ route('admin.orders.index', ['unassigned' => 1]) }}"
+                       class="text-sm text-blue-700 hover:text-blue-900 font-medium mt-3 inline-block">
+                        Assign Shipments →
+                    </a>
+                </div>
+            @endif
             @if(auth()->user()?->hasPermission('approve_orders') && ($ordersPendingApproval ?? 0) > 0)
                 {{-- Orders Pending Approval --}}
                 <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4 md:p-6 hover:shadow-md transition">

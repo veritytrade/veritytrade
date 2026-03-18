@@ -25,10 +25,14 @@ class AdminDashboardController extends Controller
 
         $ordersPendingApproval = Order::where('status', 'pending_approval')->count();
 
+        $ordersWithoutShipment = Order::whereNull('shipment_id')
+            ->whereNotIn('status', ['cancelled', 'delivered'])
+            ->count();
+
         $pendingInvoiceRequestsCount = InvoiceRequest::where('status', 'pending')
             ->whereHas('shipment')
             ->count();
 
-        return view('admin.dashboard', compact('packagesInTransit', 'ordersPendingApproval', 'pendingInvoiceRequestsCount'));
+        return view('admin.dashboard', compact('packagesInTransit', 'ordersPendingApproval', 'ordersWithoutShipment', 'pendingInvoiceRequestsCount'));
     }
 }

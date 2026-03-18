@@ -43,6 +43,10 @@ class OrderController extends Controller
             });
         }
 
+        if ($request->boolean('unassigned')) {
+            $query->whereNull('shipment_id');
+        }
+
         $orders = $query->paginate(15)->withQueryString();
 
         return view('admin.orders.index', compact('orders'));
