@@ -14,14 +14,14 @@
 
     <div x-cloak x-show="sidebarOpen" x-transition.opacity class="fixed inset-0 bg-black/40 z-30 md:hidden" @click="sidebarOpen = false"></div>
 
-    <aside x-cloak class="fixed inset-y-0 left-0 w-64 bg-gradient-to-b from-green-700 to-green-800 shadow-lg z-40 overflow-y-auto transform transition-transform duration-200"
+    <aside x-cloak class="fixed inset-y-0 left-0 w-64 bg-gradient-to-b from-green-700 to-green-800 shadow-lg z-40 transform transition-transform duration-200 flex flex-col"
            :class="sidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'">
         <div class="p-6 border-b border-green-600">
             <h1 class="text-xl font-bold text-white">VerityTrade Admin</h1>
             <p class="text-xs text-green-200 mt-1">Management Panel</p>
         </div>
 
-        <nav class="mt-4 px-3 pb-24" @click="sidebarOpen = false">
+        <nav class="mt-4 px-3 pb-6 flex-1 overflow-y-auto" @click="sidebarOpen = false">
             <ul class="space-y-1">
                 @if($user->hasPermission('view_dashboard'))
                     <li><a href="{{ route('admin.dashboard') }}" class="flex items-center px-4 py-3 text-sm font-medium rounded-lg {{ request()->routeIs('admin.dashboard') ? 'bg-white text-green-700' : 'text-green-100 hover:bg-green-600 hover:text-white' }}">Dashboard</a></li>
@@ -56,7 +56,7 @@
             </ul>
         </nav>
 
-        <div class="absolute bottom-0 left-0 right-0 p-4 border-t border-green-600 bg-green-800">
+        <div class="p-4 border-t border-green-600 bg-green-800">
             <form method="POST" action="{{ route('admin.logout') }}">
                 @csrf
                 <button type="submit" class="w-full rounded-lg bg-red-600 hover:bg-red-700 text-white py-2 text-sm font-medium">Logout</button>
