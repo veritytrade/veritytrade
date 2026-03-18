@@ -45,6 +45,7 @@
                 @endif
                 @if($user->hasPermission('approve_users'))
                     <li><a href="{{ route('admin.registered-users.index') }}" class="flex items-center px-4 py-3 text-sm font-medium rounded-lg {{ request()->routeIs('admin.registered-users.*') ? 'bg-white text-green-700' : 'text-green-100 hover:bg-green-600 hover:text-white' }}">Registered Users</a></li>
+                    <li><a href="{{ route('admin.customers.show') }}" class="flex items-center px-4 py-3 text-sm font-medium rounded-lg {{ request()->routeIs('admin.customers.*') ? 'bg-white text-green-700' : 'text-green-100 hover:bg-green-600 hover:text-white' }}">Customer 360</a></li>
                 @endif
                 @if($user->hasPermission('manage_feature_flags'))
                     <li><a href="{{ route('admin.feature-flags.index') }}" class="flex items-center px-4 py-3 text-sm font-medium rounded-lg {{ request()->routeIs('admin.feature-flags.*') ? 'bg-white text-green-700' : 'text-green-100 hover:bg-green-600 hover:text-white' }}">Feature Flags</a></li>

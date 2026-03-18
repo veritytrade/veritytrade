@@ -4,6 +4,8 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Role;
+use App\Models\Order;
+use App\Models\Invoice;
 use App\Models\User;
 use App\Support\Audit;
 use Illuminate\Http\RedirectResponse;
@@ -41,6 +43,54 @@ class UserManagementController extends Controller
         }
 
         return view('admin.registered-users.index', compact('users'));
+    }
+
+    /**
+     * Read-only Customer 360 page: search by email or WhatsApp name and see profile, orders, shipments, and invoices.
+     */
+    public function customer360(Request $request)
+    {
+        $query = trim((string) $request->query('q'));
+        $user = null;
+        $orders = collect();
+        $shipments = collect();
+        $invoices = collect();
+        $approxOutstanding = 0.0;
+
+        if ($query !== '') {
+            $user = User::where('email', $query)
+                ->orWhere('username', $query)
+                ->orWhere('username', 'like', '%' . $query . '%')
+                ->orWhere('name', 'like', '%' . $query . '%')
+                ->orderByDesc('id')
+                ->first();
+
+            if ($user) {
+                $orders = Order::with(['shipment.currentStage'])
+                    ->where('user_id', $user->id)
+                    ->orderByDesc('id')
+                    ->get();
+
+                $shipments = $orders->pluck('shipment')->filter()->unique('id')->values();
+
+                $invoices = Invoice::where('user_id', $user->id)
+                    ->orderByDesc('id')
+                    ->get();
+
+                $approxOutstanding = (float) $orders->sum(function (Order $order): float {
+                    return (float) ($order->outstanding_balance_ngn ?? 0);
+                });
+            }
+        }
+
+        return view('admin.customers.show', [
+            'query' => $query,
+            'user' => $user,
+            'orders' => $orders,
+            'shipments' => $shipments,
+            'invoices' => $invoices,
+            'approxOutstanding' => $approxOutstanding,
+        ]);
     }
 
     public function assignRoleByEmail(Request $request): RedirectResponse

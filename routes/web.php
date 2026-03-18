@@ -224,6 +224,9 @@ Route::prefix('admin')
             Route::get('/registered-users', [\App\Http\Controllers\Admin\UserManagementController::class, 'registeredUsers'])
                 ->name('admin.registered-users.index');
 
+            Route::get('/customers/360', [\App\Http\Controllers\Admin\UserManagementController::class, 'customer360'])
+                ->name('admin.customers.show');
+
             Route::post('/registered-users/{user}/approve', [\App\Http\Controllers\Admin\UserManagementController::class, 'approve'])
                 ->name('admin.registered-users.approve');
 
