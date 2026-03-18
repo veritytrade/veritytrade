@@ -82,7 +82,15 @@ class EmailCodeVerificationController extends Controller
         }
 
         $latestCode->update(['used_at' => now()]);
-        $user->forceFill(['email_verified_at' => now()])->save();
+
+        $now = now();
+        $user->forceFill([
+            'email_verified_at' => $now,
+            // Automatically approve user after successful OTP verification.
+            // Admin approval button remains as fallback when OTP is not working.
+            'is_approved' => true,
+            'approved_at' => $user->approved_at ?? $now,
+        ])->save();
 
         return redirect()->route('login')->with('status', 'Email verified successfully. You can now log in.');
     }

@@ -8,7 +8,8 @@
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
 <body class="bg-gray-50 text-gray-900">
-    @php($customerName = auth()->user()?->name ?: 'Customer')
+    @php($customer = auth()->user())
+    @php($customerName = $customer?->username ?: $customer?->name ?: 'Customer')
     <header class="bg-white border-b border-gray-200 sticky top-0 z-20">
         <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
             <a href="{{ route('dashboard') }}" class="flex items-center gap-2 shrink-0">

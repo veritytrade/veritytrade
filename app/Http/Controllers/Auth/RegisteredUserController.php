@@ -35,6 +35,7 @@ class RegisteredUserController extends Controller
         $normalizedEmail = strtolower(trim((string) $request->input('email')));
 
         $validated = $request->validate([
+            'username' => ['required', 'string', 'max:255'],
             'name' => ['required', 'string', 'max:255'],
             'email' => [
                 'required',
@@ -66,6 +67,7 @@ class RegisteredUserController extends Controller
             $existingUser->restore();
             $existingUser->forceFill([
                 'name' => $request->name,
+                'username' => $request->username,
                 'email' => $normalizedEmail,
                 'phone' => $normalizedPhone,
                 'state' => $state,
@@ -81,6 +83,7 @@ class RegisteredUserController extends Controller
         } else {
             $user = User::create([
                 'name' => $request->name,
+                'username' => $request->username,
                 'email' => $normalizedEmail,
                 'phone' => $normalizedPhone,
                 'state' => $state,

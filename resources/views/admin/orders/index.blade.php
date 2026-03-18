@@ -37,7 +37,9 @@
                                         <span class="ml-1 px-1.5 py-0.5 text-xs rounded bg-amber-100 text-amber-800">Pending</span>
                                     @endif
                                 </td>
-                                <td class="p-3 sm:p-4 text-gray-700">{{ $o->user?->name ?? '—' }}</td>
+                                <td class="p-3 sm:p-4 text-gray-700">
+                                    {{ $o->user?->username ?? $o->user?->name ?? '—' }}
+                                </td>
                                 <td class="p-3 sm:p-4">{{ $eff?->name ?? '—' }}</td>
                                 <td class="p-3 sm:p-4 text-gray-600 hidden md:table-cell">{{ $o->invoice?->invoice_number ?? '—' }}</td>
                                 <td class="p-3 sm:p-4">

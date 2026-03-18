@@ -33,12 +33,26 @@
                         @forelse($shipments as $s)
                             <tr class="hover:bg-gray-50 transition">
                                 <td class="p-3 sm:p-4 font-medium text-gray-800">
-                                    <span class="inline-flex items-center gap-1.5">
-                                        <a href="{{ route('admin.shipments.show', $s) }}" class="text-green-600 hover:text-green-700">
-                                            {{ Str::limit($s->chinese_tracking_code, 12) }}
-                                        </a>
-                                        <button type="button" data-copy="{{ e($s->chinese_tracking_code) }}" onclick="navigator.clipboard.writeText(this.dataset.copy); this.textContent='Copied!'; setTimeout(()=>this.textContent='Copy', 1500)" class="text-xs text-gray-500 hover:text-green-600 font-medium" title="Copy full code">Copy</button>
-                                    </span>
+                                    <div class="flex flex-col gap-0.5">
+                                        <span class="inline-flex items-center gap-1.5">
+                                            <a href="{{ route('admin.shipments.show', $s) }}" class="text-green-600 hover:text-green-700">
+                                                {{ Str::limit($s->chinese_tracking_code, 12) }}
+                                            </a>
+                                            <button type="button"
+                                                    data-copy="{{ e($s->chinese_tracking_code) }}"
+                                                    onclick="navigator.clipboard.writeText(this.dataset.copy); this.textContent='Copied!'; setTimeout(()=>this.textContent='Copy', 1500)"
+                                                    class="text-xs text-gray-500 hover:text-green-600 font-medium"
+                                                    title="Copy full code">
+                                                Copy
+                                            </button>
+                                        </span>
+                                        @php($logisticsShort = (string) \Illuminate\Support\Str::of($s->logistics_company)->before(' '))
+                                        @if($logisticsShort !== '')
+                                            <span class="text-xs text-gray-500">
+                                                {{ $logisticsShort }}
+                                            </span>
+                                        @endif
+                                    </div>
                                 </td>
                                 <td class="p-3 sm:p-4 text-gray-600 hidden sm:table-cell">{{ $s->logistics_company }}</td>
                                 <td class="p-3 sm:p-4">{{ $s->currentStage?->name ?? '—' }}</td>

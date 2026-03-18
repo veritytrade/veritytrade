@@ -20,7 +20,10 @@ class OrderController extends Controller
 {
     public function index(Request $request): View
     {
-        $query = Order::with(['user', 'shipment', 'invoice', 'currentStageOverride'])->latest('id');
+        $query = Order::with(['user', 'shipment', 'invoice', 'currentStageOverride'])
+            ->where('status', '!=', 'delivered')
+            ->orderByRaw('shipment_id IS NULL DESC')
+            ->latest('id');
 
         if ($status = $request->query('status')) {
             $query->where('status', $status);

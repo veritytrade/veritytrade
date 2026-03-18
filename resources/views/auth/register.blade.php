@@ -15,10 +15,19 @@
         @csrf
         @php($ngStatesCities = (array) (config('nigeria.states_cities') ?? []))
 
-        <!-- Name -->
+        <!-- WhatsApp Name (username) -->
         <div>
-            <x-input-label for="name" :value="__('Name')" />
-            <x-text-input id="name" class="block mt-1 w-full" type="text" name="name" :value="old('name')" required autofocus autocomplete="name" />
+            <x-input-label for="username" :value="__('WhatsApp Name (Username)')" />
+            <x-text-input id="username" class="block mt-1 w-full" type="text" name="username" :value="old('username')" required autofocus autocomplete="nickname" placeholder="Same name as on your WhatsApp" />
+            <p class="mt-1 text-xs text-gray-500">This name shows on your dashboard and orders for easy tracking.</p>
+            <x-input-error :messages="$errors->get('username')" class="mt-2" />
+        </div>
+
+        <!-- Full Name (for invoices) -->
+        <div class="mt-4">
+            <x-input-label for="name" :value="__('Full Name')" />
+            <x-text-input id="name" class="block mt-1 w-full" type="text" name="name" :value="old('name')" required autocomplete="name" />
+            <p class="mt-1 text-xs text-gray-500">Used on your invoices and receipts.</p>
             <x-input-error :messages="$errors->get('name')" class="mt-2" />
         </div>
 

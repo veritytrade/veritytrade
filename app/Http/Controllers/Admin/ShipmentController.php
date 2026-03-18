@@ -15,6 +15,7 @@ class ShipmentController extends Controller
     {
         $shipments = Shipment::withCount('orders')
             ->with('currentStage')
+            ->where('status', '!=', 'completed')
             ->latest('id')
             ->paginate(15)
             ->withQueryString();

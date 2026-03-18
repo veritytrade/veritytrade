@@ -163,7 +163,7 @@ td { padding: 8px; vertical-align: top; }
 <td style="text-align:right;width:150px;padding-bottom:2px;">
     @if($qrImageUrl)
         <img src="{{ $qrImageUrl }}" alt="QR" style="width:72px;height:72px;display:block;" />
-        <span style="font-size:12px;color:#2C3E50;margin-top:-5px;margin-left:40px;display:block;text-align:right;white-space:nowrap;">Scan for Support</span>
+        <span style="font-size:12px;color:#2C3E50;margin-top:-5px;display:block;text-align:center;white-space:nowrap;">Scan for Support</span>
     @endif
 </td>
 </tr>
