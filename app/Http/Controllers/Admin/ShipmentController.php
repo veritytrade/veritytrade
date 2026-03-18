@@ -13,12 +13,20 @@ class ShipmentController extends Controller
 {
     public function index(Request $request): View
     {
-        $shipments = Shipment::withCount('orders')
+        $query = Shipment::withCount('orders')
             ->with('currentStage')
             ->where('status', '!=', 'completed')
-            ->latest('id')
-            ->paginate(15)
-            ->withQueryString();
+            ->latest('id');
+
+        if ($code = trim((string) $request->query('code'))) {
+            $query->where('chinese_tracking_code', 'like', '%' . $code . '%');
+        }
+
+        if ($logistics = trim((string) $request->query('logistics'))) {
+            $query->where('logistics_company', 'like', '%' . $logistics . '%');
+        }
+
+        $shipments = $query->paginate(15)->withQueryString();
 
         return view('admin.shipments.index', compact('shipments'));
     }

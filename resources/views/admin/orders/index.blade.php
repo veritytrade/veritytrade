@@ -15,6 +15,40 @@
                  class="mb-4 p-4 bg-green-100 border border-green-200 text-green-800 rounded-lg">{{ session('success') }}</div>
         @endif
 
+        {{-- Filters --}}
+        <div class="mb-4 bg-white rounded-xl border border-gray-200 p-4">
+            <form method="GET" action="{{ route('admin.orders.index') }}" class="grid grid-cols-1 sm:grid-cols-4 gap-3 text-sm">
+                <div>
+                    <label class="block text-xs font-semibold text-gray-600 mb-1">Customer (email or WhatsApp name)</label>
+                    <input type="text" name="customer" value="{{ request('customer') }}"
+                           class="w-full rounded-lg border border-gray-300 px-3 py-2 focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                           placeholder="Search by customer">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-gray-600 mb-1">Shipment code</label>
+                    <input type="text" name="shipment" value="{{ request('shipment') }}"
+                           class="w-full rounded-lg border border-gray-300 px-3 py-2 focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                           placeholder="Chinese tracking code">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-gray-600 mb-1">Invoice number</label>
+                    <input type="text" name="invoice" value="{{ request('invoice') }}"
+                           class="w-full rounded-lg border border-gray-300 px-3 py-2 focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                           placeholder="e.g. VT-...">
+                </div>
+                <div class="flex items-end gap-2">
+                    <button type="submit"
+                            class="px-4 py-2 rounded-lg bg-green-600 hover:bg-green-700 text-white font-medium min-h-[40px]">
+                        Filter
+                    </button>
+                    <a href="{{ route('admin.orders.index') }}"
+                       class="px-3 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50 min-h-[40px]">
+                        Reset
+                    </a>
+                </div>
+            </form>
+        </div>
+
         <div class="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm">
             <div class="overflow-x-auto">
                 <table class="w-full text-sm">

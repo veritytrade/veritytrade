@@ -29,6 +29,26 @@ class OrderController extends Controller
             $query->where('status', $status);
         }
 
+        if ($customer = trim((string) $request->query('customer'))) {
+            $query->whereHas('user', function ($q) use ($customer): void {
+                $q->where('email', 'like', '%' . $customer . '%')
+                    ->orWhere('username', 'like', '%' . $customer . '%')
+                    ->orWhere('name', 'like', '%' . $customer . '%');
+            });
+        }
+
+        if ($shipmentCode = trim((string) $request->query('shipment'))) {
+            $query->whereHas('shipment', function ($q) use ($shipmentCode): void {
+                $q->where('chinese_tracking_code', 'like', '%' . $shipmentCode . '%');
+            });
+        }
+
+        if ($invoiceNumber = trim((string) $request->query('invoice'))) {
+            $query->whereHas('invoice', function ($q) use ($invoiceNumber): void {
+                $q->where('invoice_number', 'like', '%' . $invoiceNumber . '%');
+            });
+        }
+
         $orders = $query->paginate(15)->withQueryString();
 
         return view('admin.orders.index', compact('orders'));
