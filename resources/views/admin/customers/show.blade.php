@@ -77,7 +77,7 @@
                     <div class="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
                         <div class="p-3 rounded-lg bg-gray-50 border border-gray-200">
                             <div class="text-xs text-gray-500">Total Orders</div>
-                            <div class="mt-1 text-lg font-semibold text-gray-900">{{ $orders->total() }}</div>
+                            <div class="mt-1 text-lg font-semibold text-gray-900">{{ $orders ? $orders->count() : 0 }}</div>
                         </div>
                         <div class="p-3 rounded-lg bg-gray-50 border border-gray-200">
                             <div class="text-xs text-gray-500">Shipments</div>
@@ -119,7 +119,7 @@
                                 <tr class="hover:bg-gray-50">
                                     <td class="p-3">
                                         <div class="font-medium text-gray-800">
-                                            {{ Str::limit($order->product_name ?? 'Order #'.$order->id, 30) }}
+                                            {{ \Illuminate\Support\Str::limit($order->product_name ?? 'Order #'.$order->id, 30) }}
                                         </div>
                                         <div class="text-xs text-gray-500">ID: {{ $order->id }}</div>
                                     </td>
