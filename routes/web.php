@@ -261,6 +261,10 @@ Route::prefix('admin')
                 ->name('admin.roles.permissions.update');
         });
 
+        // Global admin quick search (customers, orders, shipments, invoices)
+        Route::post('/search', \App\Http\Controllers\Admin\AdminSearchController::class)
+            ->name('admin.search');
+
         // Shipments & Orders (tracking) - create routes MUST come before {id} routes
         Route::middleware('permission:view_tracking')->group(function () {
             Route::get('/shipments', [\App\Http\Controllers\Admin\ShipmentController::class, 'index'])->name('admin.shipments.index');

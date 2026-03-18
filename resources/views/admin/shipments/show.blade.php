@@ -4,6 +4,7 @@
         <div>
             <a href="{{ route('admin.shipments.index') }}" class="text-green-600 hover:text-green-700 text-sm font-medium">← Shipments</a>
             <h2 class="text-xl sm:text-2xl font-bold text-gray-900 mt-2">Shipment Details</h2>
+            <p class="text-xs text-gray-400 mt-1">Last updated: {{ optional($shipment->updated_at)->format('d M Y H:i') ?? '—' }}</p>
         </div>
         @if(auth()->user()->hasPermission('update_shipment_stage'))
             <a href="{{ route('admin.shipments.edit', $shipment) }}" class="inline-flex items-center justify-center min-h-[44px] px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium rounded-lg">

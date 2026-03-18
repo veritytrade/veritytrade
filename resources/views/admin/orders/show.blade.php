@@ -6,6 +6,7 @@
         @if($order->invoice)
             <p class="text-sm text-gray-600 mt-1">Invoice: {{ $order->invoice->invoice_number }}</p>
         @endif
+        <p class="text-xs text-gray-400 mt-1">Last updated: {{ optional($order->updated_at)->format('d M Y H:i') ?? '—' }}</p>
     </div>
 
     @if(session('success'))
@@ -41,7 +42,7 @@
                 @endif
             </dd>
             <dt class="text-gray-500">Shipment</dt>
-            <dd class="font-medium text-gray-800">{{ $order->shipment ? $order->shipment->logistics_company . ' (' . Str::limit($order->shipment->chinese_tracking_code, 8) . ')' : 'Not assigned' }}</dd>
+            <dd class="font-medium text-gray-800">{{ $order->shipment ? $order->shipment->logistics_company . ' (' . \Illuminate\Support\Str::limit($order->shipment->chinese_tracking_code, 8) . ')' : 'Not assigned' }}</dd>
             @if($order->invoiceRequest?->isPending())
                 <dt class="text-gray-500">Invoice</dt>
                 <dd class="font-medium text-amber-700">Requested by customer</dd>

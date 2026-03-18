@@ -73,7 +73,21 @@
 
                 {{-- Quick stats --}}
                 <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4 lg:col-span-2">
-                    <h3 class="text-sm font-semibold text-gray-700 mb-3">Overview</h3>
+                    <div class="flex items-center justify-between mb-3 gap-3">
+                        <h3 class="text-sm font-semibold text-gray-700">Overview</h3>
+                        <div class="flex flex-wrap gap-2 text-xs">
+                            <a href="{{ route('admin.orders.index', ['customer' => $user->email]) }}"
+                               class="px-2 py-1 rounded-lg border border-gray-200 text-gray-700 hover:bg-gray-50">
+                                View Orders
+                            </a>
+                            @if($user->email)
+                                <a href="{{ route('admin.invoice-settings.edit', ['email' => $user->email]) }}"
+                                   class="px-2 py-1 rounded-lg border border-gray-200 text-gray-700 hover:bg-gray-50">
+                                    Open Invoice Settings
+                                </a>
+                            @endif
+                        </div>
+                    </div>
                     <div class="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
                         <div class="p-3 rounded-lg bg-gray-50 border border-gray-200">
                             <div class="text-xs text-gray-500">Total Orders</div>
@@ -99,9 +113,28 @@
 
             {{-- Orders list --}}
             <div class="bg-white rounded-lg shadow-sm border border-gray-200 mb-6">
-                <div class="px-4 py-3 border-b border-gray-100 flex items-center justify-between">
-                    <h3 class="text-sm font-semibold text-gray-700">Orders</h3>
-                    <span class="text-xs text-gray-500">Newest first</span>
+                <div class="px-4 py-3 border-b border-gray-100 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+                    <div>
+                        <h3 class="text-sm font-semibold text-gray-700">Orders</h3>
+                        <span class="text-xs text-gray-500">Newest first</span>
+                    </div>
+                    <form method="GET" action="{{ route('admin.customers.show') }}" class="flex items-center gap-2 text-xs">
+                        <input type="hidden" name="q" value="{{ $query }}">
+                        <label class="text-gray-500">Filter by status:</label>
+                        <select name="order_status"
+                                class="rounded border border-gray-300 px-2 py-1">
+                            <option value="">All</option>
+                            @foreach(['pending_approval' => 'Pending approval', 'processing' => 'Processing', 'shipped' => 'Shipped', 'delivered' => 'Delivered', 'cancelled' => 'Cancelled'] as $value => $label)
+                                <option value="{{ $value }}" {{ ($orderStatus ?? '') === $value ? 'selected' : '' }}>
+                                    {{ $label }}
+                                </option>
+                            @endforeach
+                        </select>
+                        <button type="submit"
+                                class="px-2 py-1 rounded bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium">
+                            Apply
+                        </button>
+                    </form>
                 </div>
                 <div class="overflow-x-auto">
                     <table class="w-full text-sm">

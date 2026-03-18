@@ -33,6 +33,23 @@ class AdminDashboardController extends Controller
             ->whereHas('shipment')
             ->count();
 
-        return view('admin.dashboard', compact('packagesInTransit', 'ordersPendingApproval', 'ordersWithoutShipment', 'pendingInvoiceRequestsCount'));
+        $staleInvoiceRequestsCount = InvoiceRequest::where('status', 'pending')
+            ->where('created_at', '<', now()->subDays(3))
+            ->count();
+
+        $ordersOnCompletedShipmentsNotDelivered = Order::where('status', '!=', 'delivered')
+            ->whereHas('shipment', function ($q): void {
+                $q->where('status', 'completed');
+            })
+            ->count();
+
+        return view('admin.dashboard', compact(
+            'packagesInTransit',
+            'ordersPendingApproval',
+            'ordersWithoutShipment',
+            'pendingInvoiceRequestsCount',
+            'staleInvoiceRequestsCount',
+            'ordersOnCompletedShipmentsNotDelivered'
+        ));
     }
 }

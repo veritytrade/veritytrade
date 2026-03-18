@@ -51,6 +51,7 @@ class UserManagementController extends Controller
     public function customer360(Request $request)
     {
         $query = trim((string) $request->query('q'));
+        $orderStatus = trim((string) $request->query('order_status'));
         $user = null;
         $orders = collect();
         $shipments = collect();
@@ -68,8 +69,13 @@ class UserManagementController extends Controller
             if ($user) {
                 $orders = Order::with(['shipment.currentStage'])
                     ->where('user_id', $user->id)
-                    ->orderByDesc('id')
-                    ->get();
+                    ->orderByDesc('id');
+
+                if (in_array($orderStatus, ['pending_approval', 'processing', 'shipped', 'delivered', 'cancelled', 'pending'], true)) {
+                    $orders->where('status', $orderStatus);
+                }
+
+                $orders = $orders->get();
 
                 $shipments = $orders->pluck('shipment')->filter()->unique('id')->values();
 
@@ -85,6 +91,7 @@ class UserManagementController extends Controller
 
         return view('admin.customers.show', [
             'query' => $query,
+            'orderStatus' => $orderStatus,
             'user' => $user,
             'orders' => $orders,
             'shipments' => $shipments,

@@ -159,12 +159,14 @@
             @endif
         </div>
 
-        {{-- Info Box --}}
+        {{-- Info Box & Health --}}
         <div class="mt-6 bg-blue-50 border border-blue-200 p-4 md:p-6 rounded-lg">
-            <h3 class="font-semibold text-blue-800 mb-3">📊 Dashboard Tips</h3>
+            <h3 class="font-semibold text-blue-800 mb-3">📊 Dashboard Tips & Health</h3>
             <ul class="text-sm text-blue-700 space-y-2">
                 <li>• Use Feature Flags to gradually roll out new modules</li>
                 <li>• Customer approvals and staff permissions control access</li>
+                <li>• Pending invoice requests older than 3 days: <span class="font-semibold">{{ $staleInvoiceRequestsCount ?? 0 }}</span></li>
+                <li>• Orders on <span class="font-semibold">completed</span> shipments but not delivered: <span class="font-semibold">{{ $ordersOnCompletedShipmentsNotDelivered ?? 0 }}</span></li>
             </ul>
         </div>
     </div>

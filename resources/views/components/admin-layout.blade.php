@@ -65,10 +65,24 @@
     </aside>
 
     <div class="md:ml-64 min-h-screen">
-        <header class="bg-white shadow-sm p-4 flex justify-between items-center md:hidden sticky top-0 z-30">
-            <button type="button" @click="sidebarOpen = true" class="inline-flex items-center justify-center rounded-lg border border-gray-200 p-2 text-gray-600">Menu</button>
-            <span class="font-bold text-green-700">VerityTrade Admin</span>
-            <div class="w-9"></div>
+        <header class="bg-white shadow-sm p-4 flex flex-col gap-3 md:flex-row md:items-center md:justify-between sticky top-0 z-30 border-b border-gray-100">
+            <div class="flex items-center justify-between md:justify-start gap-3">
+                <button type="button" @click="sidebarOpen = true" class="inline-flex md:hidden items-center justify-center rounded-lg border border-gray-200 p-2 text-gray-600">Menu</button>
+                <span class="font-bold text-green-700">VerityTrade Admin</span>
+            </div>
+            @if($user && ($user->hasPermission('view_dashboard') || $user->hasPermission('approve_users') || $user->hasPermission('view_tracking')))
+                <form method="POST" action="{{ route('admin.search') }}" class="flex items-center gap-2 max-w-md w-full">
+                    @csrf
+                    <input type="text"
+                           name="q"
+                           class="flex-1 rounded-lg border border-gray-300 px-3 py-1.5 text-sm focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                           placeholder="Quick search: customer, order, shipment, invoice">
+                    <button type="submit"
+                            class="px-3 py-1.5 rounded-lg bg-green-600 hover:bg-green-700 text-white text-xs font-medium">
+                        Search
+                    </button>
+                </form>
+            @endif
         </header>
 
         <main class="p-4 md:p-6">
