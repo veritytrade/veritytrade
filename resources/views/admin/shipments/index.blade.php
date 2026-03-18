@@ -19,13 +19,7 @@
 
         {{-- Filters --}}
         <div class="mb-4 bg-white rounded-xl border border-gray-200 p-4">
-            <form method="GET" action="{{ route('admin.shipments.index') }}" class="grid grid-cols-1 sm:grid-cols-3 gap-3 text-sm">
-                <div>
-                    <label class="block text-xs font-semibold text-gray-600 mb-1">Chinese code</label>
-                    <input type="text" name="code" value="{{ request('code') }}"
-                           class="w-full rounded-lg border border-gray-300 px-3 py-2 focus:ring-2 focus:ring-green-500 focus:border-green-500"
-                           placeholder="Search by tracking code">
-                </div>
+            <form method="GET" action="{{ route('admin.shipments.index') }}" class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
                 <div>
                     <label class="block text-xs font-semibold text-gray-600 mb-1">Logistics</label>
                     <input type="text" name="logistics" value="{{ request('logistics') }}"

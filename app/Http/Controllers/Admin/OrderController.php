@@ -37,15 +37,9 @@ class OrderController extends Controller
             });
         }
 
-        if ($shipmentCode = trim((string) $request->query('shipment'))) {
-            $query->whereHas('shipment', function ($q) use ($shipmentCode): void {
-                $q->where('chinese_tracking_code', 'like', '%' . $shipmentCode . '%');
-            });
-        }
-
-        if ($invoiceNumber = trim((string) $request->query('invoice'))) {
-            $query->whereHas('invoice', function ($q) use ($invoiceNumber): void {
-                $q->where('invoice_number', 'like', '%' . $invoiceNumber . '%');
+        if ($logistics = trim((string) $request->query('logistics'))) {
+            $query->whereHas('shipment', function ($q) use ($logistics): void {
+                $q->where('logistics_company', 'like', '%' . $logistics . '%');
             });
         }
 

@@ -17,7 +17,7 @@
 
         {{-- Filters --}}
         <div class="mb-4 bg-white rounded-xl border border-gray-200 p-4">
-            <form method="GET" action="{{ route('admin.orders.index') }}" class="grid grid-cols-1 sm:grid-cols-4 gap-3 text-sm">
+            <form method="GET" action="{{ route('admin.orders.index') }}" class="grid grid-cols-1 sm:grid-cols-3 gap-3 text-sm">
                 <div>
                     <label class="block text-xs font-semibold text-gray-600 mb-1">Customer (email or WhatsApp name)</label>
                     <input type="text" name="customer" value="{{ request('customer') }}"
@@ -25,16 +25,10 @@
                            placeholder="Search by customer">
                 </div>
                 <div>
-                    <label class="block text-xs font-semibold text-gray-600 mb-1">Shipment code</label>
-                    <input type="text" name="shipment" value="{{ request('shipment') }}"
+                    <label class="block text-xs font-semibold text-gray-600 mb-1">Logistics</label>
+                    <input type="text" name="logistics" value="{{ request('logistics') }}"
                            class="w-full rounded-lg border border-gray-300 px-3 py-2 focus:ring-2 focus:ring-green-500 focus:border-green-500"
-                           placeholder="Chinese tracking code">
-                </div>
-                <div>
-                    <label class="block text-xs font-semibold text-gray-600 mb-1">Invoice number</label>
-                    <input type="text" name="invoice" value="{{ request('invoice') }}"
-                           class="w-full rounded-lg border border-gray-300 px-3 py-2 focus:ring-2 focus:ring-green-500 focus:border-green-500"
-                           placeholder="e.g. VT-...">
+                           placeholder="e.g. DHL, FedEx">
                 </div>
                 <div class="flex items-end gap-2">
                     <button type="submit"
