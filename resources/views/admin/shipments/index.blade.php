@@ -83,12 +83,6 @@
                                            class="inline-flex items-center justify-center min-h-[36px] px-3 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm font-medium">
                                             View
                                         </a>
-                                        @if(auth()->user()->hasPermission('update_shipment_stage'))
-                                            <a href="{{ route('admin.shipments.edit', $s) }}"
-                                               class="inline-flex items-center justify-center min-h-[36px] px-3 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg text-sm font-medium">
-                                                Edit
-                                            </a>
-                                        @endif
                                     </div>
                                 </td>
                             </tr>
