@@ -143,7 +143,7 @@ class DashboardController extends Controller
         return back()->with('status', 'Thank you! Your order has been marked as received.');
     }
 
-    public function tracking(): View|RedirectResponse
+    public function tracking(Request $request): View|RedirectResponse
     {
         if ($redirect = $this->ensureCustomer()) {
             return $redirect;
