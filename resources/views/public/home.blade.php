@@ -1,118 +1,131 @@
 <x-app-layout>
-    <div class="min-h-screen">
-        @if($hero && $hero->hero_visible && ($hero->hero_headline || $hero->hero_image_path))
-            @php
-                $hasText = $hero->hero_headline || $hero->hero_subheadline || $hero->hero_cta_text;
-                $hasImage = (bool) $hero->hero_image_path;
-                $useSplit = $hasText && $hasImage;
-            @endphp
-            <section class="bg-gradient-to-br from-slate-50 via-white to-green-50/30 border-b border-gray-100">
-                <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 lg:py-16">
-                    <div class="flex flex-col {{ $useSplit ? 'lg:flex-row lg:items-center lg:justify-between lg:gap-12 xl:gap-16' : '' }} {{ $hasImage && !$hasText ? 'items-center' : '' }}">
-                        @if($hasText)
-                            <div class="flex-1 text-center {{ $useSplit ? 'lg:text-left order-2 lg:order-1' : '' }}">
-                                @if($hero->hero_headline)
-                                    <h1 class="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-gray-900 leading-tight">
-                                        {{ $hero->hero_headline }}
-                                    </h1>
-                                @endif
-                                @if($hero->hero_subheadline)
-                                    <p class="mt-3 sm:mt-4 text-base sm:text-lg text-gray-600 max-w-xl mx-auto {{ $useSplit ? 'lg:mx-0' : '' }}">{{ $hero->hero_subheadline }}</p>
-                                @endif
-                                @if($hero->hero_cta_text)
-                                    <a href="{{ $hero->hero_cta_url ?: '#hot-deals' }}" class="inline-flex items-center justify-center mt-6 sm:mt-8 px-6 sm:px-8 py-3 sm:py-4 bg-blue-600 hover:bg-blue-700 text-white font-semibold text-base sm:text-lg rounded-xl shadow-lg hover:shadow-xl transition-all duration-200">
-                                        {{ $hero->hero_cta_text }}
-                                    </a>
-                                @endif
-                            </div>
-                        @endif
-                        @if($hasImage)
-                            <div class="flex-shrink-0 flex justify-center {{ $useSplit ? 'lg:justify-end order-1 lg:order-2 lg:w-[45%] xl:w-[50%]' : 'w-full' }}">
-                                <img src="{{ $hero->hero_image_url }}" alt="" class="w-full {{ $useSplit ? 'max-w-sm sm:max-w-md lg:max-w-full max-h-[280px] sm:max-h-[320px] lg:max-h-[360px] xl:max-h-[420px]' : 'max-w-md lg:max-w-2xl xl:max-w-3xl max-h-[320px] lg:max-h-[400px]' }} object-contain object-center drop-shadow-2xl" loading="eager">
-                            </div>
-                        @endif
-                    </div>
-                </div>
-            </section>
-        @endif
-
+    <div class="min-h-screen bg-gray-50">
         @php
-            $activeFilterCount = 0;
-            $activeFilterCount += !empty($filters['q']) ? 1 : 0;
-            $activeFilterCount += $filters['min_price'] !== null ? 1 : 0;
-            $activeFilterCount += $filters['max_price'] !== null ? 1 : 0;
-            $activeFilterCount += ($filters['sort'] ?? 'latest') !== 'latest' ? 1 : 0;
-            $hasActiveFilters = $activeFilterCount > 0;
+            $sections = collect([
+                ['id' => 'hot', 'title' => 'Hot Deals', 'deals' => $deals->take(10)],
+                ['id' => 'recommend', 'title' => 'Recommended', 'deals' => $deals->slice(0, 8)],
+                ['id' => 'new-arrival', 'title' => 'New Arrival', 'deals' => $deals->slice(2, 8)],
+                ['id' => 'budget', 'title' => 'Budget Picks', 'deals' => $deals->slice(4, 8)],
+                ['id' => 'premium', 'title' => 'Premium Picks', 'deals' => $deals->slice(6, 8)],
+            ])->filter(fn ($section) => $section['deals']->isNotEmpty())->values();
         @endphp
 
-        <div class="max-w-7xl mx-auto px-4 py-6 lg:py-8 lg:grid lg:grid-cols-[280px,1fr] lg:gap-6">
-            <aside class="mb-5 lg:mb-0">
-                <div class="bg-white border border-gray-200 rounded-xl shadow-sm p-4 lg:sticky lg:top-24">
-                    <div class="flex items-center justify-between mb-3">
-                        <h2 class="text-base font-bold text-gray-900">Browse Deals</h2>
-                        @if($hasActiveFilters)
-                            <span class="text-xs px-2 py-0.5 rounded-full bg-green-100 text-green-700">{{ $activeFilterCount }} active</span>
-                        @endif
-                    </div>
-
-                    <form method="GET" action="{{ route('home') }}" class="space-y-3">
-                        <div>
-                            <label class="block text-xs font-semibold text-gray-600 mb-1">Keyword</label>
-                            <input type="text" name="q" value="{{ $filters['q'] ?? '' }}" placeholder="Search title/spec"
-                                   class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-green-500 focus:border-green-500">
-                        </div>
-
-                        <div class="grid grid-cols-2 gap-2">
-                            <div>
-                                <label class="block text-xs font-semibold text-gray-600 mb-1">Min Price</label>
-                                <input type="number" min="0" step="1" name="min_price" value="{{ $filters['min_price'] ?? '' }}"
-                                       class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-green-500 focus:border-green-500"
-                                       placeholder="0">
-                            </div>
-                            <div>
-                                <label class="block text-xs font-semibold text-gray-600 mb-1">Max Price</label>
-                                <input type="number" min="0" step="1" name="max_price" value="{{ $filters['max_price'] ?? '' }}"
-                                       class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-green-500 focus:border-green-500"
-                                       placeholder="Any">
-                            </div>
-                        </div>
-
-                        <div>
-                            <label class="block text-xs font-semibold text-gray-600 mb-1">Sort</label>
-                            <select name="sort" class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-green-500 focus:border-green-500">
-                                <option value="latest" {{ ($filters['sort'] ?? 'latest') === 'latest' ? 'selected' : '' }}>Latest</option>
-                                <option value="price_asc" {{ ($filters['sort'] ?? 'latest') === 'price_asc' ? 'selected' : '' }}>Price: Low to High</option>
-                                <option value="price_desc" {{ ($filters['sort'] ?? 'latest') === 'price_desc' ? 'selected' : '' }}>Price: High to Low</option>
-                            </select>
-                        </div>
-
-                        <div class="grid grid-cols-2 gap-2 pt-1">
-                            <button type="submit" class="min-h-[42px] rounded-lg bg-green-600 hover:bg-green-700 text-white text-sm font-semibold">
-                                Apply
+        <div class="max-w-7xl mx-auto px-3 sm:px-4 py-4 sm:py-6">
+            <div class="grid grid-cols-[92px,1fr] sm:grid-cols-[110px,1fr] gap-3 sm:gap-4">
+                <aside class="sticky top-20 self-start">
+                    <div class="bg-white border border-gray-200 rounded-xl p-2 shadow-sm" id="categoryRail">
+                        @foreach($sections as $index => $section)
+                            <button type="button"
+                                    data-cat-target="{{ $section['id'] }}"
+                                    class="cat-btn w-full text-left px-2.5 py-2.5 rounded-lg text-xs sm:text-sm font-medium transition {{ $index === 0 ? 'bg-green-50 text-green-700 border border-green-200' : 'text-gray-600 hover:bg-gray-100' }}">
+                                {{ $section['title'] }}
                             </button>
-                            <a href="{{ route('home') }}" class="min-h-[42px] inline-flex items-center justify-center rounded-lg border border-gray-300 text-gray-700 text-sm font-semibold hover:bg-gray-50">
-                                Reset
-                            </a>
-                        </div>
-                    </form>
-                </div>
-            </aside>
+                        @endforeach
+                    </div>
+                </aside>
 
-            <section>
-                <div class="mb-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-                    <h2 class="text-sm text-gray-600">
-                        Showing <span class="font-semibold text-gray-900">{{ $deals->count() }}</span> hot deal{{ $deals->count() === 1 ? '' : 's' }}
-                    </h2>
-                    @if($hasActiveFilters)
-                        <p class="text-xs text-gray-500">Filtered results based on your current criteria.</p>
+                <section id="catalogPane" class="space-y-4 sm:space-y-5">
+                    @if($hero && $hero->hero_visible && ($hero->hero_headline || $hero->hero_subheadline || $hero->hero_image_path))
+                        <article class="bg-gradient-to-r from-green-600 to-blue-600 rounded-xl p-4 text-white shadow-sm">
+                            <h1 class="text-base sm:text-lg font-bold leading-tight">{{ $hero->hero_headline ?: 'Premium gadgets from trusted sourcing' }}</h1>
+                            @if($hero->hero_subheadline)
+                                <p class="text-xs sm:text-sm mt-1 text-green-50">{{ $hero->hero_subheadline }}</p>
+                            @endif
+                            @if($hero->hero_cta_text)
+                                <a href="{{ $hero->hero_cta_url ?: '#'.($sections->first()['id'] ?? 'hot') }}"
+                                   class="mt-3 inline-flex items-center justify-center rounded-lg bg-white text-green-700 px-3 py-2 text-xs sm:text-sm font-semibold">
+                                    {{ $hero->hero_cta_text }}
+                                </a>
+                            @endif
+                        </article>
                     @endif
-                </div>
-                <x-hot-deals-section
-                    :deals="$deals"
-                    :empty-title="$hasActiveFilters ? 'No deals match your filters' : 'No hot deals available right now'"
-                    :empty-subtitle="$hasActiveFilters ? 'Try clearing or adjusting keyword, price range, or sort.' : 'Check back soon for fresh offers.'"
-                />
-            </section>
+
+                    <article class="grid grid-cols-3 gap-2 bg-white border border-gray-200 rounded-xl p-3 text-center">
+                        <div>
+                            <div class="text-base sm:text-lg font-bold text-gray-900">24h</div>
+                            <div class="text-[11px] text-gray-500">Fast support</div>
+                        </div>
+                        <div>
+                            <div class="text-base sm:text-lg font-bold text-gray-900">100%</div>
+                            <div class="text-[11px] text-gray-500">Verified listing</div>
+                        </div>
+                        <div>
+                            <div class="text-base sm:text-lg font-bold text-gray-900">Secure</div>
+                            <div class="text-[11px] text-gray-500">WhatsApp flow</div>
+                        </div>
+                    </article>
+
+                    @forelse($sections as $section)
+                        <article id="{{ $section['id'] }}" data-section-id="{{ $section['id'] }}" class="scroll-mt-24">
+                            <h2 class="text-sm sm:text-base font-bold text-gray-900 mb-2.5">{{ $section['title'] }}</h2>
+                            <div class="space-y-2.5">
+                                @foreach($section['deals'] as $deal)
+                                    @php
+                                        $image = ($deal->images ?? collect())->first();
+                                        $imageUrl = $image ? storage_asset($image->image_path) : null;
+                                        $priceText = preg_replace('/\s+/u', '', trim((string) ($deal->price_display ?? '')));
+                                        $priceValue = preg_replace('/^(?:₦|NGN|N)/u', '', $priceText);
+                                        $priceValue = $priceValue !== '' ? $priceValue : $priceText;
+                                        $specs = collect(explode("\n", (string) $deal->description))
+                                            ->map(fn ($line) => trim($line))
+                                            ->filter()
+                                            ->map(function ($line) {
+                                                [$key, $value] = array_pad(explode(':', $line, 2), 2, '');
+                                                return ['key' => trim($key), 'value' => trim($value)];
+                                            })
+                                            ->filter(fn ($item) => $item['key'] !== '' && $item['value'] !== '' && !in_array(strtolower($item['key']), ['model', 'price', 'cost', 'amount'], true))
+                                            ->take(2);
+                                        $buyUrl = filled($deal->uuid) ? route('deal.whatsapp', ['deal' => $deal->uuid]) : null;
+                                    @endphp
+
+                                    <div class="bg-white border border-gray-200 rounded-xl p-2.5 sm:p-3 shadow-sm">
+                                        <div class="flex gap-2.5">
+                                            <div class="w-20 h-20 sm:w-24 sm:h-24 rounded-lg bg-gray-100 overflow-hidden shrink-0">
+                                                @if($imageUrl)
+                                                    <img src="{{ $imageUrl }}" alt="{{ $deal->title }}" class="w-full h-full object-contain p-1.5">
+                                                @else
+                                                    <div class="w-full h-full flex items-center justify-center text-xs text-gray-400">No image</div>
+                                                @endif
+                                            </div>
+                                            <div class="min-w-0 flex-1">
+                                                <h3 class="text-sm sm:text-base font-semibold text-gray-900 leading-tight line-clamp-2">{{ $deal->title }}</h3>
+                                                @if($specs->isNotEmpty())
+                                                    <div class="mt-1.5 flex flex-wrap gap-1">
+                                                        @foreach($specs as $spec)
+                                                            <span class="text-[10px] sm:text-xs px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-100">
+                                                                {{ \Illuminate\Support\Str::limit($spec['value'], 26) }}
+                                                            </span>
+                                                        @endforeach
+                                                    </div>
+                                                @endif
+                                                <div class="mt-2 flex items-center justify-between gap-2">
+                                                    <div class="text-green-600 font-extrabold text-sm sm:text-base">
+                                                        ₦{{ $priceValue !== '' ? $priceValue : '—' }}
+                                                    </div>
+                                                    @if($buyUrl)
+                                                        <a href="{{ $buyUrl }}" class="inline-flex items-center justify-center rounded-lg bg-green-600 hover:bg-green-700 text-white text-[11px] sm:text-xs font-bold px-3 py-1.5">
+                                                            WhatsApp Buy
+                                                        </a>
+                                                    @else
+                                                        <span class="inline-flex items-center justify-center rounded-lg bg-gray-200 text-gray-500 text-[11px] sm:text-xs font-semibold px-3 py-1.5">
+                                                            Unavailable
+                                                        </span>
+                                                    @endif
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                @endforeach
+                            </div>
+                        </article>
+                    @empty
+                        <div class="bg-white border border-gray-200 rounded-xl p-8 text-center text-gray-500">
+                            <p class="font-semibold text-gray-800">No hot deals available right now.</p>
+                            <p class="text-sm mt-1">Check back soon for fresh listings.</p>
+                        </div>
+                    @endforelse
+                </section>
+            </div>
         </div>
 
         <div class="fixed bottom-4 right-4 md:hidden z-50">
@@ -127,7 +140,49 @@
         <style>
             .scrollbar-hide::-webkit-scrollbar { display: none; }
             .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+            .cat-btn.active {
+                background: #ecfdf3;
+                color: #047857;
+                border: 1px solid #bbf7d0;
+            }
         </style>
+
+        <script>
+            document.addEventListener('DOMContentLoaded', function() {
+                const buttons = document.querySelectorAll('.cat-btn');
+                const sections = document.querySelectorAll('[data-section-id]');
+
+                const setActive = (id) => {
+                    buttons.forEach((btn) => {
+                        btn.classList.toggle('active', btn.dataset.catTarget === id);
+                    });
+                };
+
+                buttons.forEach((btn) => {
+                    btn.addEventListener('click', () => {
+                        const id = btn.dataset.catTarget;
+                        const target = document.getElementById(id);
+                        if (target) {
+                            target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                            setActive(id);
+                        }
+                    });
+                });
+
+                if ('IntersectionObserver' in window && sections.length > 0) {
+                    const observer = new IntersectionObserver((entries) => {
+                        const visible = entries
+                            .filter((entry) => entry.isIntersecting)
+                            .sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0];
+                        if (visible) {
+                            setActive(visible.target.dataset.sectionId);
+                        }
+                    }, { threshold: [0.3, 0.5, 0.7] });
+
+                    sections.forEach((section) => observer.observe(section));
+                }
+            });
+        </script>
 
     </div>
 </x-app-layout>
