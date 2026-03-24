@@ -12,6 +12,7 @@ use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\File;
 use Illuminate\View\View;
 use Symfony\Component\HttpFoundation\Response;
@@ -59,7 +60,8 @@ class OrderController extends Controller
             ->orderBy('name')
             ->get();
         $shipments = Shipment::where('status', 'active')->orderBy('id', 'desc')->get();
-        return view('admin.orders.create', compact('customers', 'shipments'));
+        $supplierPlatforms = Order::supplierPlatforms();
+        return view('admin.orders.create', compact('customers', 'shipments', 'supplierPlatforms'));
     }
 
     public function store(Request $request): RedirectResponse
@@ -70,6 +72,9 @@ class OrderController extends Controller
         $rules = [
             'user_id' => 'required|exists:users,id',
             'gadget_description' => 'required|string|max:5000',
+            'supplier_platform' => ['nullable', Rule::in(array_keys(Order::supplierPlatforms()))],
+            'supplier_order_number' => 'nullable|string|max:120|unique:orders,supplier_order_number',
+            'supplier_logistics_code' => 'nullable|string|max:120|unique:orders,supplier_logistics_code',
             'outstanding_balance_ngn' => 'nullable|numeric|min:0',
             'logistics_type' => 'nullable|string|in:within_lagos,outside_lagos,combined',
             'shipment_id' => 'nullable|exists:shipments,id',
@@ -100,6 +105,18 @@ class OrderController extends Controller
         $outstanding = (float) ($valid['outstanding_balance_ngn'] ?? 0);
         $paidAmount = $totalAmount - $outstanding;
         $paymentStatus = $outstanding <= 0 ? 'paid' : ($paidAmount > 0 ? 'partial' : 'pending');
+        $supplierOrderNumber = trim((string) ($valid['supplier_order_number'] ?? ''));
+        $supplierLogisticsCode = trim((string) ($valid['supplier_logistics_code'] ?? ''));
+        $mappingStatus = null;
+        $mappedAt = null;
+        $mappedBy = null;
+        if ($supplierLogisticsCode !== '') {
+            $mappingStatus = 'mapped';
+            $mappedAt = now();
+            $mappedBy = auth()->id();
+        } elseif ($supplierOrderNumber !== '') {
+            $mappingStatus = 'pending_logistics';
+        }
 
         $shipment = !empty($valid['shipment_id']) ? Shipment::with('currentStage')->find($valid['shipment_id']) : null;
         $status = $shipment
@@ -119,6 +136,12 @@ class OrderController extends Controller
             'status' => $status,
             'shipment_id' => $valid['shipment_id'] ?? null,
             'current_stage_id' => null,
+            'supplier_platform' => $valid['supplier_platform'] ?? null,
+            'supplier_order_number' => $supplierOrderNumber !== '' ? $supplierOrderNumber : null,
+            'supplier_logistics_code' => $supplierLogisticsCode !== '' ? $supplierLogisticsCode : null,
+            'mapping_status' => $mappingStatus,
+            'mapped_at' => $mappedAt,
+            'mapped_by' => $mappedBy,
         ]);
 
         $slips = $request->file('payment_slips');
@@ -156,13 +179,17 @@ class OrderController extends Controller
         $users = User::orderBy('name')->get();
         $shipments = Shipment::where('status', 'active')->orderBy('id', 'desc')->get();
         $stages = TrackingStage::orderBy('position')->get();
-        return view('admin.orders.edit', compact('order', 'users', 'shipments', 'stages'));
+        $supplierPlatforms = Order::supplierPlatforms();
+        return view('admin.orders.edit', compact('order', 'users', 'shipments', 'stages', 'supplierPlatforms'));
     }
 
     public function update(Request $request, Order $order): RedirectResponse
     {
         $valid = $request->validate([
             'user_id' => 'required|exists:users,id',
+            'supplier_platform' => ['nullable', Rule::in(array_keys(Order::supplierPlatforms()))],
+            'supplier_order_number' => ['nullable', 'string', 'max:120', Rule::unique('orders', 'supplier_order_number')->ignore($order->id)],
+            'supplier_logistics_code' => ['nullable', 'string', 'max:120', Rule::unique('orders', 'supplier_logistics_code')->ignore($order->id)],
             'product_name' => 'required|string|max:255',
             'spec_summary' => 'nullable|string|max:500',
             'full_description' => 'nullable|string|max:5000',
@@ -201,6 +228,21 @@ class OrderController extends Controller
 
         $valid['outstanding_balance_ngn'] = (float) ($valid['outstanding_balance_ngn'] ?? 0);
         $valid['logistics_type'] = $valid['logistics_type'] ?? 'within_lagos';
+        $valid['supplier_order_number'] = trim((string) ($valid['supplier_order_number'] ?? '')) ?: null;
+        $valid['supplier_logistics_code'] = trim((string) ($valid['supplier_logistics_code'] ?? '')) ?: null;
+        if ($valid['supplier_logistics_code']) {
+            $valid['mapping_status'] = 'mapped';
+            $valid['mapped_at'] = now();
+            $valid['mapped_by'] = auth()->id();
+        } elseif ($valid['supplier_order_number']) {
+            $valid['mapping_status'] = 'pending_logistics';
+            $valid['mapped_at'] = null;
+            $valid['mapped_by'] = null;
+        } else {
+            $valid['mapping_status'] = null;
+            $valid['mapped_at'] = null;
+            $valid['mapped_by'] = null;
+        }
         $totalAmount = (float) ($valid['total_amount_ngn'] ?? 0);
         $outstanding = $valid['outstanding_balance_ngn'];
         $paidAmount = $totalAmount - $outstanding;

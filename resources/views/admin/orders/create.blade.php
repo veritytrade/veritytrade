@@ -55,6 +55,39 @@ Price: 1,030,000">{{ old('gadget_description') }}</textarea>
                 @error('outstanding_balance_ngn')<p class="text-red-600 text-sm mt-1">{{ $message }}</p>@enderror
             </div>
 
+            <div class="rounded-lg border border-gray-200 p-4 space-y-3">
+                <h3 class="text-sm font-semibold text-gray-800">Supplier Mapping (Optional)</h3>
+                <p class="text-xs text-gray-500">Choose platform and paste supplier order number now. Add supplier logistics code later when available.</p>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Supplier Platform</label>
+                    <select name="supplier_platform"
+                            class="w-full rounded-lg border border-gray-300 px-4 py-3 text-base focus:ring-2 focus:ring-green-500 focus:border-green-500 min-h-[48px]">
+                        <option value="">Select platform</option>
+                        @foreach($supplierPlatforms as $value => $label)
+                            <option value="{{ $value }}" {{ old('supplier_platform') === $value ? 'selected' : '' }}>{{ $label }}</option>
+                        @endforeach
+                    </select>
+                    @error('supplier_platform')<p class="text-red-600 text-sm mt-1">{{ $message }}</p>@enderror
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Supplier Order Number</label>
+                    <input type="text" name="supplier_order_number" value="{{ old('supplier_order_number') }}"
+                           placeholder="e.g. PDD-20260318-12345"
+                           class="w-full rounded-lg border border-gray-300 px-4 py-3 text-base focus:ring-2 focus:ring-green-500 focus:border-green-500">
+                    @error('supplier_order_number')<p class="text-red-600 text-sm mt-1">{{ $message }}</p>@enderror
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Supplier Logistics Code</label>
+                    <input type="text" name="supplier_logistics_code" value="{{ old('supplier_logistics_code') }}"
+                           placeholder="Add when logistics assigns this package"
+                           class="w-full rounded-lg border border-gray-300 px-4 py-3 text-base focus:ring-2 focus:ring-green-500 focus:border-green-500">
+                    @error('supplier_logistics_code')<p class="text-red-600 text-sm mt-1">{{ $message }}</p>@enderror
+                </div>
+            </div>
+
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Payment slip(s) (optional)</label>
                 <input type="file" name="payment_slips[]" multiple accept=".jpg,.jpeg,.png,.gif,.webp,.pdf"

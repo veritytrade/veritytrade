@@ -43,6 +43,17 @@
             </dd>
             <dt class="text-gray-500">Shipment</dt>
             <dd class="font-medium text-gray-800">{{ $order->shipment ? $order->shipment->logistics_company . ' (' . \Illuminate\Support\Str::limit($order->shipment->chinese_tracking_code, 8) . ')' : 'Not assigned' }}</dd>
+            <dt class="text-gray-500">Supplier Platform</dt>
+            <dd class="font-medium text-gray-800">
+                @php($supplierPlatforms = \App\Models\Order::supplierPlatforms())
+                {{ $order->supplier_platform ? ($supplierPlatforms[$order->supplier_platform] ?? ucfirst($order->supplier_platform)) : '—' }}
+            </dd>
+            <dt class="text-gray-500">Supplier Order Number</dt>
+            <dd class="font-medium text-gray-800">{{ $order->supplier_order_number ?: '—' }}</dd>
+            <dt class="text-gray-500">Supplier Logistics Code</dt>
+            <dd class="font-medium text-gray-800">{{ $order->supplier_logistics_code ?: '—' }}</dd>
+            <dt class="text-gray-500">Mapping Status</dt>
+            <dd class="font-medium text-gray-800">{{ $order->mapping_status ? ucfirst(str_replace('_', ' ', $order->mapping_status)) : '—' }}</dd>
             @if($order->invoiceRequest?->isPending())
                 <dt class="text-gray-500">Invoice</dt>
                 <dd class="font-medium text-amber-700">Requested by customer</dd>

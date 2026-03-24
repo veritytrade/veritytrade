@@ -26,11 +26,33 @@ class Order extends Model
         'invoice_id',
         'current_stage_id',
         'tracking_code',
+        'supplier_platform',
+        'supplier_order_number',
+        'supplier_logistics_code',
+        'mapping_status',
+        'mapped_at',
+        'mapped_by',
     ];
 
     protected $casts = [
         'outstanding_balance_ngn' => 'decimal:2',
+        'mapped_at' => 'datetime',
     ];
+
+    public const SUPPLIER_PLATFORMS = [
+        'pinduoduo' => 'Pinduoduo',
+        'zhuanzhuan' => 'Zhuanzhuan',
+        'taobao' => 'Taobao',
+        'jindong' => 'Jindong',
+        'xiangyu' => 'Xiangyu',
+        '1688' => '1688',
+        'others' => 'Others',
+    ];
+
+    public static function supplierPlatforms(): array
+    {
+        return self::SUPPLIER_PLATFORMS;
+    }
 
     /** True if this order pays the N10k logistics (outside Lagos) */
     public function getPaysLogisticsAttribute(): bool

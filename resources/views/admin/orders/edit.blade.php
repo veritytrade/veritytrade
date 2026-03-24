@@ -51,6 +51,38 @@
                        class="w-full rounded-lg border border-gray-300 px-4 py-3 text-base focus:ring-2 focus:ring-green-500 focus:border-green-500">
                 @error('outstanding_balance_ngn')<p class="text-red-600 text-sm mt-1">{{ $message }}</p>@enderror
             </div>
+            <div class="rounded-lg border border-gray-200 p-4 space-y-3">
+                <h3 class="text-sm font-semibold text-gray-800">Supplier Mapping</h3>
+                <p class="text-xs text-gray-500">Keep supplier order number and logistics code in one row to track package ownership.</p>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Supplier Platform</label>
+                    <select name="supplier_platform"
+                            class="w-full rounded-lg border border-gray-300 px-4 py-3 text-base focus:ring-2 focus:ring-green-500 focus:border-green-500 min-h-[48px]">
+                        <option value="">Select platform</option>
+                        @foreach($supplierPlatforms as $value => $label)
+                            <option value="{{ $value }}" {{ old('supplier_platform', $order->supplier_platform) === $value ? 'selected' : '' }}>{{ $label }}</option>
+                        @endforeach
+                    </select>
+                    @error('supplier_platform')<p class="text-red-600 text-sm mt-1">{{ $message }}</p>@enderror
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Supplier Order Number</label>
+                    <input type="text" name="supplier_order_number"
+                           value="{{ old('supplier_order_number', $order->supplier_order_number) }}"
+                           class="w-full rounded-lg border border-gray-300 px-4 py-3 text-base focus:ring-2 focus:ring-green-500 focus:border-green-500">
+                    @error('supplier_order_number')<p class="text-red-600 text-sm mt-1">{{ $message }}</p>@enderror
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Supplier Logistics Code</label>
+                    <input type="text" name="supplier_logistics_code"
+                           value="{{ old('supplier_logistics_code', $order->supplier_logistics_code) }}"
+                           class="w-full rounded-lg border border-gray-300 px-4 py-3 text-base focus:ring-2 focus:ring-green-500 focus:border-green-500">
+                    @error('supplier_logistics_code')<p class="text-red-600 text-sm mt-1">{{ $message }}</p>@enderror
+                </div>
+            </div>
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Payment Status</label>
                 <p class="text-sm text-gray-500 mb-1">Derived from Outstanding Balance (paid when 0, partial when some paid, pending when none).</p>
