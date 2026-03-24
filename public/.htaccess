@@ -1,6 +1,6 @@
-# Block debug/install scripts from web access (delete from server when done).
-# setup.php is allowed so it can be run once with ?token=... then delete it.
-<FilesMatch "^(debug_500|install_composer|test_db|run_migrations)\.php$">
+# Block debug/install/maintenance scripts from web access (delete from server when done).
+# setup.php is intentionally allowed for one-time bootstrap with token, then delete it.
+<FilesMatch "^(debug_500|install_composer|test_db|run_migrations|run_artisan)\.php$">
     <IfModule mod_authz_core.c>
         Require all denied
     </IfModule>
