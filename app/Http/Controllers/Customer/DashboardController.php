@@ -42,7 +42,7 @@ class DashboardController extends Controller
             ->where('status', '!=', 'delivered')
             ->with(['shipment.currentStage', 'currentStageOverride', 'invoice'])
             ->latest('id')
-            ->take(10)
+            ->take(5)
             ->get();
 
         // Orders in transit: only shipped, not yet delivered
@@ -53,10 +53,26 @@ class DashboardController extends Controller
             })
             ->with(['shipment.currentStage', 'currentStageOverride'])
             ->latest('id')
-            ->take(5)
+            ->take(3)
             ->get();
 
-        return view('customer.dashboard', compact('orders', 'trackableOrders', 'pendingInvoiceRequests'));
+        $pendingOrdersCount = Order::where('user_id', $user->id)
+            ->whereIn('status', ['pending', 'pending_approval', 'processing', 'shipped'])
+            ->count();
+        $inTransitCount = Order::where('user_id', $user->id)
+            ->where('status', '!=', 'delivered')
+            ->where(function ($q) {
+                $q->whereNotNull('shipment_id')->orWhereNotNull('current_stage_id');
+            })
+            ->count();
+
+        return view('customer.dashboard', compact(
+            'orders',
+            'trackableOrders',
+            'pendingInvoiceRequests',
+            'pendingOrdersCount',
+            'inTransitCount'
+        ));
     }
 
     public function orders(Request $request): View|RedirectResponse
@@ -70,7 +86,9 @@ class DashboardController extends Controller
             ->latest('id')
             ->paginate(15);
 
-        return view('customer.orders', compact('orders'));
+        $highlightOrderId = (int) $request->query('order', 0);
+
+        return view('customer.orders', compact('orders', 'highlightOrderId'));
     }
 
     public function requestInvoice(Order $order): RedirectResponse
@@ -141,7 +159,9 @@ class DashboardController extends Controller
             ->latest('id')
             ->paginate(15);
 
-        return view('customer.tracking', compact('orders'));
+        $highlightOrderId = (int) $request->query('order', 0);
+
+        return view('customer.tracking', compact('orders', 'highlightOrderId'));
     }
 
     public function invoices(): View|RedirectResponse

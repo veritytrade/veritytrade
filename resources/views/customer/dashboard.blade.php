@@ -1,4 +1,19 @@
 <x-layouts.customer>
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
+        <a href="{{ route('dashboard.orders') }}" class="bg-white rounded-xl border border-gray-200 p-4 hover:shadow-sm transition">
+            <p class="text-xs text-gray-500">Pending Orders</p>
+            <p class="text-2xl font-bold text-gray-900 mt-1">{{ $pendingOrdersCount ?? 0 }}</p>
+        </a>
+        <a href="{{ route('dashboard.tracking') }}" class="bg-white rounded-xl border border-gray-200 p-4 hover:shadow-sm transition">
+            <p class="text-xs text-gray-500">In Transit</p>
+            <p class="text-2xl font-bold text-blue-700 mt-1">{{ $inTransitCount ?? 0 }}</p>
+        </a>
+        <a href="{{ route('dashboard.invoices') }}" class="bg-white rounded-xl border border-gray-200 p-4 hover:shadow-sm transition">
+            <p class="text-xs text-gray-500">Pending Invoice Requests</p>
+            <p class="text-2xl font-bold text-amber-700 mt-1">{{ $pendingInvoiceRequests->count() }}</p>
+        </a>
+    </div>
+
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <section class="bg-white rounded-xl border border-gray-200 p-4">
             <div class="flex items-center justify-between mb-3">
@@ -9,7 +24,7 @@
                 <div class="py-3 border-b border-gray-100 last:border-b-0">
                     <div class="flex justify-between items-start text-sm">
                         <div>
-                            <a href="{{ route('dashboard.orders') }}" class="font-semibold text-gray-800 hover:text-blue-700">{{ $order->product_name ?? 'Order #'.$order->id }}</a>
+                            <a href="{{ route('dashboard.orders', ['order' => $order->id]) }}" class="font-semibold text-gray-800 hover:text-blue-700">{{ $order->product_name ?? 'Order #'.$order->id }}</a>
                             <p class="text-gray-500 text-xs mt-0.5">₦{{ number_format((float) ($order->total_amount_ngn ?? 0)) }} · {{ $order->customer_status_label }}</p>
                         </div>
                         <div class="flex items-center gap-2 shrink-0">
@@ -17,13 +32,16 @@
                                 <a href="{{ route('dashboard.invoices.download', $order->invoice) }}" target="_blank" rel="noopener" class="text-xs text-green-600 hover:text-green-700 font-medium">See Invoice</a>
                             @endif
                             @if($order->shipment_id || $order->current_stage_id)
-                                <a href="{{ route('dashboard.tracking') }}" class="text-xs text-blue-600 hover:text-blue-700 font-medium">Track →</a>
+                                <a href="{{ route('dashboard.tracking', ['order' => $order->id]) }}" class="text-xs text-blue-600 hover:text-blue-700 font-medium">Track →</a>
                             @endif
                         </div>
                     </div>
                 </div>
             @empty
-                <p class="text-sm text-gray-500">No orders yet.</p>
+                <div class="text-sm text-gray-500">
+                    <p>No orders yet.</p>
+                    <a href="{{ route('dashboard.orders.create') }}" class="inline-block mt-2 text-green-600 hover:text-green-700 font-medium">Create your first order</a>
+                </div>
             @endforelse
             @if($orders->isNotEmpty())
                 <a href="{{ route('dashboard.orders') }}" class="block mt-3 text-sm font-medium text-blue-600 hover:text-blue-700">View all orders →</a>
@@ -56,7 +74,7 @@
             @forelse($trackableOrders as $order)
                 <div class="py-3 border-b border-gray-100 last:border-b-0">
                     <div class="flex justify-between items-start text-sm mb-2">
-                        <a href="{{ route('dashboard.tracking') }}" class="font-semibold text-gray-800 hover:text-blue-700">{{ $order->product_name ?? 'Order #'.$order->id }}</a>
+                        <a href="{{ route('dashboard.tracking', ['order' => $order->id]) }}" class="font-semibold text-gray-800 hover:text-blue-700">{{ $order->product_name ?? 'Order #'.$order->id }}</a>
                         <span class="text-gray-500 text-xs">{{ $order->effectiveStage()?->short_name ?? $order->effectiveStage()?->name ?? 'Pending' }}</span>
                     </div>
                     <x-tracking-progress-bar :order="$order" />

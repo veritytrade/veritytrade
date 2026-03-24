@@ -9,7 +9,7 @@
 
     <div class="space-y-4">
         @forelse($orders as $order)
-            <div class="bg-white rounded-xl border border-gray-200 p-4 sm:p-5 shadow-sm hover:shadow-md transition">
+            <div id="order-{{ $order->id }}" class="bg-white rounded-xl border p-4 sm:p-5 shadow-sm hover:shadow-md transition {{ (($highlightOrderId ?? 0) === $order->id) ? 'border-blue-300 bg-blue-50/40' : 'border-gray-200' }}">
                 <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
                     <div class="flex-1 min-w-0">
                         <h2 class="font-bold text-gray-900">{{ $order->product_name ?? 'Order #'.$order->id }}</h2>

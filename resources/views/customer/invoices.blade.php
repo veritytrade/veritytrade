@@ -1,9 +1,6 @@
 <x-layouts.customer>
     <div class="bg-white rounded-xl border border-gray-200 p-4">
         <h1 class="text-xl font-bold text-gray-800 mb-4">My Invoices</h1>
-        @if(session('error'))
-            <p class="mb-4 p-3 rounded-lg bg-red-50 text-red-700 text-sm">{{ session('error') }}</p>
-        @endif
         @forelse($invoices as $invoice)
             <div class="py-3 border-b border-gray-100 last:border-b-0 flex items-center justify-between text-sm">
                 <div>
