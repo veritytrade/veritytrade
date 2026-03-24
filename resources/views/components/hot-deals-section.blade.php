@@ -1,12 +1,16 @@
-@props(['deals'])
+@props([
+    'deals',
+    'emptyTitle' => 'No hot deals available right now',
+    'emptySubtitle' => 'Check back soon for fresh offers.',
+])
 
 <div id="hot-deals" class="max-w-7xl mx-auto px-4 py-6">
     <h1 class="text-2xl md:text-3xl font-bold text-gray-900 mb-6">Hot Deals</h1>
 
     @if($deals->isEmpty())
         <div class="block p-10 bg-white border border-gray-200 rounded-xl shadow-sm text-center text-gray-500">
-            <p class="font-semibold text-lg text-gray-800">No hot deals available right now</p>
-            <p class="text-sm mt-2">Check back soon for fresh offers.</p>
+            <p class="font-semibold text-lg text-gray-800">{{ $emptyTitle }}</p>
+            <p class="text-sm mt-2">{{ $emptySubtitle }}</p>
         </div>
     @else
         <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">

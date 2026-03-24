@@ -36,7 +36,84 @@
             </section>
         @endif
 
-        <x-hot-deals-section :deals="$deals" />
+        @php
+            $activeFilterCount = 0;
+            $activeFilterCount += !empty($filters['q']) ? 1 : 0;
+            $activeFilterCount += $filters['min_price'] !== null ? 1 : 0;
+            $activeFilterCount += $filters['max_price'] !== null ? 1 : 0;
+            $activeFilterCount += ($filters['sort'] ?? 'latest') !== 'latest' ? 1 : 0;
+            $hasActiveFilters = $activeFilterCount > 0;
+        @endphp
+
+        <div class="max-w-7xl mx-auto px-4 py-6 lg:py-8 lg:grid lg:grid-cols-[280px,1fr] lg:gap-6">
+            <aside class="mb-5 lg:mb-0">
+                <div class="bg-white border border-gray-200 rounded-xl shadow-sm p-4 lg:sticky lg:top-24">
+                    <div class="flex items-center justify-between mb-3">
+                        <h2 class="text-base font-bold text-gray-900">Browse Deals</h2>
+                        @if($hasActiveFilters)
+                            <span class="text-xs px-2 py-0.5 rounded-full bg-green-100 text-green-700">{{ $activeFilterCount }} active</span>
+                        @endif
+                    </div>
+
+                    <form method="GET" action="{{ route('home') }}" class="space-y-3">
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-600 mb-1">Keyword</label>
+                            <input type="text" name="q" value="{{ $filters['q'] ?? '' }}" placeholder="Search title/spec"
+                                   class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-green-500 focus:border-green-500">
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-2">
+                            <div>
+                                <label class="block text-xs font-semibold text-gray-600 mb-1">Min Price</label>
+                                <input type="number" min="0" step="1" name="min_price" value="{{ $filters['min_price'] ?? '' }}"
+                                       class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                                       placeholder="0">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-gray-600 mb-1">Max Price</label>
+                                <input type="number" min="0" step="1" name="max_price" value="{{ $filters['max_price'] ?? '' }}"
+                                       class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                                       placeholder="Any">
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-600 mb-1">Sort</label>
+                            <select name="sort" class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-green-500 focus:border-green-500">
+                                <option value="latest" {{ ($filters['sort'] ?? 'latest') === 'latest' ? 'selected' : '' }}>Latest</option>
+                                <option value="price_asc" {{ ($filters['sort'] ?? 'latest') === 'price_asc' ? 'selected' : '' }}>Price: Low to High</option>
+                                <option value="price_desc" {{ ($filters['sort'] ?? 'latest') === 'price_desc' ? 'selected' : '' }}>Price: High to Low</option>
+                            </select>
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-2 pt-1">
+                            <button type="submit" class="min-h-[42px] rounded-lg bg-green-600 hover:bg-green-700 text-white text-sm font-semibold">
+                                Apply
+                            </button>
+                            <a href="{{ route('home') }}" class="min-h-[42px] inline-flex items-center justify-center rounded-lg border border-gray-300 text-gray-700 text-sm font-semibold hover:bg-gray-50">
+                                Reset
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </aside>
+
+            <section>
+                <div class="mb-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                    <h2 class="text-sm text-gray-600">
+                        Showing <span class="font-semibold text-gray-900">{{ $deals->count() }}</span> hot deal{{ $deals->count() === 1 ? '' : 's' }}
+                    </h2>
+                    @if($hasActiveFilters)
+                        <p class="text-xs text-gray-500">Filtered results based on your current criteria.</p>
+                    @endif
+                </div>
+                <x-hot-deals-section
+                    :deals="$deals"
+                    :empty-title="$hasActiveFilters ? 'No deals match your filters' : 'No hot deals available right now'"
+                    :empty-subtitle="$hasActiveFilters ? 'Try clearing or adjusting keyword, price range, or sort.' : 'Check back soon for fresh offers.'"
+                />
+            </section>
+        </div>
 
         <div class="fixed bottom-4 right-4 md:hidden z-50">
             @php $waNumber = preg_replace('/\D/', '', (string) site_setting('whatsapp_number', site_setting('whatsapp_business_number', '2347084117779'))); @endphp
