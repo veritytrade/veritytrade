@@ -67,7 +67,6 @@ class ShipmentController extends Controller
         $valid = $request->validate([
             'chinese_tracking_code' => 'required|string|max:255',
             'logistics_company' => 'required|string|max:255',
-            'current_stage_id' => 'nullable|exists:tracking_stages,id',
             'status' => 'required|in:active,completed',
             'waybill_outstanding_ngn' => 'nullable|numeric|min:0|max:10000',
         ]);
@@ -77,11 +76,6 @@ class ShipmentController extends Controller
             ? (float) $valid['waybill_outstanding_ngn']
             : null;
         $shipment->update($valid);
-
-        $stage = $shipment->currentStage;
-        if ($stage && (int) $stage->position === 6) {
-            $shipment->orders()->whereNull('current_stage_id')->update(['status' => 'delivered']);
-        }
 
         return redirect()->route('admin.shipments.show', $shipment)->with('success', 'Shipment updated.');
     }

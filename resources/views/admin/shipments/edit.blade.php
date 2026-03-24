@@ -20,14 +20,9 @@
                        class="w-full rounded-lg border border-gray-300 px-4 py-3 text-base">
                 @error('logistics_company')<p class="text-red-600 text-sm mt-1">{{ $message }}</p>@enderror
             </div>
-            <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Current Stage</label>
-                <select name="current_stage_id" class="w-full rounded-lg border border-gray-300 px-4 py-3 text-base min-h-[48px]">
-                    <option value="">Select</option>
-                    @foreach($stages as $stage)
-                        <option value="{{ $stage->id }}" {{ $shipment->current_stage_id == $stage->id ? 'selected' : '' }}>{{ $stage->name }}</option>
-                    @endforeach
-                </select>
+            <div class="rounded-lg border border-blue-100 bg-blue-50 p-3 text-sm text-blue-800">
+                Stage updates are managed on Shipment Details to avoid conflicting actions.
+                <a href="{{ route('admin.shipments.show', $shipment) }}" class="font-medium underline hover:text-blue-900">Go to Shipment Details</a>.
             </div>
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Status</label>
