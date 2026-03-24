@@ -41,7 +41,7 @@
                     </div>
                 </div>
                 <a href="{{ route('admin.shipments.index') }}"
-                   class="text-sm text-emerald-700 hover:text-emerald-900 font-medium mt-3 inline-block">
+                   class="mt-3 inline-flex items-center justify-center min-h-[40px] px-3 py-2 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-800 text-sm font-medium">
                     View Shipments →
                 </a>
             </div>
@@ -63,11 +63,11 @@
                 </div>
                 @if(auth()->user()?->hasPermission('manage_deals'))
                 <a href="{{ route('admin.deals.index') }}" 
-                   class="text-sm text-red-600 hover:text-red-800 font-medium mt-3 inline-block">
+                   class="mt-3 inline-flex items-center justify-center min-h-[40px] px-3 py-2 rounded-lg bg-red-50 hover:bg-red-100 text-red-700 text-sm font-medium">
                     View All →
                 </a>
                 @else
-                <span class="text-sm text-red-600 font-medium mt-3 inline-block">View All →</span>
+                <span class="mt-3 inline-flex items-center justify-center min-h-[40px] px-3 py-2 rounded-lg bg-red-50 text-red-600 text-sm font-medium">View All →</span>
                 @endif
             </div>
 
@@ -87,7 +87,7 @@
                     </div>
                 </div>
                 <a href="{{ route('admin.invoice-settings.edit') }}"
-                   class="text-sm font-medium mt-3 inline-block {{ ($pendingInvoiceRequestsCount ?? 0) > 0 ? 'text-amber-700 hover:text-amber-900' : 'text-gray-600 hover:text-gray-800' }}">
+                   class="mt-3 inline-flex items-center justify-center min-h-[40px] px-3 py-2 rounded-lg text-sm font-medium {{ ($pendingInvoiceRequestsCount ?? 0) > 0 ? 'bg-amber-50 hover:bg-amber-100 text-amber-800' : 'bg-gray-50 hover:bg-gray-100 text-gray-700' }}">
                     Generate Invoices →
                 </a>
             </div>
@@ -108,7 +108,7 @@
                         </div>
                     </div>
                     <a href="{{ route('admin.orders.index', ['unassigned' => 1]) }}"
-                       class="text-sm text-blue-700 hover:text-blue-900 font-medium mt-3 inline-block">
+                       class="mt-3 inline-flex items-center justify-center min-h-[40px] px-3 py-2 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-800 text-sm font-medium">
                         Assign Shipments →
                     </a>
                 </div>
@@ -130,7 +130,7 @@
                         </div>
                     </div>
                     <a href="{{ route('admin.orders.index', ['queue' => 'sourcing']) }}"
-                       class="text-sm text-purple-700 hover:text-purple-900 font-medium mt-3 inline-block">
+                       class="mt-3 inline-flex items-center justify-center min-h-[40px] px-3 py-2 rounded-lg bg-purple-50 hover:bg-purple-100 text-purple-800 text-sm font-medium">
                         Complete Mapping →
                     </a>
                 </div>
@@ -152,7 +152,7 @@
                         </div>
                     </div>
                     <a href="{{ route('admin.orders.index') }}?status=pending_approval"
-                       class="text-sm text-amber-700 hover:text-amber-900 font-medium mt-3 inline-block">
+                       class="mt-3 inline-flex items-center justify-center min-h-[40px] px-3 py-2 rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-800 text-sm font-medium">
                         Review Orders →
                     </a>
                 </div>
@@ -174,7 +174,7 @@
                         </div>
                     </div>
                     <a href="{{ route('admin.registered-users.index') }}"
-                       class="text-sm text-amber-700 hover:text-amber-900 font-medium mt-3 inline-block">
+                       class="mt-3 inline-flex items-center justify-center min-h-[40px] px-3 py-2 rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-800 text-sm font-medium">
                         Review Approvals
                     </a>
                 </div>
