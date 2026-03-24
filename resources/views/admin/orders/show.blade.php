@@ -7,14 +7,6 @@
         <span class="mx-1">/</span>
         <span class="text-gray-700 font-medium">Order #{{ $order->id }}</span>
     </nav>
-    <div class="sticky top-[76px] z-20 mb-4 rounded-lg border border-blue-100 bg-blue-50 px-4 py-2">
-        <div class="flex flex-wrap gap-x-4 gap-y-1 text-xs text-blue-900">
-            <span><strong>Customer:</strong> {{ $order->user?->username ?? $order->user?->name ?? '—' }}</span>
-            <span><strong>Status:</strong> {{ ucfirst($order->status ?? 'pending') }}</span>
-            <span><strong>Shipment:</strong> {{ $order->shipment?->logistics_company ?? 'Unassigned' }}</span>
-            <span><strong>Invoice:</strong> {{ $order->invoice?->invoice_number ?? '—' }}</span>
-        </div>
-    </div>
     <div class="mb-6">
         <a href="{{ route('admin.orders.index') }}" class="text-green-600 hover:text-green-700 text-sm font-medium">← Orders</a>
         <h2 class="text-xl sm:text-2xl font-bold text-gray-900 mt-2">Order #{{ $order->id }}</h2>
