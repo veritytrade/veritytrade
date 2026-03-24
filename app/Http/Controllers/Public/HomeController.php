@@ -5,7 +5,6 @@ namespace App\Http\Controllers\Public;
 use App\Http\Controllers\Controller;
 use App\Models\Deal;
 use App\Models\HomepageHero;
-use App\Modules\Phones\Models\PhoneBrand;
 
 class HomeController extends Controller
 {
@@ -13,7 +12,6 @@ class HomeController extends Controller
     {
         $categories = collect();
         $deals = collect();
-        $phoneBrands = collect();
         $hero = null;
 
         if (class_exists(\App\Models\Category::class)) {
@@ -42,17 +40,11 @@ class HomeController extends Controller
         }
 
         try {
-            $phoneBrands = PhoneBrand::where('is_active', true)->orderBy('name')->get();
-        } catch (\Throwable $e) {
-            report($e);
-        }
-
-        try {
             $hero = HomepageHero::get();
         } catch (\Throwable $e) {
             report($e);
         }
 
-        return view('public.home', compact('categories', 'deals', 'phoneBrands', 'hero'));
+        return view('public.home', compact('categories', 'deals', 'hero'));
     }
 }

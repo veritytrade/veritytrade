@@ -1,9 +1,5 @@
 <x-app-layout>
     <div class="min-h-screen">
-        @php
-            $phoneTabId = 'phones';
-        @endphp
-
         @if($hero && $hero->hero_visible && ($hero->hero_headline || $hero->hero_image_path))
             @php
                 $hasText = $hero->hero_headline || $hero->hero_subheadline || $hero->hero_cta_text;
@@ -40,46 +36,7 @@
             </section>
         @endif
 
-        <div class="bg-white border-b border-gray-200 sticky top-16 z-20 shadow-sm">
-            <div class="flex w-full">
-                <button type="button" data-tab-target="hot-deals" class="tab-trigger w-1/2 min-w-0 py-4 px-3 text-sm font-semibold border-b-2 border-green-600 text-green-600 bg-white">
-                    🔥 Hot Deals
-                </button>
-                <button type="button" data-tab-target="{{ $phoneTabId }}" class="tab-trigger w-1/2 min-w-0 py-4 px-3 text-sm font-medium border-b-2 border-transparent text-gray-500 hover:text-gray-700 hover:bg-gray-50">
-                    Phones
-                </button>
-            </div>
-        </div>
-
         <x-hot-deals-section :deals="$deals" />
-
-        <div id="{{ $phoneTabId }}" data-tab-section class="max-w-7xl mx-auto px-4 py-6 hidden" aria-hidden="true">
-            <h1 class="text-xl font-bold text-gray-900 mb-4">Select phone brand</h1>
-
-            @if($phoneBrands->isEmpty())
-                <div class="block p-6 bg-white border border-gray-200 rounded-xl shadow-sm text-center text-gray-500">
-                    <p>No phone brands available right now.</p>
-                </div>
-            @else
-                <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-                    @foreach($phoneBrands as $brand)
-                        <a href="{{ route('phones.brand', $brand->slug) }}" class="block p-6 bg-white border border-gray-200 rounded-xl shadow-sm hover:bg-green-50 hover:border-green-200 hover:shadow-md transition min-h-[140px] md:min-h-[170px] flex flex-col items-center justify-center">
-                            @if($brand->image)
-                                <img src="{{ storage_asset($brand->image) }}" alt="{{ $brand->name }}" class="h-16 w-16 md:h-20 md:w-20 object-contain mb-3">
-                            @else
-                                <div class="h-16 w-16 md:h-20 md:w-20 rounded-lg bg-gray-100 mb-3 flex items-center justify-center text-gray-400 text-2xl font-bold">{{ Str::limit($brand->name, 1) }}</div>
-                            @endif
-                            <span class="text-sm font-semibold text-gray-900 text-center line-clamp-2">{{ $brand->name }}</span>
-                        </a>
-                    @endforeach
-                </div>
-                <div class="mt-6">
-                    <a href="{{ route('phones.index') }}" class="inline-flex justify-center items-center w-full min-h-12 px-5 py-2.5 text-green-700 bg-white border border-green-200 rounded-xl font-medium hover:bg-green-50 focus:ring-4 focus:ring-green-200 transition">
-                        Browse all phone brands
-                    </a>
-                </div>
-            @endif
-        </div>
 
         <div class="fixed bottom-4 right-4 md:hidden z-50">
             @php $waNumber = preg_replace('/\D/', '', (string) site_setting('whatsapp_number', site_setting('whatsapp_business_number', '2347084117779'))); @endphp
@@ -95,48 +52,5 @@
             .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
         </style>
 
-        <script>
-            document.addEventListener('DOMContentLoaded', function() {
-                const tabs = document.querySelectorAll('[data-tab-target]');
-                const sectionIds = ['hot-deals', '{{ $phoneTabId }}'];
-
-                const activateTab = (targetId) => {
-                    const target = document.getElementById(targetId);
-                    if (!target) return;
-
-                    document.querySelectorAll('[data-tab-section]').forEach(function(el) {
-                        el.classList.add('hidden');
-                        el.setAttribute('aria-hidden', 'true');
-                    });
-                    target.classList.remove('hidden');
-                    target.removeAttribute('aria-hidden');
-
-                    tabs.forEach((tab) => {
-                        const isActive = tab.dataset.tabTarget === targetId;
-                        tab.classList.toggle('text-green-600', isActive);
-                        tab.classList.toggle('border-b-2', isActive);
-                        tab.classList.toggle('border-green-600', isActive);
-                        tab.classList.toggle('border-transparent', !isActive);
-                        tab.classList.toggle('font-semibold', isActive);
-                        tab.classList.toggle('text-gray-500', !isActive);
-                        tab.classList.toggle('font-medium', !isActive);
-                    });
-                };
-
-                tabs.forEach((tab) => {
-                    tab.addEventListener('click', function(evt) {
-                        evt.preventDefault();
-                        const targetId = this.dataset.tabTarget;
-                        history.replaceState(null, '', '#' + targetId);
-                        activateTab(targetId);
-                    });
-                });
-
-                const initialTarget = (window.location.hash && sectionIds.includes(window.location.hash.slice(1)))
-                    ? window.location.hash.slice(1)
-                    : 'hot-deals';
-                activateTab(initialTarget);
-            });
-        </script>
     </div>
 </x-app-layout>

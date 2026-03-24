@@ -8,9 +8,6 @@
                        class="block flex-shrink-0 px-5 py-4 text-sm font-bold text-white bg-gradient-to-r from-green-600 to-blue-600 rounded-t-lg whitespace-nowrap shadow-sm">
                         🔥 Hot Deals
                     </a>
-                    <a href="#phones" class="block flex-shrink-0 px-5 py-4 text-sm font-medium text-gray-600 hover:text-green-600 whitespace-nowrap transition-colors">
-                        Phones
-                    </a>
                     <a href="#laptops" class="block flex-shrink-0 px-5 py-4 text-sm font-medium text-gray-600 hover:text-green-600 whitespace-nowrap transition-colors">
                         Laptops
                     </a>
@@ -186,10 +183,6 @@
         </div>
 
         {{-- Placeholder sections so tab anchors work (content coming soon) --}}
-        <div id="phones" class="max-w-6xl mx-auto px-4 py-12 border-t border-gray-200">
-            <h2 class="text-xl font-bold text-gray-800 mb-4 text-center">Phones</h2>
-            <p class="text-center text-gray-500">Coming soon.</p>
-        </div>
         <div id="laptops" class="max-w-6xl mx-auto px-4 py-12 border-t border-gray-200">
             <h2 class="text-xl font-bold text-gray-800 mb-4 text-center">Laptops</h2>
             <p class="text-center text-gray-500">Coming soon.</p>

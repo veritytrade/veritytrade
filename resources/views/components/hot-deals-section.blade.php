@@ -1,6 +1,6 @@
 @props(['deals'])
 
-<div id="hot-deals" data-tab-section class="max-w-7xl mx-auto px-4 py-6">
+<div id="hot-deals" class="max-w-7xl mx-auto px-4 py-6">
     <h1 class="text-2xl md:text-3xl font-bold text-gray-900 mb-6">Hot Deals</h1>
 
     @if($deals->isEmpty())
