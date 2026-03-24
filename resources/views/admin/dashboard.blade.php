@@ -26,7 +26,8 @@
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 mb-6">
 
             {{-- Packages in Transit --}}
-            <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4 md:p-6 hover:shadow-md transition">
+            <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4 md:p-6 hover:shadow-md transition cursor-pointer"
+                 onclick="window.location.href='{{ route('admin.shipments.index') }}'">
                 <div class="flex items-center justify-between">
                     <div>
                         <p class="text-sm text-gray-500 mb-1">Packages in Transit</p>
@@ -40,14 +41,15 @@
                         </svg>
                     </div>
                 </div>
-                <a href="{{ route('admin.shipments.index') }}"
+                <a href="{{ route('admin.shipments.index') }}" onclick="event.stopPropagation()"
                    class="mt-3 inline-flex items-center justify-center min-h-[40px] px-3 py-2 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-800 text-sm font-medium">
                     View Shipments →
                 </a>
             </div>
 
             {{-- Hot Deals Card --}}
-            <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4 md:p-6 hover:shadow-md transition">
+            <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4 md:p-6 hover:shadow-md transition {{ auth()->user()?->hasPermission('manage_deals') ? 'cursor-pointer' : '' }}"
+                 @if(auth()->user()?->hasPermission('manage_deals')) onclick="window.location.href='{{ route('admin.deals.index') }}'" @endif>
                 <div class="flex items-center justify-between">
                     <div>
                         <p class="text-sm text-gray-500 mb-1">Active Hot Deals</p>
@@ -62,7 +64,7 @@
                     </div>
                 </div>
                 @if(auth()->user()?->hasPermission('manage_deals'))
-                <a href="{{ route('admin.deals.index') }}" 
+                <a href="{{ route('admin.deals.index') }}" onclick="event.stopPropagation()"
                    class="mt-3 inline-flex items-center justify-center min-h-[40px] px-3 py-2 rounded-lg bg-red-50 hover:bg-red-100 text-red-700 text-sm font-medium">
                     View All →
                 </a>
@@ -72,7 +74,8 @@
             </div>
 
             {{-- Pending Invoice Requests --}}
-            <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4 md:p-6 hover:shadow-md transition">
+            <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4 md:p-6 hover:shadow-md transition cursor-pointer"
+                 onclick="window.location.href='{{ route('admin.invoice-settings.edit') }}'">
                 <div class="flex items-center justify-between">
                     <div>
                         <p class="text-sm text-gray-500 mb-1">Pending Invoice Requests</p>
@@ -86,14 +89,15 @@
                         </svg>
                     </div>
                 </div>
-                <a href="{{ route('admin.invoice-settings.edit') }}"
+                <a href="{{ route('admin.invoice-settings.edit') }}" onclick="event.stopPropagation()"
                    class="mt-3 inline-flex items-center justify-center min-h-[40px] px-3 py-2 rounded-lg text-sm font-medium {{ ($pendingInvoiceRequestsCount ?? 0) > 0 ? 'bg-amber-50 hover:bg-amber-100 text-amber-800' : 'bg-gray-50 hover:bg-gray-100 text-gray-700' }}">
                     Generate Invoices →
                 </a>
             </div>
             @if(auth()->user()?->hasPermission('assign_shipment') && ($ordersWithoutShipment ?? 0) > 0)
                 {{-- Orders Without Shipment --}}
-                <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4 md:p-6 hover:shadow-md transition">
+                <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4 md:p-6 hover:shadow-md transition cursor-pointer"
+                     onclick="window.location.href='{{ route('admin.orders.index', ['unassigned' => 1]) }}'">
                     <div class="flex items-center justify-between">
                         <div>
                             <p class="text-sm text-gray-500 mb-1">Orders Without Shipment</p>
@@ -107,7 +111,7 @@
                             </svg>
                         </div>
                     </div>
-                    <a href="{{ route('admin.orders.index', ['unassigned' => 1]) }}"
+                    <a href="{{ route('admin.orders.index', ['unassigned' => 1]) }}" onclick="event.stopPropagation()"
                        class="mt-3 inline-flex items-center justify-center min-h-[40px] px-3 py-2 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-800 text-sm font-medium">
                         Assign Shipments →
                     </a>
@@ -115,7 +119,8 @@
             @endif
             @if(auth()->user()?->hasPermission('view_tracking') && ($ordersWaitingSupplierLogistics ?? 0) > 0)
                 {{-- Orders waiting supplier logistics code --}}
-                <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4 md:p-6 hover:shadow-md transition">
+                <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4 md:p-6 hover:shadow-md transition cursor-pointer"
+                     onclick="window.location.href='{{ route('admin.orders.index', ['queue' => 'sourcing']) }}'">
                     <div class="flex items-center justify-between">
                         <div>
                             <p class="text-sm text-gray-500 mb-1">Waiting Supplier Logistics Code</p>
@@ -129,7 +134,7 @@
                             </svg>
                         </div>
                     </div>
-                    <a href="{{ route('admin.orders.index', ['queue' => 'sourcing']) }}"
+                    <a href="{{ route('admin.orders.index', ['queue' => 'sourcing']) }}" onclick="event.stopPropagation()"
                        class="mt-3 inline-flex items-center justify-center min-h-[40px] px-3 py-2 rounded-lg bg-purple-50 hover:bg-purple-100 text-purple-800 text-sm font-medium">
                         Complete Mapping →
                     </a>
@@ -137,7 +142,8 @@
             @endif
             @if(auth()->user()?->hasPermission('approve_orders') && ($ordersPendingApproval ?? 0) > 0)
                 {{-- Orders Pending Approval --}}
-                <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4 md:p-6 hover:shadow-md transition">
+                <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4 md:p-6 hover:shadow-md transition cursor-pointer"
+                     onclick="window.location.href='{{ route('admin.orders.index') }}?status=pending_approval'">
                     <div class="flex items-center justify-between">
                         <div>
                             <p class="text-sm text-gray-500 mb-1">Orders Pending Approval</p>
@@ -151,7 +157,7 @@
                             </svg>
                         </div>
                     </div>
-                    <a href="{{ route('admin.orders.index') }}?status=pending_approval"
+                    <a href="{{ route('admin.orders.index') }}?status=pending_approval" onclick="event.stopPropagation()"
                        class="mt-3 inline-flex items-center justify-center min-h-[40px] px-3 py-2 rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-800 text-sm font-medium">
                         Review Orders →
                     </a>
@@ -159,7 +165,8 @@
             @endif
             @if(auth()->user() && auth()->user()->hasPermission('approve_users'))
                 {{-- Pending Approvals Card --}}
-                <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4 md:p-6 hover:shadow-md transition">
+                <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4 md:p-6 hover:shadow-md transition cursor-pointer"
+                     onclick="window.location.href='{{ route('admin.registered-users.index') }}'">
                     <div class="flex items-center justify-between">
                         <div>
                             <p class="text-sm text-gray-500 mb-1">Pending Customer Approvals</p>
@@ -173,7 +180,7 @@
                             </svg>
                         </div>
                     </div>
-                    <a href="{{ route('admin.registered-users.index') }}"
+                    <a href="{{ route('admin.registered-users.index') }}" onclick="event.stopPropagation()"
                        class="mt-3 inline-flex items-center justify-center min-h-[40px] px-3 py-2 rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-800 text-sm font-medium">
                         Review Approvals
                     </a>
