@@ -7,8 +7,7 @@
         </nav>
         <div class="mb-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <div>
-                <a href="{{ route('admin.dashboard') }}" class="text-green-600 hover:text-green-700 text-sm font-medium">&larr; Dashboard</a>
-                <h2 class="text-xl sm:text-2xl font-bold text-gray-900 mt-2">Invoices</h2>
+                <h2 class="text-xl sm:text-2xl font-bold text-gray-900">Invoices</h2>
                 <p class="text-sm text-gray-500 mt-1">Overview of all generated invoices per shipment, similar to big platforms.</p>
             </div>
             <div class="flex gap-2">

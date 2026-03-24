@@ -8,8 +8,7 @@
         <span class="text-gray-700 font-medium">Order #{{ $order->id }}</span>
     </nav>
     <div class="mb-6">
-        <a href="{{ route('admin.orders.index') }}" class="text-green-600 hover:text-green-700 text-sm font-medium">← Orders</a>
-        <h2 class="text-xl sm:text-2xl font-bold text-gray-900 mt-2">Order #{{ $order->id }}</h2>
+        <h2 class="text-xl sm:text-2xl font-bold text-gray-900">Order #{{ $order->id }}</h2>
         @if($order->invoice)
             <p class="text-sm text-gray-600 mt-1">Invoice: {{ $order->invoice->invoice_number }}</p>
         @endif
