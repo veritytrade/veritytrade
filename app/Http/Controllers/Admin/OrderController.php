@@ -229,11 +229,15 @@ class OrderController extends Controller
     public function edit(Order $order): View
     {
         $order->load(['user', 'shipment', 'currentStageOverride', 'paymentSlips']);
-        $users = User::orderBy('name')->get();
-        $shipments = Shipment::where('status', 'active')->orderBy('id', 'desc')->get();
-        $stages = TrackingStage::orderBy('position')->get();
+        $users = User::query()
+            ->where(function ($q) use ($order): void {
+                $q->whereHas('role', fn ($r) => $r->where('name', 'customer'))
+                    ->orWhere('id', $order->user_id);
+            })
+            ->orderBy('name')
+            ->get();
         $supplierPlatforms = Order::supplierPlatforms();
-        return view('admin.orders.edit', compact('order', 'users', 'shipments', 'stages', 'supplierPlatforms'));
+        return view('admin.orders.edit', compact('order', 'users', 'supplierPlatforms'));
     }
 
     public function update(Request $request, Order $order): RedirectResponse
@@ -250,8 +254,6 @@ class OrderController extends Controller
             'outstanding_balance_ngn' => 'nullable|numeric|min:0',
             'logistics_type' => 'nullable|string|in:within_lagos,outside_lagos,combined',
             'status' => 'required|string|in:pending,pending_approval,processing,shipped,delivered,cancelled',
-            'shipment_id' => 'nullable|exists:shipments,id',
-            'current_stage_id' => 'nullable|exists:tracking_stages,id',
             'payment_slips' => 'nullable|array|max:5',
             'payment_slips.*' => [File::types(['jpg', 'jpeg', 'png', 'gif', 'webp', 'pdf'])->max(5 * 1024)],
         ], [
@@ -259,18 +261,13 @@ class OrderController extends Controller
             'payment_slips.*.max' => 'Each slip must not exceed 5MB.',
         ]);
 
-        if (array_key_exists('current_stage_id', $valid) && $valid['current_stage_id'] === '') {
-            $valid['current_stage_id'] = null;
-        }
-        if (array_key_exists('shipment_id', $valid) && $valid['shipment_id'] === '') {
-            $valid['shipment_id'] = null;
-        }
-
-        if (!empty($valid['shipment_id']) || !empty($valid['current_stage_id'])) {
-            $shipment = !empty($valid['shipment_id']) ? Shipment::with('currentStage')->find($valid['shipment_id']) : null;
+        $shipmentId = $order->shipment_id;
+        $currentStageId = $order->current_stage_id;
+        if (!empty($shipmentId) || !empty($currentStageId)) {
+            $shipment = !empty($shipmentId) ? Shipment::with('currentStage')->find($shipmentId) : null;
             $valid['status'] = Order::deriveStatusFromStage(
-                $valid['shipment_id'] ?? null,
-                $valid['current_stage_id'] ?? null,
+                $shipmentId,
+                $currentStageId,
                 $shipment
             );
         } else {

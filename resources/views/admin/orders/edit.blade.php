@@ -92,7 +92,7 @@
             </div>
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Status</label>
-                <p class="text-sm text-gray-500 mb-2">When shipment is assigned, status is auto-derived from the shipment stage.</p>
+                <p class="text-sm text-gray-500 mb-2">When shipment or stage override exists, status is auto-derived and manual value is ignored.</p>
                 <select name="status" required
                         class="w-full rounded-lg border border-gray-300 px-4 py-3 text-base focus:ring-2 focus:ring-green-500 focus:border-green-500 min-h-[48px]">
                     <option value="pending" {{ old('status', $order->status) === 'pending' ? 'selected' : '' }}>Pending</option>
@@ -103,6 +103,10 @@
                     <option value="pending_approval" {{ old('status', $order->status) === 'pending_approval' ? 'selected' : '' }}>Pending approval</option>
                 </select>
                 @error('status')<p class="text-red-600 text-sm mt-1">{{ $message }}</p>@enderror
+            </div>
+            <div class="rounded-lg border border-blue-100 bg-blue-50 p-3 text-sm text-blue-800">
+                Shipment assignment and stage override have been centralized on the Order Details page to reduce conflicts.
+                <a href="{{ route('admin.orders.show', $order) }}" class="font-medium underline hover:text-blue-900">Go to Order Details</a>.
             </div>
             @if($order->paymentSlips && $order->paymentSlips->isNotEmpty())
                 <div>
@@ -119,28 +123,6 @@
                 <input type="file" name="payment_slips[]" multiple accept=".jpg,.jpeg,.png,.gif,.webp,.pdf"
                        class="w-full rounded-lg border border-gray-300 px-4 py-3 text-base focus:ring-2 focus:ring-green-500 focus:border-green-500">
                 @error('payment_slips.*')<p class="text-red-600 text-sm mt-1">{{ $message }}</p>@enderror
-            </div>
-            <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Shipment</label>
-                <select name="shipment_id"
-                        class="w-full rounded-lg border border-gray-300 px-4 py-3 text-base focus:ring-2 focus:ring-green-500 focus:border-green-500 min-h-[48px]">
-                    <option value="">None</option>
-                    @foreach($shipments as $s)
-                        <option value="{{ $s->id }}" {{ old('shipment_id', $order->shipment_id) == $s->id ? 'selected' : '' }}>{{ $s->chinese_tracking_code }} ({{ $s->logistics_company }})</option>
-                    @endforeach
-                </select>
-                @error('shipment_id')<p class="text-red-600 text-sm mt-1">{{ $message }}</p>@enderror
-            </div>
-            <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Stage Override</label>
-                <select name="current_stage_id"
-                        class="w-full rounded-lg border border-gray-300 px-4 py-3 text-base focus:ring-2 focus:ring-green-500 focus:border-green-500 min-h-[48px]">
-                    <option value="">Inherit from shipment</option>
-                    @foreach($stages as $stage)
-                        <option value="{{ $stage->id }}" {{ old('current_stage_id', $order->current_stage_id) == $stage->id ? 'selected' : '' }}>{{ $stage->name }}</option>
-                    @endforeach
-                </select>
-                @error('current_stage_id')<p class="text-red-600 text-sm mt-1">{{ $message }}</p>@enderror
             </div>
             <div class="pt-4">
                 <button type="submit" class="w-full sm:w-auto min-h-[48px] px-6 py-3 bg-green-600 hover:bg-green-700 text-white font-medium rounded-lg transition">
