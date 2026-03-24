@@ -43,13 +43,22 @@ class AdminDashboardController extends Controller
             })
             ->count();
 
+        $ordersWaitingSupplierLogistics = Order::whereNotNull('supplier_order_number')
+            ->where(function ($q): void {
+                $q->whereNull('supplier_logistics_code')
+                    ->orWhere('supplier_logistics_code', '');
+            })
+            ->whereNotIn('status', ['cancelled', 'delivered'])
+            ->count();
+
         return view('admin.dashboard', compact(
             'packagesInTransit',
             'ordersPendingApproval',
             'ordersWithoutShipment',
             'pendingInvoiceRequestsCount',
             'staleInvoiceRequestsCount',
-            'ordersOnCompletedShipmentsNotDelivered'
+            'ordersOnCompletedShipmentsNotDelivered',
+            'ordersWaitingSupplierLogistics'
         ));
     }
 }

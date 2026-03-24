@@ -10,6 +10,17 @@
             @endif
         </div>
 
+        <div class="mb-4 flex flex-wrap gap-2">
+            <a href="{{ route('admin.orders.index', array_merge(request()->except('page', 'queue'), ['queue' => 'sourcing'])) }}"
+               class="px-3 py-1.5 rounded-lg text-sm font-medium border {{ ($queue ?? 'operations') === 'sourcing' ? 'bg-purple-100 text-purple-800 border-purple-200' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50' }}">
+                Sourcing Queue
+            </a>
+            <a href="{{ route('admin.orders.index', array_merge(request()->except('page', 'queue'), ['queue' => 'operations'])) }}"
+               class="px-3 py-1.5 rounded-lg text-sm font-medium border {{ ($queue ?? 'operations') === 'operations' ? 'bg-green-100 text-green-800 border-green-200' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50' }}">
+                Operations Queue
+            </a>
+        </div>
+
         @if(session('success'))
             <div x-data="{ show: true }" x-show="show" x-init="setTimeout(() => show = false, 3000)"
                  class="mb-4 p-4 bg-green-100 border border-green-200 text-green-800 rounded-lg">{{ session('success') }}</div>
@@ -18,6 +29,7 @@
         {{-- Filters --}}
         <div class="mb-4 bg-white rounded-xl border border-gray-200 p-4">
             <form method="GET" action="{{ route('admin.orders.index') }}" class="grid grid-cols-1 sm:grid-cols-3 gap-3 text-sm">
+                <input type="hidden" name="queue" value="{{ $queue ?? 'operations' }}">
                 <div>
                     <label class="block text-xs font-semibold text-gray-600 mb-1">Customer (email or WhatsApp name)</label>
                     <input type="text" name="customer" value="{{ request('customer') }}"
@@ -50,6 +62,7 @@
                         <tr>
                             <th class="p-3 sm:p-4 text-left font-semibold text-gray-700">Order</th>
                             <th class="p-3 sm:p-4 text-left font-semibold text-gray-700">Customer</th>
+                            <th class="p-3 sm:p-4 text-left font-semibold text-gray-700">Supplier Mapping</th>
                             <th class="p-3 sm:p-4 text-left font-semibold text-gray-700">Stage</th>
                             <th class="p-3 sm:p-4 text-left font-semibold text-gray-700 hidden md:table-cell">Invoice</th>
                             <th class="p-3 sm:p-4 text-center font-semibold text-gray-700">Actions</th>
@@ -68,6 +81,22 @@
                                 <td class="p-3 sm:p-4 text-gray-700">
                                     {{ $o->user?->username ?? $o->user?->name ?? '—' }}
                                 </td>
+                                <td class="p-3 sm:p-4 text-xs text-gray-700">
+                                    <div>Order#: {{ $o->supplier_order_number ?: '—' }}</div>
+                                    <div>Logistics: {{ $o->supplier_logistics_code ?: '—' }}</div>
+                                    @if(($queue ?? 'operations') === 'sourcing' && $o->supplier_order_number && !$o->supplier_logistics_code && auth()->user()->hasPermission('assign_shipment'))
+                                        <form method="POST" action="{{ route('admin.orders.supplier-mapping.update', $o) }}" class="mt-2 flex items-center gap-1">
+                                            @csrf
+                                            <input type="text" name="supplier_logistics_code" required
+                                                   class="rounded border border-gray-300 px-2 py-1 text-xs w-36"
+                                                   placeholder="Add logistics code">
+                                            <button type="submit"
+                                                    class="px-2 py-1 rounded bg-purple-600 hover:bg-purple-700 text-white text-xs font-medium">
+                                                Save
+                                            </button>
+                                        </form>
+                                    @endif
+                                </td>
                                 <td class="p-3 sm:p-4">{{ $eff?->name ?? '—' }}</td>
                                 <td class="p-3 sm:p-4 text-gray-600 hidden md:table-cell">{{ $o->invoice?->invoice_number ?? '—' }}</td>
                                 <td class="p-3 sm:p-4">
@@ -75,7 +104,7 @@
                                 </td>
                             </tr>
                         @empty
-                            <tr><td colspan="5" class="p-6 text-center text-gray-500">No orders yet.</td></tr>
+                            <tr><td colspan="6" class="p-6 text-center text-gray-500">No orders in this queue.</td></tr>
                         @endforelse
                     </tbody>
                 </table>

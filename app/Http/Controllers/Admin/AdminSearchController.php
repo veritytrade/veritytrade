@@ -16,7 +16,18 @@ class AdminSearchController extends Controller
     {
         $q = trim((string) $request->input('q', ''));
         if ($q === '') {
-            return back()->with('error', 'Enter something to search (email, WhatsApp name, shipment, order, or invoice).');
+            return back()->with('error', 'Enter something to search (customer, order ID, shipment, invoice, supplier order number, or supplier logistics code).');
+        }
+
+        // 0. Supplier references on orders (fastest recovery path in operations)
+        $supplierOrder = Order::where('supplier_order_number', $q)
+            ->orWhere('supplier_logistics_code', $q)
+            ->orWhere('supplier_order_number', 'like', '%' . $q . '%')
+            ->orWhere('supplier_logistics_code', 'like', '%' . $q . '%')
+            ->orderByDesc('id')
+            ->first();
+        if ($supplierOrder) {
+            return redirect()->route('admin.orders.show', $supplierOrder);
         }
 
         // 1. Customer by email / username / name -> Customer 360
@@ -60,7 +71,7 @@ class AdminSearchController extends Controller
             return redirect()->route('admin.invoices.index', ['invoice_number' => $invoice->invoice_number]);
         }
 
-        return back()->with('error', 'No matching customer, order, shipment, or invoice found.');
+        return back()->with('error', 'No matching customer, order, shipment, invoice, or supplier reference found.');
     }
 }
 

@@ -21,10 +21,29 @@ class OrderController extends Controller
 {
     public function index(Request $request): View
     {
+        $queue = trim((string) $request->query('queue', 'operations'));
+        if (! in_array($queue, ['sourcing', 'operations'], true)) {
+            $queue = 'operations';
+        }
+
         $query = Order::with(['user', 'shipment', 'invoice', 'currentStageOverride'])
             ->where('status', '!=', 'delivered')
             ->orderByRaw('shipment_id IS NULL DESC')
             ->latest('id');
+
+        if ($queue === 'sourcing') {
+            $query->where(function ($q): void {
+                $q->whereNull('supplier_order_number')
+                    ->orWhere('supplier_order_number', '')
+                    ->orWhereNull('supplier_logistics_code')
+                    ->orWhere('supplier_logistics_code', '');
+            });
+        } else {
+            $query->whereNotNull('supplier_order_number')
+                ->where('supplier_order_number', '!=', '')
+                ->whereNotNull('supplier_logistics_code')
+                ->where('supplier_logistics_code', '!=', '');
+        }
 
         if ($status = $request->query('status')) {
             $query->where('status', $status);
@@ -50,7 +69,23 @@ class OrderController extends Controller
 
         $orders = $query->paginate(15)->withQueryString();
 
-        return view('admin.orders.index', compact('orders'));
+        return view('admin.orders.index', compact('orders', 'queue'));
+    }
+
+    public function updateSupplierMapping(Request $request, Order $order): RedirectResponse
+    {
+        $validated = $request->validate([
+            'supplier_logistics_code' => ['required', 'string', 'max:120', Rule::unique('orders', 'supplier_logistics_code')->ignore($order->id)],
+        ]);
+
+        $order->update([
+            'supplier_logistics_code' => trim((string) $validated['supplier_logistics_code']),
+            'mapping_status' => 'mapped',
+            'mapped_at' => now(),
+            'mapped_by' => auth()->id(),
+        ]);
+
+        return back()->with('success', 'Supplier logistics code saved.');
     }
 
     public function create(): View

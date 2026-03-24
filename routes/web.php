@@ -300,6 +300,7 @@ Route::prefix('admin')
             Route::get('/orders/{order}/edit', [\App\Http\Controllers\Admin\OrderController::class, 'edit'])->name('admin.orders.edit');
             Route::put('/orders/{order}', [\App\Http\Controllers\Admin\OrderController::class, 'update'])->name('admin.orders.update');
             Route::post('/orders/{order}/assign-shipment', [\App\Http\Controllers\Admin\OrderController::class, 'assignShipment'])->name('admin.orders.assign-shipment');
+            Route::post('/orders/{order}/supplier-mapping', [\App\Http\Controllers\Admin\OrderController::class, 'updateSupplierMapping'])->name('admin.orders.supplier-mapping.update');
         });
         Route::middleware('permission:override_order_stage')->group(function () {
             Route::post('/orders/{order}/override-stage', [\App\Http\Controllers\Admin\OrderController::class, 'overrideStage'])->name('admin.orders.override-stage');

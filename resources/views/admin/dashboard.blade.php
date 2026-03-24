@@ -113,6 +113,28 @@
                     </a>
                 </div>
             @endif
+            @if(auth()->user()?->hasPermission('view_tracking') && ($ordersWaitingSupplierLogistics ?? 0) > 0)
+                {{-- Orders waiting supplier logistics code --}}
+                <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4 md:p-6 hover:shadow-md transition">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm text-gray-500 mb-1">Waiting Supplier Logistics Code</p>
+                            <p class="text-2xl md:text-3xl font-bold text-purple-700">
+                                {{ $ordersWaitingSupplierLogistics }}
+                            </p>
+                        </div>
+                        <div class="bg-purple-100 p-3 rounded-lg">
+                            <svg class="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h8M8 11h8M8 15h5M6 3h12a2 2 0 012 2v14l-4-2-4 2-4-2-4 2V5a2 2 0 012-2z"/>
+                            </svg>
+                        </div>
+                    </div>
+                    <a href="{{ route('admin.orders.index', ['queue' => 'sourcing']) }}"
+                       class="text-sm text-purple-700 hover:text-purple-900 font-medium mt-3 inline-block">
+                        Complete Mapping →
+                    </a>
+                </div>
+            @endif
             @if(auth()->user()?->hasPermission('approve_orders') && ($ordersPendingApproval ?? 0) > 0)
                 {{-- Orders Pending Approval --}}
                 <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4 md:p-6 hover:shadow-md transition">
