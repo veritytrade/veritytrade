@@ -12,6 +12,7 @@ use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\File;
 use Illuminate\View\View;
@@ -84,6 +85,7 @@ class OrderController extends Controller
     {
         $validated = $request->validate([
             'supplier_logistics_code' => ['required', 'string', 'max:120', Rule::unique('orders', 'supplier_logistics_code')->ignore($order->id)],
+            'return_url' => ['nullable', 'string', 'max:2000'],
         ]);
 
         $order->update([
@@ -93,7 +95,15 @@ class OrderController extends Controller
             'mapped_by' => auth()->id(),
         ]);
 
-        return back()->with('success', 'Supplier logistics code saved.');
+        $returnUrl = (string) ($validated['return_url'] ?? '');
+        if ($returnUrl !== '' && Str::startsWith($returnUrl, [url('/admin/orders'), '/admin/orders'])) {
+            return redirect($returnUrl)
+                ->with('success', 'Supplier logistics code saved.')
+                ->with('highlight_order_id', $order->id);
+        }
+
+        return back()->with('success', 'Supplier logistics code saved.')
+            ->with('highlight_order_id', $order->id);
     }
 
     public function create(): View

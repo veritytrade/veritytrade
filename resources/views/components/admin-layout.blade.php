@@ -68,7 +68,12 @@
         <header class="bg-white shadow-sm p-4 flex flex-col gap-3 md:flex-row md:items-center md:justify-between sticky top-0 z-30 border-b border-gray-100">
             <div class="flex items-center justify-between md:justify-start gap-3">
                 <button type="button" @click="sidebarOpen = true" class="inline-flex md:hidden items-center justify-center rounded-lg border border-gray-200 p-2 text-gray-600">Menu</button>
-                <span class="font-bold text-green-700">VerityTrade Admin</span>
+                <div>
+                    <span class="font-bold text-green-700">VerityTrade Admin</span>
+                    @if($user)
+                        <p class="text-xs text-gray-500">{{ $user->name }} • {{ $user->role?->name ?? 'staff' }}</p>
+                    @endif
+                </div>
             </div>
             @if($user && ($user->hasPermission('view_dashboard') || $user->hasPermission('approve_users') || $user->hasPermission('view_tracking')))
                 <form method="POST" action="{{ route('admin.search') }}" class="flex items-center gap-2 max-w-md w-full">
@@ -86,6 +91,30 @@
         </header>
 
         <main class="p-4 md:p-6">
+            @if(session('success'))
+                <div x-data="{ show: true, progress: 100 }"
+                     x-show="show"
+                     x-init="
+                        const total = 3500;
+                        const started = Date.now();
+                        const timer = setInterval(() => {
+                            const elapsed = Date.now() - started;
+                            progress = Math.max(0, 100 - Math.floor((elapsed / total) * 100));
+                            if (elapsed >= total) { clearInterval(timer); show = false; }
+                        }, 100);
+                     "
+                     class="mb-4 rounded-lg border border-green-200 bg-green-50 text-green-800 px-4 py-3 shadow-sm">
+                    <div class="text-sm font-medium">{{ session('success') }}</div>
+                    <div class="mt-2 h-1.5 w-full rounded bg-green-100 overflow-hidden">
+                        <div class="h-full bg-green-500 transition-all duration-100" :style="`width: ${progress}%`"></div>
+                    </div>
+                </div>
+            @endif
+            @if(session('error'))
+                <div class="mb-4 rounded-lg border border-red-200 bg-red-50 text-red-800 px-4 py-3 shadow-sm text-sm font-medium">
+                    {{ session('error') }}
+                </div>
+            @endif
             {{ $slot }}
         </main>
     </div>

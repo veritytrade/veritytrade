@@ -1,5 +1,10 @@
 <x-layouts.admin>
     <div class="max-w-6xl mx-auto p-4 md:p-6">
+        <nav class="mb-3 text-xs text-gray-500">
+            <a href="{{ route('admin.dashboard') }}" class="hover:text-green-700">Dashboard</a>
+            <span class="mx-1">/</span>
+            <span class="text-gray-700 font-medium">Overview</span>
+        </nav>
         
         {{-- Header --}}
         <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4 md:p-6 mb-6">
@@ -9,6 +14,7 @@
                         Admin Dashboard
                     </h2>
                     <p class="text-sm text-gray-500 mt-1">Overview of your core system</p>
+                    <p class="text-xs text-gray-400 mt-1">Last refreshed: {{ now()->format('d M Y H:i') }}</p>
                 </div>
                 
                 @if(auth()->user()?->hasPermission('manage_deals'))
@@ -21,6 +27,20 @@
                 @endif
             </div>
         </div>
+
+        @php
+            $pendingApprovals = \App\Models\User::where('is_approved', false)->whereHas('role', fn ($q) => $q->where('name', 'customer'))->count();
+            $hasPendingOps = (($pendingInvoiceRequestsCount ?? 0) > 0)
+                || (($ordersWithoutShipment ?? 0) > 0)
+                || (($ordersWaitingSupplierLogistics ?? 0) > 0)
+                || (($ordersPendingApproval ?? 0) > 0)
+                || ($pendingApprovals > 0);
+        @endphp
+        @if(!$hasPendingOps)
+            <div class="mb-6 rounded-lg border border-green-200 bg-green-50 p-4 text-sm text-green-800">
+                All clear. No pending admin actions right now.
+            </div>
+        @endif
 
         {{-- Core stats --}}
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 mb-6">

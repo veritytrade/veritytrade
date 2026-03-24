@@ -1,5 +1,12 @@
 <x-admin-layout>
 <div class="max-w-4xl mx-auto p-4 sm:p-6">
+    <nav class="mb-3 text-xs text-gray-500">
+        <a href="{{ route('admin.dashboard') }}" class="hover:text-green-700">Dashboard</a>
+        <span class="mx-1">/</span>
+        <a href="{{ route('admin.shipments.index') }}" class="hover:text-green-700">Shipments</a>
+        <span class="mx-1">/</span>
+        <span class="text-gray-700 font-medium">Shipment Details</span>
+    </nav>
     <div class="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
             <a href="{{ route('admin.shipments.index') }}" class="text-green-600 hover:text-green-700 text-sm font-medium">← Shipments</a>
@@ -12,11 +19,6 @@
             </a>
         @endif
     </div>
-
-    @if(session('success'))
-        <div x-data="{ show: true }" x-show="show" x-init="setTimeout(() => show = false, 3000)"
-             class="mb-4 p-4 bg-green-100 border border-green-200 text-green-800 rounded-lg">{{ session('success') }}</div>
-    @endif
 
     <div class="bg-white rounded-xl border border-gray-200 p-4 sm:p-6 mb-6">
         <h3 class="font-bold text-gray-800 mb-4">Shipment Info</h3>
@@ -76,7 +78,15 @@
                         @php($eff = $order->effectiveStage())
                         <tr class="hover:bg-gray-50">
                             <td class="p-3 sm:p-4"><a href="{{ route('admin.orders.show', $order) }}" class="text-green-600 hover:text-green-700 font-medium">{{ Str::limit($order->product_name ?? 'Order #'.$order->id, 20) }}</a></td>
-                            <td class="p-3 sm:p-4 text-gray-700">{{ $order->user?->name ?? '—' }}</td>
+                            <td class="p-3 sm:p-4 text-gray-700">
+                                @if($order->user)
+                                    <a href="{{ route('admin.customers.show', ['q' => $order->user->email]) }}" class="text-green-600 hover:text-green-700">
+                                        {{ $order->user?->username ?? $order->user?->name ?? '—' }}
+                                    </a>
+                                @else
+                                    —
+                                @endif
+                            </td>
                             <td class="p-3 sm:p-4 font-mono text-gray-700">{{ $order->invoice?->invoice_number ?? '—' }}</td>
                             <td class="p-3 sm:p-4">{{ $eff?->name ?? '—' }}</td>
                             <td class="p-3 sm:p-4">

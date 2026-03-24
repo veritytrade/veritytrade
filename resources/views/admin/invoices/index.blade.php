@@ -1,5 +1,10 @@
 <x-admin-layout>
     <div class="p-4 sm:p-6 max-w-6xl mx-auto">
+        <nav class="mb-3 text-xs text-gray-500">
+            <a href="{{ route('admin.dashboard') }}" class="hover:text-green-700">Dashboard</a>
+            <span class="mx-1">/</span>
+            <span class="text-gray-700 font-medium">Invoices</span>
+        </nav>
         <div class="mb-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <div>
                 <a href="{{ route('admin.dashboard') }}" class="text-green-600 hover:text-green-700 text-sm font-medium">&larr; Dashboard</a>
@@ -73,7 +78,7 @@
                                     <div class="text-xs text-gray-500">ID: {{ $invoice->id }}</div>
                                 </td>
                                 <td class="px-4 py-2 align-top">
-                                    <div class="text-gray-900">{{ $invoice->user?->name ?? '—' }}</div>
+                                    <div class="text-gray-900">{{ $invoice->user?->username ?? $invoice->user?->name ?? '—' }}</div>
                                     <div class="text-xs text-gray-500">{{ $invoice->user?->email ?? '—' }}</div>
                                 </td>
                                 <td class="px-4 py-2 align-top">

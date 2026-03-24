@@ -1,5 +1,10 @@
 <x-admin-layout>
     <div class="max-w-6xl mx-auto p-4 sm:p-6">
+        <nav class="mb-3 text-xs text-gray-500">
+            <a href="{{ route('admin.dashboard') }}" class="hover:text-green-700">Dashboard</a>
+            <span class="mx-1">/</span>
+            <span class="text-gray-700 font-medium">Orders</span>
+        </nav>
         <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
             <h2 class="text-xl sm:text-2xl font-bold text-gray-900">Orders</h2>
             @if(auth()->user()->hasPermission('create_order'))
@@ -20,11 +25,6 @@
                 Operations Queue
             </a>
         </div>
-
-        @if(session('success'))
-            <div x-data="{ show: true }" x-show="show" x-init="setTimeout(() => show = false, 3000)"
-                 class="mb-4 p-4 bg-green-100 border border-green-200 text-green-800 rounded-lg">{{ session('success') }}</div>
-        @endif
 
         {{-- Filters --}}
         <div class="mb-4 bg-white rounded-xl border border-gray-200 p-4">
@@ -71,7 +71,8 @@
                     <tbody class="divide-y divide-gray-100">
                         @forelse($orders as $o)
                             @php($eff = $o->effectiveStage())
-                            <tr class="hover:bg-gray-50">
+                            <tr id="order-{{ $o->id }}"
+                                class="hover:bg-gray-50 {{ (session('highlight_order_id') == $o->id || (int) request('highlight') === $o->id) ? 'bg-yellow-50' : '' }}">
                                 <td class="p-3 sm:p-4">
                                     <span class="font-medium text-gray-800">{{ Str::limit($o->product_name ?? 'Order #'.$o->id, 18) }}</span>
                                     @if($o->status === 'pending_approval')
@@ -79,7 +80,13 @@
                                     @endif
                                 </td>
                                 <td class="p-3 sm:p-4 text-gray-700">
-                                    {{ $o->user?->username ?? $o->user?->name ?? '—' }}
+                                    @if($o->user)
+                                        <a href="{{ route('admin.customers.show', ['q' => $o->user->email]) }}" class="text-green-600 hover:text-green-700">
+                                            {{ $o->user?->username ?? $o->user?->name ?? '—' }}
+                                        </a>
+                                    @else
+                                        —
+                                    @endif
                                 </td>
                                 <td class="p-3 sm:p-4 text-xs text-gray-700">
                                     <div>Order#: {{ $o->supplier_order_number ?: '—' }}</div>
@@ -87,6 +94,7 @@
                                     @if(($queue ?? 'operations') === 'sourcing' && $o->supplier_order_number && !$o->supplier_logistics_code && auth()->user()->hasPermission('assign_shipment'))
                                         <form method="POST" action="{{ route('admin.orders.supplier-mapping.update', $o) }}" class="mt-2 flex items-center gap-1">
                                             @csrf
+                                            <input type="hidden" name="return_url" value="{{ request()->fullUrlWithQuery(['highlight' => $o->id]) }}">
                                             <input type="text" name="supplier_logistics_code" required
                                                    class="rounded border border-gray-300 px-2 py-1 text-xs w-36"
                                                    placeholder="Add logistics code">
