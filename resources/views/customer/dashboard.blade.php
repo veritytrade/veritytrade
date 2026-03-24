@@ -10,7 +10,12 @@
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4">
         <section class="bg-white rounded-xl border border-gray-200 p-4">
             <div class="flex items-center justify-between mb-3">
-                <h2 class="font-bold text-gray-800">Recent Orders</h2>
+                <div class="flex items-center gap-2">
+                    <h2 class="font-bold text-gray-800">Recent Orders</h2>
+                    <span class="px-2 py-0.5 rounded-full bg-gray-100 text-gray-700 text-xs font-medium">
+                        Pending: {{ $pendingOrdersCount ?? 0 }}
+                    </span>
+                </div>
                 <a href="{{ route('dashboard.orders') }}" class="text-sm font-medium text-blue-600 hover:text-blue-700">View all →</a>
             </div>
             @forelse($orders as $order)
@@ -43,26 +48,14 @@
 
         <section class="bg-white rounded-xl border border-gray-200 p-4">
             <div class="flex items-center justify-between mb-3">
-                <h2 class="font-bold text-gray-800">Pending Orders</h2>
-                <a href="{{ route('dashboard.orders') }}" class="text-sm font-medium text-blue-600 hover:text-blue-700">Open orders →</a>
-            </div>
-            <p class="text-3xl font-bold text-gray-900">{{ $pendingOrdersCount ?? 0 }}</p>
-            <p class="text-sm text-gray-500 mt-1">Orders waiting for completion or delivery.</p>
-        </section>
-    </div>
-
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4">
-        <section class="bg-white rounded-xl border border-gray-200 p-4">
-            <div class="flex items-center justify-between mb-3">
-                <h2 class="font-bold text-gray-800">In Transit</h2>
+                <div class="flex items-center gap-2">
+                    <h2 class="font-bold text-gray-800">In Transit</h2>
+                    <span class="px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 text-xs font-medium">
+                        {{ $inTransitCount ?? 0 }}
+                    </span>
+                </div>
                 <a href="{{ route('dashboard.tracking') }}" class="text-sm font-medium text-blue-600 hover:text-blue-700">Tracking page →</a>
             </div>
-            <p class="text-3xl font-bold text-blue-700">{{ $inTransitCount ?? 0 }}</p>
-            <p class="text-sm text-gray-500 mt-1">Packages currently moving to destination.</p>
-        </section>
-
-        <section class="bg-white rounded-xl border border-gray-200 p-4">
-            <h2 class="font-bold text-gray-800 mb-3">Orders in Transit</h2>
             @forelse($trackableOrders as $order)
                 <div class="py-3 border-b border-gray-100 last:border-b-0">
                     <div class="flex justify-between items-start text-sm mb-2">
