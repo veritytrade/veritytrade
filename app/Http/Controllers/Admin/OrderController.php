@@ -32,17 +32,25 @@ class OrderController extends Controller
             ->latest('id');
 
         if ($queue === 'sourcing') {
-            $query->where(function ($q): void {
-                $q->whereNull('supplier_order_number')
-                    ->orWhere('supplier_order_number', '')
-                    ->orWhereNull('supplier_logistics_code')
-                    ->orWhere('supplier_logistics_code', '');
-            });
+            // Sourcing queue: orders that still need supplier mapping and are not in shipment flow yet.
+            $query->whereNull('shipment_id')
+                ->where(function ($q): void {
+                    $q->whereNull('supplier_order_number')
+                        ->orWhere('supplier_order_number', '')
+                        ->orWhereNull('supplier_logistics_code')
+                        ->orWhere('supplier_logistics_code', '');
+                });
         } else {
-            $query->whereNotNull('supplier_order_number')
-                ->where('supplier_order_number', '!=', '')
-                ->whereNotNull('supplier_logistics_code')
-                ->where('supplier_logistics_code', '!=', '');
+            // Operations queue: legacy shipment-flow orders OR fully mapped supplier orders.
+            $query->where(function ($q): void {
+                $q->whereNotNull('shipment_id')
+                    ->orWhere(function ($mapped): void {
+                        $mapped->whereNotNull('supplier_order_number')
+                            ->where('supplier_order_number', '!=', '')
+                            ->whereNotNull('supplier_logistics_code')
+                            ->where('supplier_logistics_code', '!=' , '');
+                    });
+            });
         }
 
         if ($status = $request->query('status')) {
