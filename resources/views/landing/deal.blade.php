@@ -38,42 +38,19 @@
                 <div class="flex flex-col gap-4 sm:flex-row">
                     {{-- Image / Carousel --}}
                     <div class="sm:w-1/2">
-                        <div class="relative aspect-square bg-white border border-gray-200 rounded-xl overflow-hidden"
-                             x-data="dealCarousel(@js($imageUrls->toArray()))"
-                             x-init="init()"
-                             @touchstart.passive="handleTouchStart($event)"
-                             @touchend="handleTouchEnd($event)">
-                            <template x-if="images.length === 0">
+                        <div class="relative aspect-square bg-white border border-gray-200 rounded-xl overflow-hidden">
+                            @if($imageUrls->isNotEmpty())
+                                {{-- Static server-rendered image to ensure it always shows (no JS dependency). --}}
+                                <img
+                                    src="{{ $imageUrls->first() }}"
+                                    alt="{{ $deal->title }} image"
+                                    class="w-full h-full object-contain p-4 bg-white"
+                                />
+                            @else
                                 <div class="w-full h-full flex items-center justify-center text-gray-400">
                                     No image
                                 </div>
-                            </template>
-
-                            <template x-if="images.length > 0">
-                                <template x-for="(image, index) in images" :key="index">
-                                    <div x-show="current === index"
-                                         class="absolute inset-0 transition-opacity duration-300">
-                                        <img :src="image"
-                                             :alt="'{{ addslashes(str_replace(["\r","\n"], ' ', $deal->title)) }} image ' + (index + 1)"
-                                             class="w-full h-full object-contain p-4 bg-white"/>
-                                    </div>
-                                </template>
-
-                                <div class="absolute bottom-3 left-0 right-0 flex justify-center gap-2">
-                                    <template x-for="(img, index) in images" :key="'dot-' + index">
-                                        <button type="button"
-                                                @click="current = index; resetAutoRotate()"
-                                                class="w-2.5 h-2.5 rounded-full transition-all shadow-sm"
-                                                :class="current === index ? 'bg-green-600 scale-110' : 'bg-gray-300 hover:bg-gray-400'">
-                                        </button>
-                                    </template>
-                                </div>
-
-                                <div x-show="images.length > 1"
-                                     class="absolute top-3 right-3 bg-black/60 text-white text-xs px-3 py-1.5 rounded-full">
-                                    <span x-text="current + 1"></span>/<span x-text="images.length"></span>
-                                </div>
-                            </template>
+                            @endif
                         </div>
                     </div>
 
