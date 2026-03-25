@@ -35,9 +35,9 @@
             </div>
 
             <div class="bg-white border border-gray-200 rounded-xl shadow-sm p-3 sm:p-5">
-                <div class="flex flex-col gap-4 sm:flex-row">
+                <div class="flex flex-col gap-4">
                     {{-- Image / Carousel --}}
-                    <div class="sm:w-1/2">
+                    <div class="w-full">
                         <div class="relative aspect-square bg-white border border-gray-200 rounded-xl overflow-hidden">
                             @if($imageUrls->isNotEmpty())
                                 {{-- Static server-rendered image to ensure it always shows (no JS dependency). --}}
@@ -55,7 +55,7 @@
                     </div>
 
                     {{-- Content --}}
-                    <div class="sm:w-1/2 flex flex-col">
+                    <div class="w-full flex flex-col">
                         <h1 class="text-xl sm:text-2xl font-extrabold text-gray-900 leading-tight">
                             {{ $deal->title }}
                         </h1>
