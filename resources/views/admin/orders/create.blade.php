@@ -73,17 +73,31 @@ Price: 1,030,000">{{ old('gadget_description') }}</textarea>
 
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Supplier Order Number</label>
-                    <input type="text" name="supplier_order_number" value="{{ old('supplier_order_number') }}"
-                           placeholder="e.g. PDD-20260318-12345"
-                           class="w-full rounded-lg border border-gray-300 px-4 py-3 text-base focus:ring-2 focus:ring-green-500 focus:border-green-500">
+                    <div class="relative">
+                        <input type="text" name="supplier_order_number" value="{{ old('supplier_order_number') }}"
+                               placeholder="e.g. PDD-20260318-12345"
+                               class="w-full rounded-lg border border-gray-300 px-4 py-3 text-base focus:ring-2 focus:ring-green-500 focus:border-green-500 pr-16">
+                        <button type="button"
+                                class="absolute right-2 top-1/2 -translate-y-1/2 min-h-[36px] px-3 rounded-lg bg-gray-50 border border-gray-200 text-xs font-semibold text-gray-700 hover:bg-gray-100 focus:ring-2 focus:ring-green-500"
+                                onclick="veritytradeCopyInputValue('supplier_order_number', this)">
+                            Copy
+                        </button>
+                    </div>
                     @error('supplier_order_number')<p class="text-red-600 text-sm mt-1">{{ $message }}</p>@enderror
                 </div>
 
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Supplier Logistics Code</label>
-                    <input type="text" name="supplier_logistics_code" value="{{ old('supplier_logistics_code') }}"
-                           placeholder="Add when logistics assigns this package"
-                           class="w-full rounded-lg border border-gray-300 px-4 py-3 text-base focus:ring-2 focus:ring-green-500 focus:border-green-500">
+                    <div class="relative">
+                        <input type="text" name="supplier_logistics_code" value="{{ old('supplier_logistics_code') }}"
+                               placeholder="Add when logistics assigns this package"
+                               class="w-full rounded-lg border border-gray-300 px-4 py-3 text-base focus:ring-2 focus:ring-green-500 focus:border-green-500 pr-16">
+                        <button type="button"
+                                class="absolute right-2 top-1/2 -translate-y-1/2 min-h-[36px] px-3 rounded-lg bg-gray-50 border border-gray-200 text-xs font-semibold text-gray-700 hover:bg-gray-100 focus:ring-2 focus:ring-green-500"
+                                onclick="veritytradeCopyInputValue('supplier_logistics_code', this)">
+                            Copy
+                        </button>
+                    </div>
                     @error('supplier_logistics_code')<p class="text-red-600 text-sm mt-1">{{ $message }}</p>@enderror
                 </div>
             </div>
@@ -117,6 +131,58 @@ Price: 1,030,000">{{ old('gadget_description') }}</textarea>
         </form>
 
         <script>
+            function veritytradeCopyInputValue(inputName, buttonEl) {
+                try {
+                    const input = document.querySelector('input[name="' + inputName + '"]');
+                    if (!input) return;
+                    const value = (input.value || '').trim();
+                    if (!value) return;
+
+                    const setButton = (text) => {
+                        if (!buttonEl) return;
+                        const prev = buttonEl.dataset.prevText || buttonEl.textContent;
+                        buttonEl.dataset.prevText = prev;
+                        buttonEl.textContent = text;
+                    };
+                    const restoreButton = () => {
+                        if (!buttonEl) return;
+                        if (buttonEl.dataset.prevText) buttonEl.textContent = buttonEl.dataset.prevText;
+                        else buttonEl.textContent = 'Copy';
+                    };
+
+                    // Preferred path when available.
+                    if (navigator.clipboard && typeof navigator.clipboard.writeText === 'function') {
+                        navigator.clipboard.writeText(value)
+                            .then(() => {
+                                setButton('Copied');
+                                setTimeout(restoreButton, 1200);
+                            })
+                            .catch(() => {
+                                // Fallback to selection-based copy
+                                input.focus();
+                                input.select();
+                                const ok = document.execCommand && document.execCommand('copy');
+                                if (ok) {
+                                    setButton('Copied');
+                                    setTimeout(restoreButton, 1200);
+                                }
+                            });
+                        return;
+                    }
+
+                    // Fallback: select and copy
+                    input.focus();
+                    input.select();
+                    const ok = document.execCommand && document.execCommand('copy');
+                    if (ok) {
+                        setButton('Copied');
+                        setTimeout(restoreButton, 1200);
+                    }
+                } catch (e) {
+                    // Ignore clipboard failures; keep page functional.
+                }
+            }
+
             document.addEventListener('alpine:init', () => {
                 Alpine.data('orderPriceExtractor', () => ({
                     hasPrice: false,

@@ -66,7 +66,7 @@
                                         $priceText = preg_replace('/\s+/u', '', trim((string) ($deal->price_display ?? '')));
                                         $priceValue = preg_replace('/^(?:₦|NGN|N)/u', '', $priceText);
                                         $priceValue = $priceValue !== '' ? $priceValue : $priceText;
-                                        $specs = collect(explode("\n", (string) $deal->description))
+                                        $specLines = collect(explode("\n", (string) $deal->description))
                                             ->map(fn ($line) => trim($line))
                                             ->filter()
                                             ->map(function ($line) {
@@ -74,30 +74,134 @@
                                                 return ['key' => trim($key), 'value' => trim($value)];
                                             })
                                             ->filter(fn ($item) => $item['key'] !== '' && $item['value'] !== '' && !in_array(strtolower($item['key']), ['model', 'price', 'cost', 'amount'], true))
-                                            ->take(2);
+                                            ->values();
+
+                                        // Priority chips for list cards:
+                                        // 1) RAM  2) ROM/Storage  3) Battery  (then fallback: Processor -> SIM/Connectivity -> other)
+                                        $specTypes = [
+                                            'ram' => null,
+                                            'storage' => null,
+                                            'battery' => null,
+                                            'processor' => null,
+                                            'sim' => null,
+                                            'other' => null,
+                                        ];
+
+                                        foreach ($specLines as $item) {
+                                            $k = strtolower((string) $item['key']);
+                                            $v = trim((string) $item['value']);
+                                            if ($v === '') {
+                                                continue;
+                                            }
+
+                                            $vLower = strtolower($v);
+                                            $hasMah = str_contains($vLower, 'mah');
+
+                                            if ($specTypes['ram'] === null && str_contains($k, 'ram')) {
+                                                $specTypes['ram'] = $v;
+                                                continue;
+                                            }
+
+                                            if ($specTypes['battery'] === null && (str_contains($k, 'battery') || str_contains($k, 'health') || str_contains($k, 'batt'))) {
+                                                $specTypes['battery'] = $v;
+                                                continue;
+                                            }
+
+                                            if ($specTypes['battery'] === null && $hasMah && str_contains($k, 'capacity')) {
+                                                // Battery capacity lines often look like "Battery: ... (9000mAh capacity)".
+                                                $specTypes['battery'] = $v;
+                                                continue;
+                                            }
+
+                                            if ($specTypes['storage'] === null && (str_contains($k, 'rom') || str_contains($k, 'storage'))) {
+                                                $specTypes['storage'] = $v;
+                                                continue;
+                                            }
+
+                                            if ($specTypes['storage'] === null && (str_contains($k, 'internal') || str_contains($k, 'memory'))) {
+                                                // "Memory" may sometimes be used for storage; keep as fallback.
+                                                $specTypes['storage'] = $v;
+                                                continue;
+                                            }
+
+                                            if ($specTypes['processor'] === null && (str_contains($k, 'processor') || str_contains($k, 'cpu') || str_contains($k, 'chip'))) {
+                                                $specTypes['processor'] = $v;
+                                                continue;
+                                            }
+
+                                            if ($specTypes['processor'] === null && (str_contains($vLower, 'snapdragon') || str_contains($vLower, 'dimensity') || str_contains($vLower, 'mediatek') || str_contains($vLower, 'qualcomm'))) {
+                                                $specTypes['processor'] = $v;
+                                                continue;
+                                            }
+
+                                            if ($specTypes['sim'] === null && (str_contains($k, 'sim') || str_contains($k, 'connect') || str_contains($k, '5g') || str_contains($k, 'wifi') || str_contains($k, 'dual sim'))) {
+                                                $specTypes['sim'] = $v;
+                                                continue;
+                                            }
+
+                                            if ($specTypes['other'] === null) {
+                                                $specTypes['other'] = $v;
+                                            }
+                                        }
+
+                                        $specChips = collect(['ram', 'storage', 'battery', 'processor', 'sim', 'other'])
+                                            ->map(fn ($type) => $specTypes[$type])
+                                            ->filter()
+                                            ->take(3)
+                                            ->values();
+
                                         $buyUrl = filled($deal->uuid) ? route('deal.whatsapp', ['deal' => $deal->uuid]) : null;
+                                        $detailUrl = filled($deal->uuid) ? route('deal.show', ['deal' => $deal->uuid]) : null;
                                     @endphp
 
                                     <div class="bg-white border border-gray-200 rounded-xl p-2.5 sm:p-3 shadow-sm">
                                         <div class="flex gap-2.5">
-                                            <div class="w-20 h-20 sm:w-24 sm:h-24 rounded-lg bg-gray-100 overflow-hidden shrink-0">
-                                                @if($imageUrl)
-                                                    <img src="{{ $imageUrl }}" alt="{{ $deal->title }}" class="w-full h-full object-contain p-1.5">
-                                                @else
-                                                    <div class="w-full h-full flex items-center justify-center text-xs text-gray-400">No image</div>
-                                                @endif
-                                            </div>
+                                            @if($detailUrl)
+                                                <a href="{{ $detailUrl }}"
+                                                   class="w-20 h-20 sm:w-24 sm:h-24 rounded-lg bg-gray-100 overflow-hidden shrink-0 block">
+                                                    @if($imageUrl)
+                                                        <img src="{{ $imageUrl }}" alt="{{ $deal->title }}" class="w-full h-full object-contain p-1.5">
+                                                    @else
+                                                        <div class="w-full h-full flex items-center justify-center text-xs text-gray-400">No image</div>
+                                                    @endif
+                                                </a>
+                                            @else
+                                                <div class="w-20 h-20 sm:w-24 sm:h-24 rounded-lg bg-gray-100 overflow-hidden shrink-0">
+                                                    @if($imageUrl)
+                                                        <img src="{{ $imageUrl }}" alt="{{ $deal->title }}" class="w-full h-full object-contain p-1.5">
+                                                    @else
+                                                        <div class="w-full h-full flex items-center justify-center text-xs text-gray-400">No image</div>
+                                                    @endif
+                                                </div>
+                                            @endif
+
                                             <div class="min-w-0 flex-1">
-                                                <h3 class="text-sm sm:text-base font-semibold text-gray-900 leading-tight line-clamp-2">{{ $deal->title }}</h3>
-                                                @if($specs->isNotEmpty())
-                                                    <div class="mt-1.5 flex flex-wrap gap-1">
-                                                        @foreach($specs as $spec)
-                                                            <span class="text-[10px] sm:text-xs px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-100">
-                                                                {{ \Illuminate\Support\Str::limit($spec['value'], 26) }}
-                                                            </span>
-                                                        @endforeach
-                                                    </div>
+                                                @if($detailUrl)
+                                                    <a href="{{ $detailUrl }}" class="block">
+                                                        <h3 class="text-sm sm:text-base font-semibold text-gray-900 leading-tight line-clamp-2">{{ $deal->title }}</h3>
+                                                        @if($specChips->isNotEmpty())
+                                                            <div class="mt-1.5 flex flex-wrap gap-1">
+                                                                @foreach($specChips as $chipValue)
+                                                                    <span class="text-[10px] sm:text-xs px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-100 whitespace-normal break-words leading-tight">
+                                                                        {{ $chipValue }}
+                                                                    </span>
+                                                                @endforeach
+                                                            </div>
+                                                        @endif
+                                                    </a>
+                                                @else
+                                                    <h3 class="text-sm sm:text-base font-semibold text-gray-900 leading-tight line-clamp-2">{{ $deal->title }}</h3>
+                                                    @if($specChips->isNotEmpty())
+                                                        <div class="mt-1.5 flex flex-wrap gap-1">
+                                                            @foreach($specChips as $chipValue)
+                                                                <span class="text-[10px] sm:text-xs px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-100 whitespace-normal break-words leading-tight">
+                                                                    {{ $chipValue }}
+                                                                </span>
+                                                            @endforeach
+                                                        </div>
+                                                    @endif
                                                 @endif
+
                                                 <div class="mt-2 flex items-center justify-between gap-2">
                                                     <div class="text-green-600 font-extrabold text-sm sm:text-base">
                                                         ₦{{ $priceValue !== '' ? $priceValue : '—' }}

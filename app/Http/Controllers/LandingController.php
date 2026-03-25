@@ -50,4 +50,29 @@ class LandingController extends Controller
         
         return redirect("https://wa.me/{$whatsappNumber}?text=" . urlencode($message));
     }
+
+    public function show(Deal $deal)
+    {
+        $deal->loadMissing('images');
+
+        // Suggestions exclude the current deal.
+        $suggestions = collect();
+        try {
+            $suggestions = Deal::with('images')
+                ->where('is_active', true)
+                ->where('expires_at', '>', now())
+                ->where('id', '!=', $deal->id)
+                ->orderBy('expires_at', 'asc')
+                ->take(8)
+                ->get();
+        } catch (\Throwable $e) {
+            report($e);
+            $suggestions = collect();
+        }
+
+        return view('landing.deal', [
+            'deal' => $deal,
+            'suggestions' => $suggestions,
+        ]);
+    }
 }

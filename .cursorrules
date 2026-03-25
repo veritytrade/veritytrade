@@ -1,0 +1,12 @@
+# Apply project coding + security guidelines
+
+- Always follow `CODING_SECURITY_GUIDELINES.md` for every implementation.
+- Prefer additive, backward-compatible changes; keep diffs small and scoped.
+- Prevent 500 errors and dead links: verify routes exist, update only the necessary views/controllers, and run lint checks on changed files.
+- Keep admin/control features limited to authorized users via middleware and existing permission checks.
+- Never trust client input: validate and sanitize in controllers/FormRequests; do not add new state-changing endpoints without CSRF protection.
+- Keep view logic simple: move non-trivial parsing/transformations into controllers/services when it becomes large.
+- Avoid exposing internal paths or stack traces to users; log technical details server-side only.
+- Mobile-first: ensure tables/actions remain accessible (horizontal scroll, non-truncated critical controls, adequate tap targets).
+- Do not add or expose one-time setup/debug endpoints publicly unless protected with strong tokens and deleted after use.
+

@@ -78,6 +78,10 @@ Route::get('/landing', [LandingController::class, 'index'])->name('landing');
 Route::get('/deal/{deal:uuid}/whatsapp', [LandingController::class, 'whatsapp'])
     ->name('deal.whatsapp');
 
+// Deal detail page (used by tapping deal cards on the home page)
+Route::get('/deal/{deal:uuid}', [LandingController::class, 'show'])
+    ->name('deal.show');
+
 /*
 |--------------------------------------------------------------------------
 | Breeze Auth Routes
