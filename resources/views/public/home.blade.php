@@ -1,5 +1,5 @@
 <x-app-layout>
-    <div class="min-h-screen bg-gray-50">
+        <div class="min-h-screen bg-gray-50 flex flex-col">
         @php
             $sections = collect([
                 ['id' => 'hot', 'title' => 'Hot Deals', 'deals' => $deals->take(10)],
@@ -10,8 +10,8 @@
             ])->filter(fn ($section) => $section['deals']->isNotEmpty())->values();
         @endphp
 
-        <div class="max-w-7xl mx-auto px-3 sm:px-4 py-4 sm:py-6">
-            <section id="catalogPane" class="space-y-4 sm:space-y-5">
+        <div class="max-w-7xl mx-auto px-3 sm:px-4 py-4 sm:py-6 flex flex-col flex-1 min-h-0">
+            <section class="space-y-4 sm:space-y-5">
                     @if($hero && $hero->hero_visible && ($hero->hero_headline || $hero->hero_subheadline || $hero->hero_image_path))
                         <article class="bg-gradient-to-r from-green-600 to-blue-600 rounded-xl p-5 sm:p-6 text-white shadow-sm text-center">
                             <h1 class="text-lg sm:text-2xl font-bold leading-tight">{{ $hero->hero_headline ?: 'Premium gadgets from trusted sourcing' }}</h1>
@@ -27,14 +27,16 @@
                                 @foreach($sections as $section)
                                     <button type="button"
                                             data-cat-target="{{ $section['id'] }}"
-                                            class="cat-btn {{ $loop->last ? 'col-span-2' : '' }} w-full text-left rounded-xl border border-gray-200 bg-gradient-to-br from-white to-gray-50 px-3 sm:px-4 py-3 sm:py-3.5 text-sm sm:text-base font-semibold text-gray-700 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md hover:border-green-300">
+                                            class="cat-btn {{ $section['id'] === 'premium' ? 'col-span-2' : '' }} w-full text-left rounded-xl border border-gray-200 bg-gradient-to-br from-white to-gray-50 px-3 sm:px-4 py-3 sm:py-3.5 text-sm sm:text-base font-semibold text-gray-700 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md hover:border-green-300">
                                         <span class="block">{{ $section['title'] }}</span>
                                     </button>
                                 @endforeach
                             </div>
                         </article>
                     @endif
+                    </section>
 
+            <section id="catalogScroll" class="flex-1 min-h-0 overflow-y-auto space-y-4 sm:space-y-5 pt-2">
                     <article class="grid grid-cols-3 gap-2 bg-white border border-gray-200 rounded-xl p-3 text-center">
                         <div>
                             <div class="text-base sm:text-lg font-bold text-gray-900">24h</div>
@@ -49,7 +51,7 @@
                             <div class="text-[11px] text-gray-500">WhatsApp flow</div>
                         </div>
                     </article>
-
+ 
                     @forelse($sections as $section)
                         <article id="{{ $section['id'] }}" data-section-id="{{ $section['id'] }}" class="scroll-mt-24">
                             <h2 class="text-sm sm:text-base font-bold text-gray-900 mb-2.5">{{ $section['title'] }}</h2>
