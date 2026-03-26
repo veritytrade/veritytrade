@@ -1,5 +1,5 @@
 <x-app-layout>
-        <div class="min-h-screen bg-gray-50 flex flex-col">
+        <div id="homeViewport" class="bg-gray-50 flex flex-col overflow-hidden">
         @php
             $sections = collect([
                 ['id' => 'hot', 'title' => 'Hot Deals', 'deals' => $deals->take(10)],
@@ -250,8 +250,20 @@
 
         <script>
             document.addEventListener('DOMContentLoaded', function() {
+                const homeViewport = document.getElementById('homeViewport');
+                const catalogScroll = document.getElementById('catalogScroll');
                 const buttons = document.querySelectorAll('.cat-btn');
                 const sections = document.querySelectorAll('[data-section-id]');
+
+                const updateViewportHeight = () => {
+                    if (!homeViewport) return;
+                    const topOffset = homeViewport.getBoundingClientRect().top;
+                    const availableHeight = window.innerHeight - topOffset;
+                    homeViewport.style.height = `${Math.max(availableHeight, 420)}px`;
+                };
+
+                updateViewportHeight();
+                window.addEventListener('resize', updateViewportHeight);
 
                 const setActive = (id) => {
                     buttons.forEach((btn) => {
@@ -278,7 +290,10 @@
                         if (visible) {
                             setActive(visible.target.dataset.sectionId);
                         }
-                    }, { threshold: [0.3, 0.5, 0.7] });
+                    }, {
+                        root: catalogScroll || null,
+                        threshold: [0.3, 0.5, 0.7]
+                    });
 
                     sections.forEach((section) => observer.observe(section));
                 }
