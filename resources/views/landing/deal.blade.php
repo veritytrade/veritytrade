@@ -28,13 +28,13 @@
         $buyUrl = filled($deal->uuid) ? route('deal.whatsapp', ['deal' => $deal->uuid]) : null;
     @endphp
 
-    <div class="premium-shell">
+    <div class="min-h-screen bg-gray-50">
         <div class="max-w-4xl mx-auto px-3 sm:px-4 py-4 sm:py-6">
             <div class="mb-4">
-                <a href="{{ route('home') }}" class="premium-link text-sm font-medium">&larr; Back</a>
+                <a href="{{ route('home') }}" class="text-green-700 hover:text-green-800 text-sm font-medium">&larr; Back</a>
             </div>
 
-            <div class="premium-card p-3 sm:p-5">
+            <div class="bg-white border border-gray-200 rounded-xl shadow-sm p-3 sm:p-5">
                 <div class="flex flex-col gap-4">
                     {{-- Image / Carousel --}}
                     <div class="w-full">
@@ -56,23 +56,23 @@
 
                     {{-- Content --}}
                     <div class="w-full flex flex-col">
-                        <h1 class="premium-title text-xl sm:text-2xl leading-tight">
+                        <h1 class="text-xl sm:text-2xl font-extrabold text-gray-900 leading-tight">
                             {{ $deal->title }}
                         </h1>
 
                         @if(!empty($deal->price_display))
-                            <div class="text-xl sm:text-2xl font-extrabold text-emerald-700 mt-1">
+                            <div class="text-xl sm:text-2xl font-extrabold text-green-700 mt-1">
                                 ₦{{ $priceValue !== '' ? $priceValue : '—' }}
                             </div>
                         @endif
 
                         @if($specLines->isNotEmpty())
                             <div class="mt-3">
-                                <div class="border border-gray-200 rounded-xl p-3 bg-slate-50/70"
+                                <div class="border border-gray-200 rounded-xl p-3 bg-gray-50"
                                      x-data="{ specsOpen: false }">
                                     <button type="button"
                                             @click="specsOpen = !specsOpen"
-                                            class="w-full flex items-center justify-center gap-2 py-2 px-3 rounded-lg border border-gray-200 bg-white hover:bg-gray-100 text-sm font-medium text-emerald-700 transition-colors">
+                                            class="w-full flex items-center justify-center gap-2 py-2 px-3 rounded-lg border border-gray-200 bg-white hover:bg-gray-100 text-sm font-medium text-green-700 transition-colors">
                                         <span x-text="specsOpen ? 'Hide full specs' : 'Show full specs'"></span>
                                         <svg class="w-4 h-4 transition-transform" :class="{ 'rotate-180': specsOpen }" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
@@ -88,8 +88,8 @@
                                          x-transition:leave-end="opacity-0"
                                          class="space-y-2.5 mt-3">
                                         @foreach($specLines as $spec)
-                                            <div class="rounded-lg border border-gray-200 bg-gradient-to-r from-sky-50 to-emerald-50 px-3 py-2">
-                                                <div class="text-xs font-semibold tracking-wide text-sky-700 uppercase">
+                                            <div class="rounded-lg border border-gray-200 bg-[#f2f8ff] px-3 py-2">
+                                                <div class="text-xs font-semibold tracking-wide text-blue-700 uppercase">
                                                     {{ $spec['key'] }}
                                                 </div>
                                                 <div class="text-sm font-bold text-gray-900 mt-1 break-words">
@@ -105,7 +105,7 @@
                         <div class="mt-auto pt-4">
                             @if($buyUrl)
                                 <a href="{{ $buyUrl }}"
-                                   class="premium-btn-primary w-full min-h-12 text-sm sm:text-base rounded-xl flex gap-2">
+                                   class="w-full min-h-12 bg-green-600 hover:bg-green-700 text-white font-bold text-sm sm:text-base rounded-xl flex items-center justify-center gap-2 focus:ring-4 focus:ring-green-300 transition">
                                     <span>WhatsApp to Buy Now</span>
                                 </a>
                             @else
@@ -121,9 +121,9 @@
 
             {{-- Suggestions --}}
             <div class="mt-6">
-                <h2 class="premium-title text-lg sm:text-xl mb-3">More deals you might like</h2>
+                <h2 class="text-lg sm:text-xl font-extrabold text-gray-900 mb-3">More deals you might like</h2>
                 @if($suggestions->isEmpty())
-                    <div class="premium-card p-4 text-sm text-gray-500">
+                    <div class="bg-white border border-gray-200 rounded-xl p-4 text-sm text-gray-500">
                         No suggestions right now.
                     </div>
                 @else
@@ -137,7 +137,7 @@
                                 $sPriceValue = $sPriceValue !== '' ? $sPriceValue : $sPriceText;
                             @endphp
                             <a href="{{ route('deal.show', ['deal' => $s->uuid]) }}"
-                               class="premium-card-soft p-2.5 hover:border-emerald-200 hover:shadow-sm transition block">
+                               class="bg-white border border-gray-200 rounded-xl p-2.5 hover:border-green-200 hover:shadow-sm transition block">
                                 <div class="aspect-square rounded-lg bg-gray-50 overflow-hidden border border-gray-100">
                                     @if($sImageUrl)
                                         <img src="{{ $sImageUrl }}" alt="{{ $s->title }}" class="w-full h-full object-contain p-2"/>
@@ -150,7 +150,7 @@
                                         {{ $s->title }}
                                     </div>
                                     @if(!empty($s->price_display))
-                                        <div class="text-sm font-extrabold text-emerald-700 mt-1">
+                                        <div class="text-sm font-extrabold text-green-700 mt-1">
                                             ₦{{ $sPriceValue !== '' ? $sPriceValue : '—' }}
                                         </div>
                                     @endif

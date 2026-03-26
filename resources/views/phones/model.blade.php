@@ -1,15 +1,15 @@
 <x-app-layout>
-    <div class="premium-shell" x-data="phoneModelPage()">
+    <div class="min-h-screen" x-data="phoneModelPage()">
         <div class="max-w-2xl mx-auto px-4 py-6 pb-24">
             <nav class="flex mb-6" aria-label="Breadcrumb">
                 <ol class="inline-flex items-center space-x-1 text-sm text-gray-500 md:space-x-2">
-                    <li><a href="{{ route('phones.index') }}" class="inline-flex items-center premium-link font-medium">Phones</a></li>
-                    <li class="flex items-center"><span class="mx-1">/</span><a href="{{ route('phones.brand', $brand->slug) }}" class="premium-link font-medium">{{ $brand->name }}</a></li>
+                    <li><a href="{{ route('phones.index') }}" class="inline-flex items-center text-green-600 hover:text-green-700 font-medium">Phones</a></li>
+                    <li class="flex items-center"><span class="mx-1">/</span><a href="{{ route('phones.brand', $brand->slug) }}" class="text-green-600 hover:text-green-700 font-medium">{{ $brand->name }}</a></li>
                     <li class="flex items-center"><span class="mx-1">/</span><span class="text-gray-700 font-medium">{{ $model->name }}</span></li>
                 </ol>
             </nav>
 
-            <div class="premium-card p-0 overflow-hidden mb-6" x-data="{ currentImage: '{{ $model->images->isNotEmpty() ? storage_asset($model->images->first()->path) : ($model->image ? storage_asset($model->image) : '') }}' }">
+            <div class="block p-0 bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden mb-6" x-data="{ currentImage: '{{ $model->images->isNotEmpty() ? storage_asset($model->images->first()->path) : ($model->image ? storage_asset($model->image) : '') }}' }">
                 <div class="aspect-square bg-white p-4 flex items-center justify-center">
                     @if($model->images->isNotEmpty() || $model->image)
                         <img :src="currentImage" alt="{{ $model->name }}" class="max-w-full max-h-full object-contain" id="model-main-image">
@@ -35,12 +35,12 @@
                     </div>
                 @endif
                 <div class="p-4 border-t border-gray-100">
-                    <h1 class="premium-title text-xl">{{ $model->name }}</h1>
+                    <h1 class="text-xl font-bold text-gray-900">{{ $model->name }}</h1>
                 </div>
             </div>
 
             {{-- Spec selection: Storage (primary), then Appearance, then Function --}}
-            <div class="premium-card p-4 md:p-6 mb-6 space-y-6">
+            <div class="block p-4 md:p-6 bg-white border border-gray-200 rounded-xl shadow-sm mb-6 space-y-6">
                 @foreach($specs as $spec)
                     <div>
                         <p class="text-sm font-semibold text-gray-700 mb-2">{{ $spec->name }}</p>
@@ -49,7 +49,7 @@
                                 @if($spec->name === 'Storage')
                                     <button type="button"
                                             @click="selectStorage({{ $val->id }})"
-                                            :class="selectedStorageId === {{ $val->id }} ? 'bg-emerald-600 text-white ring-2 ring-emerald-600' : 'bg-gray-100 text-gray-800 hover:bg-gray-200'"
+                                            :class="selectedStorageId === {{ $val->id }} ? 'bg-green-600 text-white ring-2 ring-green-600' : 'bg-gray-100 text-gray-800 hover:bg-gray-200'"
                                             class="px-4 py-2.5 rounded-xl font-medium text-sm transition">
                                         {{ $val->value }}
                                     </button>
@@ -57,7 +57,7 @@
                                     <button type="button"
                                             :disabled="!isAppearanceAvailable({{ $val->id }})"
                                             @click="selectAppearance({{ $val->id }})"
-                                            :class="isAppearanceAvailable({{ $val->id }}) ? (selectedAppearanceId === {{ $val->id }} ? 'bg-emerald-600 text-white ring-2 ring-emerald-600' : 'bg-gray-100 text-gray-800 hover:bg-gray-200') : 'bg-gray-50 text-gray-400 cursor-not-allowed opacity-60'"
+                                            :class="isAppearanceAvailable({{ $val->id }}) ? (selectedAppearanceId === {{ $val->id }} ? 'bg-green-600 text-white ring-2 ring-green-600' : 'bg-gray-100 text-gray-800 hover:bg-gray-200') : 'bg-gray-50 text-gray-400 cursor-not-allowed opacity-60'"
                                             class="px-4 py-2.5 rounded-xl font-medium text-sm transition disabled:pointer-events-none">
                                         {{ $val->value }}
                                     </button>
@@ -65,7 +65,7 @@
                                     <button type="button"
                                             :disabled="!isFunctionAvailable({{ $val->id }})"
                                             @click="selectFunction({{ $val->id }})"
-                                            :class="isFunctionAvailable({{ $val->id }}) ? (selectedFunctionId === {{ $val->id }} ? 'bg-emerald-600 text-white ring-2 ring-emerald-600' : 'bg-gray-100 text-gray-800 hover:bg-gray-200') : 'bg-gray-50 text-gray-400 cursor-not-allowed opacity-60'"
+                                            :class="isFunctionAvailable({{ $val->id }}) ? (selectedFunctionId === {{ $val->id }} ? 'bg-green-600 text-white ring-2 ring-green-600' : 'bg-gray-100 text-gray-800 hover:bg-gray-200') : 'bg-gray-50 text-gray-400 cursor-not-allowed opacity-60'"
                                             class="px-4 py-2.5 rounded-xl font-medium text-sm transition disabled:pointer-events-none">
                                         {{ $val->value }}
                                     </button>
@@ -76,7 +76,7 @@
                 @endforeach
 
                 <p class="text-sm text-gray-500 pt-2">
-                    <button type="button" @click="isModalOpen = true" class="premium-link font-medium underline">
+                    <button type="button" @click="isModalOpen = true" class="text-green-600 hover:text-green-800 font-medium underline">
                         What do Appearance &amp; Function grades mean?
                     </button>
                 </p>
@@ -84,15 +84,15 @@
 
             {{-- Price (only when full valid combination) --}}
             <div x-show="selectedVariant" x-cloak
-                 class="premium-card-soft p-4 mb-6">
-                <p class="text-sm font-semibold text-emerald-800 mb-1">Price range (NGN)</p>
-                <p class="text-2xl font-bold text-emerald-800" x-text="selectedVariant ? '₦' + Number(selectedVariant.min_ngn).toLocaleString() + ' - ₦' + Number(selectedVariant.max_ngn).toLocaleString() : ''"></p>
+                 class="block p-4 mb-6 bg-green-50 border border-green-200 rounded-xl">
+                <p class="text-sm font-semibold text-green-800 mb-1">Price range (NGN)</p>
+                <p class="text-2xl font-bold text-green-800" x-text="selectedVariant ? '₦' + Number(selectedVariant.min_ngn).toLocaleString() + ' - ₦' + Number(selectedVariant.max_ngn).toLocaleString() : ''"></p>
             </div>
 
             {{-- Request button (always visible; disabled until variant selected) --}}
             <a href="https://wa.me/2347084117779"
                :href="selectedVariant ? 'https://wa.me/2347084117779?text=' + encodeURIComponent(requestMessage()) : '#'"
-               :class="selectedVariant ? 'premium-btn-primary cursor-pointer' : 'bg-gray-300 text-gray-500 cursor-not-allowed pointer-events-none'"
+               :class="selectedVariant ? 'bg-green-600 hover:bg-green-700 cursor-pointer focus:ring-4 focus:ring-green-300' : 'bg-gray-300 text-gray-500 cursor-not-allowed pointer-events-none'"
                class="block w-full min-h-14 rounded-xl font-bold text-white text-center flex items-center justify-center transition">
                 Request via WhatsApp
             </a>

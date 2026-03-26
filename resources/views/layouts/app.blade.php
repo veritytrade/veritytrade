@@ -23,8 +23,8 @@
         @vite(['resources/css/app.css', 'resources/js/app.js'])
         <script src="https://cdnjs.cloudflare.com/ajax/libs/flowbite/2.2.2/flowbite.min.js"></script>
     </head>
-    <body class="font-sans antialiased">
-        <div class="premium-shell">
+    <body class="font-sans antialiased bg-gray-50">
+        <div class="min-h-screen">
             @include('layouts.navigation')
 
             <!-- Page Heading -->
