@@ -16,7 +16,7 @@
                         <article class="rounded-2xl p-5 sm:p-6 text-white text-center shadow-[0_14px_30px_rgba(2,6,23,0.16)] bg-gradient-to-r from-emerald-600 via-emerald-500 to-sky-600">
                             <h1 class="text-lg sm:text-2xl font-bold leading-tight">{{ $hero->hero_headline ?: 'Premium gadgets from trusted sourcing' }}</h1>
                             @if($hero->hero_subheadline)
-                                <p class="text-sm sm:text-base mt-2 text-emerald-50 max-w-3xl mx-auto">{{ $hero->hero_subheadline }}</p>
+                                <p class="text-sm sm:text-base mt-2 text-green-50 max-w-3xl mx-auto">{{ $hero->hero_subheadline }}</p>
                             @endif
                         </article>
                     @endif
@@ -40,22 +40,22 @@
             <section id="catalogScroll" class="space-y-4 sm:space-y-5 pt-2">
                     <article class="premium-card-soft grid grid-cols-3 gap-2 p-3 text-center">
                         <div>
-                            <div class="text-base sm:text-lg font-bold text-slate-900">24h</div>
-                            <div class="text-[11px] text-slate-500">Fast support</div>
+                            <div class="text-base sm:text-lg font-bold text-gray-900">24h</div>
+                            <div class="text-[11px] text-gray-500">Fast support</div>
                         </div>
                         <div>
-                            <div class="text-base sm:text-lg font-bold text-slate-900">100%</div>
-                            <div class="text-[11px] text-slate-500">Verified listing</div>
+                            <div class="text-base sm:text-lg font-bold text-gray-900">100%</div>
+                            <div class="text-[11px] text-gray-500">Verified listing</div>
                         </div>
                         <div>
-                            <div class="text-base sm:text-lg font-bold text-slate-900">Secure</div>
-                            <div class="text-[11px] text-slate-500">WhatsApp flow</div>
+                            <div class="text-base sm:text-lg font-bold text-gray-900">Secure</div>
+                            <div class="text-[11px] text-gray-500">WhatsApp flow</div>
                         </div>
                     </article>
  
                     @forelse($sections as $section)
                         <article id="{{ $section['id'] }}" data-section-id="{{ $section['id'] }}" class="scroll-mt-24">
-                            <h2 class="text-sm sm:text-base font-bold text-slate-900 mb-2.5">{{ $section['title'] }}</h2>
+                            <h2 class="text-sm sm:text-base font-bold text-gray-900 mb-2.5">{{ $section['title'] }}</h2>
                             <div class="space-y-2.5">
                                 @foreach($section['deals'] as $deal)
                                     @php
@@ -180,7 +180,7 @@
                                                         @if($specChips->isNotEmpty())
                                                             <div class="mt-1.5 flex flex-wrap gap-1">
                                                                 @foreach($specChips as $chipValue)
-                                                                    <span class="premium-chip whitespace-normal break-words leading-tight">
+                                                                    <span class="text-[10px] sm:text-xs px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-100 whitespace-normal break-words leading-tight">
                                                                         {{ $chipValue }}
                                                                     </span>
                                                                 @endforeach
@@ -192,7 +192,7 @@
                                                     @if($specChips->isNotEmpty())
                                                         <div class="mt-1.5 flex flex-wrap gap-1">
                                                             @foreach($specChips as $chipValue)
-                                                                <span class="premium-chip whitespace-normal break-words leading-tight">
+                                                                <span class="text-[10px] sm:text-xs px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-100 whitespace-normal break-words leading-tight">
                                                                     {{ $chipValue }}
                                                                 </span>
                                                             @endforeach
@@ -221,8 +221,8 @@
                             </div>
                         </article>
                     @empty
-                        <div class="premium-card p-8 text-center text-slate-500">
-                            <p class="font-semibold text-slate-800">No hot deals available right now.</p>
+                        <div class="premium-card p-8 text-center text-gray-500">
+                            <p class="font-semibold text-gray-800">No hot deals available right now.</p>
                             <p class="text-sm mt-1">Check back soon for fresh listings.</p>
                         </div>
                     @endforelse
