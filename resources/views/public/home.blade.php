@@ -11,32 +11,27 @@
         @endphp
 
         <div class="max-w-7xl mx-auto px-3 sm:px-4 py-4 sm:py-6">
-            <div class="grid grid-cols-[92px,1fr] sm:grid-cols-[110px,1fr] gap-3 sm:gap-4">
-                <aside class="sticky top-20 self-start">
-                    <div class="bg-white border border-gray-200 rounded-xl p-2 shadow-sm" id="categoryRail">
-                        @foreach($sections as $index => $section)
-                            <button type="button"
-                                    data-cat-target="{{ $section['id'] }}"
-                                    class="cat-btn w-full text-left px-2.5 py-2.5 rounded-lg text-xs sm:text-sm font-medium transition {{ $index === 0 ? 'bg-green-50 text-green-700 border border-green-200' : 'text-gray-600 hover:bg-gray-100' }}">
-                                {{ $section['title'] }}
-                            </button>
-                        @endforeach
-                    </div>
-                </aside>
-
-                <section id="catalogPane" class="space-y-4 sm:space-y-5">
+            <section id="catalogPane" class="space-y-4 sm:space-y-5">
                     @if($hero && $hero->hero_visible && ($hero->hero_headline || $hero->hero_subheadline || $hero->hero_image_path))
-                        <article class="bg-gradient-to-r from-green-600 to-blue-600 rounded-xl p-4 text-white shadow-sm">
-                            <h1 class="text-base sm:text-lg font-bold leading-tight">{{ $hero->hero_headline ?: 'Premium gadgets from trusted sourcing' }}</h1>
+                        <article class="bg-gradient-to-r from-green-600 to-blue-600 rounded-xl p-5 sm:p-6 text-white shadow-sm text-center">
+                            <h1 class="text-lg sm:text-2xl font-bold leading-tight">{{ $hero->hero_headline ?: 'Premium gadgets from trusted sourcing' }}</h1>
                             @if($hero->hero_subheadline)
-                                <p class="text-xs sm:text-sm mt-1 text-green-50">{{ $hero->hero_subheadline }}</p>
+                                <p class="text-sm sm:text-base mt-2 text-green-50 max-w-3xl mx-auto">{{ $hero->hero_subheadline }}</p>
                             @endif
-                            @if($hero->hero_cta_text)
-                                <a href="{{ $hero->hero_cta_url ?: '#'.($sections->first()['id'] ?? 'hot') }}"
-                                   class="mt-3 inline-flex items-center justify-center rounded-lg bg-white text-green-700 px-3 py-2 text-xs sm:text-sm font-semibold">
-                                    {{ $hero->hero_cta_text }}
-                                </a>
-                            @endif
+                        </article>
+                    @endif
+
+                    @if($sections->isNotEmpty())
+                        <article id="categoryRail" class="bg-white border border-gray-200 rounded-xl p-3 sm:p-4 shadow-sm">
+                            <div class="grid grid-cols-2 gap-2.5 sm:gap-3">
+                                @foreach($sections as $section)
+                                    <button type="button"
+                                            data-cat-target="{{ $section['id'] }}"
+                                            class="cat-btn {{ $loop->last ? 'col-span-2' : '' }} w-full text-left rounded-xl border border-gray-200 bg-gradient-to-br from-white to-gray-50 px-3 sm:px-4 py-3 sm:py-3.5 text-sm sm:text-base font-semibold text-gray-700 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md hover:border-green-300">
+                                        <span class="block">{{ $section['title'] }}</span>
+                                    </button>
+                                @endforeach
+                            </div>
                         </article>
                     @endif
 
@@ -228,8 +223,7 @@
                             <p class="text-sm mt-1">Check back soon for fresh listings.</p>
                         </div>
                     @endforelse
-                </section>
-            </div>
+            </section>
         </div>
 
         <div class="fixed bottom-4 right-4 md:hidden z-50">
@@ -245,9 +239,10 @@
             .scrollbar-hide::-webkit-scrollbar { display: none; }
             .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
             .cat-btn.active {
-                background: #ecfdf3;
-                color: #047857;
-                border: 1px solid #bbf7d0;
+                background: linear-gradient(135deg, #ecfdf3 0%, #f0f9ff 100%);
+                color: #065f46;
+                border: 1px solid #86efac;
+                box-shadow: 0 10px 18px -12px rgba(22, 163, 74, 0.55);
             }
         </style>
 
