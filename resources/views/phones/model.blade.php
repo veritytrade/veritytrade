@@ -27,8 +27,8 @@
                         @foreach($galleryImages as $idx => $imgUrl)
                             <button type="button"
                                     @click="currentImage = '{{ $imgUrl }}'"
-                                    class="w-14 h-14 rounded-lg border-2 overflow-hidden flex-shrink-0 transition focus:ring-2 focus:ring-green-500 focus:ring-offset-2"
-                                    :class="currentImage === '{{ $imgUrl }}' ? 'border-green-600' : 'border-gray-200 hover:border-gray-300'">
+                                    class="w-14 h-14 rounded-lg border-2 overflow-hidden flex-shrink-0 transition focus:ring-2 focus:ring-sky-400 focus:ring-offset-2"
+                                    :class="currentImage === '{{ $imgUrl }}' ? 'border-emerald-500' : 'border-gray-200 hover:border-gray-300'">
                                 <img src="{{ $imgUrl }}" alt="" class="w-full h-full object-contain">
                             </button>
                         @endforeach
