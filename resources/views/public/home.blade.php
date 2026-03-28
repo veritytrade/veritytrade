@@ -10,25 +10,25 @@
             ])->filter(fn ($section) => $section['deals']->isNotEmpty())->values();
         @endphp
 
-        <div class="max-w-7xl mx-auto px-3 sm:px-4 py-4 sm:py-6">
-            <section class="sticky top-16 z-20 bg-gray-50 pb-2 space-y-4 sm:space-y-5">
+        <div class="max-w-7xl mx-auto px-3 sm:px-4 py-2 sm:py-3">
+            <section class="sticky top-16 z-20 bg-gray-50 pb-1 space-y-2 sm:space-y-2.5">
                     @if($hero && $hero->hero_visible && ($hero->hero_headline || $hero->hero_subheadline || $hero->hero_image_path))
-                        <article class="bg-gradient-to-r from-green-600 to-blue-600 rounded-xl p-5 sm:p-6 text-white shadow-sm text-center">
-                            <h1 class="text-lg sm:text-2xl font-bold leading-tight">{{ $hero->hero_headline ?: 'Premium gadgets from trusted sourcing' }}</h1>
+                        <article class="bg-gradient-to-r from-green-600 to-blue-600 rounded-lg sm:rounded-xl p-3 sm:p-4 text-white shadow-sm text-center">
+                            <h1 class="text-base sm:text-xl font-bold leading-snug">{{ $hero->hero_headline ?: 'Premium gadgets from trusted sourcing' }}</h1>
                             @if($hero->hero_subheadline)
-                                <p class="text-sm sm:text-base mt-2 text-green-50 max-w-3xl mx-auto">{{ $hero->hero_subheadline }}</p>
+                                <p class="text-xs sm:text-sm mt-1 text-green-50 max-w-3xl mx-auto leading-snug">{{ $hero->hero_subheadline }}</p>
                             @endif
                         </article>
                     @endif
 
                     @if($sections->isNotEmpty())
-                        <article id="categoryRail" class="bg-white border border-gray-200 rounded-xl p-3 sm:p-4 shadow-sm">
-                            <div class="grid grid-cols-2 gap-2.5 sm:gap-3">
+                        <article id="categoryRail" class="bg-white border border-gray-200 rounded-lg sm:rounded-xl p-2 sm:p-2.5 shadow-sm">
+                            <div class="grid grid-cols-2 gap-2">
                                 @foreach($sections as $section)
                                     <button type="button"
                                             data-cat-target="{{ $section['id'] }}"
                                             style="{{ $section['id'] === 'premium' ? 'grid-column: 1 / -1;' : '' }}"
-                                            class="cat-btn w-full text-left rounded-xl border border-gray-200 bg-gradient-to-br from-white to-gray-50 px-3 sm:px-4 py-3 sm:py-3.5 text-sm sm:text-base font-semibold text-gray-700 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md hover:border-green-300">
+                                            class="cat-btn w-full text-left rounded-lg border border-gray-200 bg-gradient-to-br from-white to-gray-50 px-2.5 sm:px-3 py-2 sm:py-2 text-xs sm:text-sm font-semibold text-gray-700 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md hover:border-green-300">
                                         <span class="block">{{ $section['title'] }}</span>
                                     </button>
                                 @endforeach
@@ -37,24 +37,24 @@
                     @endif
                     </section>
 
-            <section id="catalogScroll" class="space-y-4 sm:space-y-5 pt-2">
-                    <article class="grid grid-cols-3 gap-2 bg-white border border-gray-200 rounded-xl p-3 text-center">
+            <section id="catalogScroll" class="space-y-3 sm:space-y-4 pt-1.5">
+                    <article class="grid grid-cols-3 gap-1.5 bg-white border border-gray-200 rounded-lg p-2 text-center">
                         <div>
-                            <div class="text-base sm:text-lg font-bold text-gray-900">24h</div>
-                            <div class="text-[11px] text-gray-500">Fast support</div>
+                            <div class="text-sm sm:text-base font-bold text-gray-900 leading-tight">24h</div>
+                            <div class="text-[10px] text-gray-500 leading-tight">Fast support</div>
                         </div>
                         <div>
-                            <div class="text-base sm:text-lg font-bold text-gray-900">100%</div>
-                            <div class="text-[11px] text-gray-500">Verified listing</div>
+                            <div class="text-sm sm:text-base font-bold text-gray-900 leading-tight">100%</div>
+                            <div class="text-[10px] text-gray-500 leading-tight">Verified listing</div>
                         </div>
                         <div>
-                            <div class="text-base sm:text-lg font-bold text-gray-900">Secure</div>
-                            <div class="text-[11px] text-gray-500">WhatsApp flow</div>
+                            <div class="text-sm sm:text-base font-bold text-gray-900 leading-tight">Secure</div>
+                            <div class="text-[10px] text-gray-500 leading-tight">WhatsApp flow</div>
                         </div>
                     </article>
  
                     @forelse($sections as $section)
-                        <article id="{{ $section['id'] }}" data-section-id="{{ $section['id'] }}" class="scroll-mt-24">
+                        <article id="{{ $section['id'] }}" data-section-id="{{ $section['id'] }}" class="scroll-mt-20">
                             <h2 class="text-sm sm:text-base font-bold text-gray-900 mb-2.5">{{ $section['title'] }}</h2>
                             <div class="space-y-2.5">
                                 @foreach($section['deals'] as $deal)
@@ -265,7 +265,7 @@
                         const id = btn.dataset.catTarget;
                         const target = document.getElementById(id);
                         if (target) {
-                            const y = target.getBoundingClientRect().top + window.scrollY - 220;
+                            const y = target.getBoundingClientRect().top + window.scrollY - 190;
                             window.scrollTo({ top: Math.max(0, y), behavior: 'smooth' });
                             setActive(id);
                         }
@@ -280,7 +280,7 @@
                         if (visible) {
                             setActive(visible.target.dataset.sectionId);
                         }
-                    }, { threshold: [0.3, 0.5, 0.7], rootMargin: '-180px 0px -40% 0px' });
+                    }, { threshold: [0.3, 0.5, 0.7], rootMargin: '-155px 0px -40% 0px' });
 
                     sections.forEach((section) => observer.observe(section));
                 }
