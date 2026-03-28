@@ -160,10 +160,19 @@ td { padding: 8px; vertical-align: top; }
 <strong style="color:#12c06b;">Thank you for choosing Verity Gadgets.</strong><br>
 <span style="font-size:12px;color:#2C3E50;margin-left:40px;display:inline-block;">Verified Value. Visible Quality.</span>
 </td>
-<td style="text-align:right;width:150px;padding-bottom:2px;">
+<td style="text-align:right;width:150px;padding-bottom:2px;vertical-align:top;">
     @if($qrImageUrl)
-        <img src="{{ $qrImageUrl }}" alt="QR" style="width:72px;height:72px;display:block;" />
-        <span style="font-size:12px;color:#2C3E50;margin-top:-5px;margin-left:4px;display:block;text-align:center;white-space:nowrap;">Scan for Support</span>
+        {{-- Nested table: DomPDF ignores subtle margins on centered blocks; padding on label cell shifts text reliably --}}
+        <table cellpadding="0" cellspacing="0" style="margin-left:auto;border-collapse:collapse;">
+            <tr>
+                <td style="padding:0;text-align:center;">
+                    <img src="{{ $qrImageUrl }}" alt="QR" style="width:72px;height:72px;display:block;margin:0 auto;" />
+                </td>
+            </tr>
+            <tr>
+                <td style="padding:2px 0 0 4px;text-align:center;font-size:12px;color:#2C3E50;line-height:1.2;white-space:nowrap;">Scan for Support</td>
+            </tr>
+        </table>
     @endif
 </td>
 </tr>

@@ -28,7 +28,7 @@
                                     <button type="button"
                                             data-cat-target="{{ $section['id'] }}"
                                             style="{{ $section['id'] === 'premium' ? 'grid-column: 1 / -1;' : '' }}"
-                                            class="cat-btn w-full text-left rounded-lg border border-gray-200 bg-gradient-to-br from-white to-gray-50 px-2.5 sm:px-3 py-2 sm:py-2 text-xs sm:text-sm font-semibold text-gray-700 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md hover:border-green-300">
+                                            class="cat-btn w-full rounded-lg border border-gray-200 bg-gradient-to-br from-white to-gray-50 px-2.5 sm:px-3 py-2 sm:py-2 text-xs sm:text-sm font-semibold text-gray-700 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md hover:border-green-300 {{ $section['id'] === 'premium' ? 'text-center' : 'text-left' }}">
                                         <span class="block">{{ $section['title'] }}</span>
                                     </button>
                                 @endforeach
