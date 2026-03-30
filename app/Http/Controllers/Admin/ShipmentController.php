@@ -160,4 +160,45 @@ class ShipmentController extends Controller
 
         return back()->with('success', $msg);
     }
+
+    public function markAgentCollected(Shipment $shipment): RedirectResponse
+    {
+        $payload = is_array($shipment->carrier_tracks_json) ? $shipment->carrier_tracks_json : [];
+        $tracks = $payload['tracks'] ?? [];
+        if (! is_array($tracks)) {
+            $tracks = [];
+        }
+
+        $markerText = 'Package collected by Verity agent from logistics warehouse';
+        $alreadyMarked = collect($tracks)->contains(function ($track) use ($markerText) {
+            if (! is_array($track)) {
+                return false;
+            }
+            return str_contains(strtolower((string) ($track['en'] ?? '')), strtolower($markerText));
+        });
+
+        if (! $alreadyMarked) {
+            $tracks[] = [
+                'en' => $markerText,
+                'cn' => '',
+                'at' => now()->format('Y-m-d H:i:s'),
+                'meta' => [
+                    'stage_hint' => 'arrived_nigeria',
+                    'subsection' => 'Agent pickup',
+                    'source' => 'admin',
+                ],
+            ];
+        }
+
+        $payload['tracks'] = $tracks;
+        $payload['fetched_at'] = now()->toIso8601String();
+
+        $shipment->update([
+            'carrier_tracks_json' => $payload,
+            'carrier_tracks_synced_at' => now(),
+            'updated_by' => auth()->id(),
+        ]);
+
+        return back()->with('success', 'Marked: package collected by agent. Customer timeline updated.');
+    }
 }

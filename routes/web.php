@@ -286,6 +286,7 @@ Route::prefix('admin')
             Route::post('/shipments/{shipment}/stage', [\App\Http\Controllers\Admin\ShipmentController::class, 'updateStage'])->name('admin.shipments.update-stage');
             Route::post('/shipments/{shipment}/apply-stage-all', [\App\Http\Controllers\Admin\ShipmentController::class, 'applyStageToAllOrders'])->name('admin.shipments.apply-stage-all');
             Route::post('/shipments/{shipment}/refresh-carrier-tracking', [\App\Http\Controllers\Admin\ShipmentController::class, 'refreshCarrierTracking'])->name('admin.shipments.refresh-carrier-tracking');
+            Route::post('/shipments/{shipment}/mark-agent-collected', [\App\Http\Controllers\Admin\ShipmentController::class, 'markAgentCollected'])->name('admin.shipments.mark-agent-collected');
         });
 
         Route::middleware('permission:view_tracking')->group(function () {
