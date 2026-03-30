@@ -1,6 +1,7 @@
 <x-admin-layout>
 <div class="max-w-4xl mx-auto p-4 sm:p-6">
     @php
+        $canManageShipmentStage = auth()->user()->hasRole('super_admin') || auth()->user()->hasPermission('update_shipment_stage');
         $logisticsLabel = [
             'skycargo' => 'SkyCargo',
             'fish-logistics' => 'Fish Logistics',
@@ -20,7 +21,7 @@
             <p class="text-xs text-gray-400 mt-1">Last updated: {{ optional($shipment->updated_at)->format('d M Y H:i') ?? '—' }}</p>
         </div>
         <div class="flex flex-col sm:flex-row gap-2 sm:items-center">
-        @if(auth()->user()->hasPermission('update_shipment_stage'))
+        @if($canManageShipmentStage)
             <a href="{{ route('admin.shipments.edit', $shipment) }}" class="inline-flex items-center justify-center min-h-[44px] px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium rounded-lg">
                 Edit Shipment
             </a>
@@ -69,7 +70,7 @@
             </dd>
         </dl>
 
-        @if(auth()->user()->hasPermission('update_shipment_stage'))
+        @if($canManageShipmentStage)
             <form method="POST" action="{{ route('admin.shipments.update-stage', $shipment) }}" class="mt-6 flex flex-col sm:flex-row gap-3">
                 @csrf
                 <select name="current_stage_id" class="flex-1 rounded-lg border border-gray-300 px-4 py-3 min-h-[48px]">
