@@ -7,19 +7,37 @@ use Illuminate\Support\Facades\Log;
 
 class SkyCargoLogisticsService
 {
-    protected string $baseUrl;
+    protected string $skyCargoBaseUrl;
+    protected string $fishBaseUrl;
 
-    public function __construct(?string $baseUrl = null)
+    public function __construct(?string $baseUrl = null, ?string $fishBaseUrl = null)
     {
-        $this->baseUrl = rtrim($baseUrl ?? config('services.skycargo.base_url', 'https://sapi.skycargoltd.com/sky-sys/v1'), '/');
+        $this->skyCargoBaseUrl = rtrim($baseUrl ?? config('services.skycargo.base_url', 'https://sapi.skycargoltd.com/sky-sys/v1'), '/');
+        $this->fishBaseUrl = rtrim($fishBaseUrl ?? config('services.fishlogistics.base_url', 'https://api.fish-logistics.com/api/v1'), '/');
     }
 
     /**
-     * Fetch logistics tracks for a doc number (same as customer-facing tracking code).
+     * Fetch logistics tracks by provider and tracking number.
      *
      * @return array{tracks: array<int, array{en: string, cn: string, at: string}>, raw: array}|null
      */
-    public function fetchTracksByDocNo(string $docNo): ?array
+    public function fetchTracks(string $provider, string $trackingNumber): ?array
+    {
+        $provider = strtolower(trim($provider));
+
+        return match ($provider) {
+            'skycargo' => $this->fetchSkyCargoTracks($trackingNumber),
+            'fish-logistics' => $this->fetchFishLogisticsTracks($trackingNumber),
+            default => ['tracks' => [], 'raw' => []],
+        };
+    }
+
+    /**
+     * Fetch Sky Cargo logistics tracks for docNo.
+     *
+     * @return array{tracks: array<int, array{en: string, cn: string, at: string}>, raw: array}|null
+     */
+    protected function fetchSkyCargoTracks(string $docNo): ?array
     {
         $docNo = trim($docNo);
         if ($docNo === '') {
@@ -29,7 +47,7 @@ class SkyCargoLogisticsService
         try {
             $response = Http::timeout(25)
                 ->acceptJson()
-                ->get($this->baseUrl.'/waybill/logistics/list', [
+                ->get($this->skyCargoBaseUrl.'/waybill/logistics/list', [
                     'docNo' => $docNo,
                 ]);
 
@@ -73,6 +91,76 @@ class SkyCargoLogisticsService
         } catch (\Throwable $e) {
             Log::warning('SkyCargo API exception', [
                 'docNo' => $docNo,
+                'message' => $e->getMessage(),
+            ]);
+
+            return null;
+        }
+    }
+
+    /**
+     * Fetch Fish Logistics tracks for number.
+     *
+     * @return array{tracks: array<int, array{en: string, cn: string, at: string}>, raw: array}|null
+     */
+    protected function fetchFishLogisticsTracks(string $number): ?array
+    {
+        $number = trim($number);
+        if ($number === '') {
+            return null;
+        }
+
+        try {
+            $response = Http::timeout(25)
+                ->acceptJson()
+                ->get($this->fishBaseUrl.'/oms/international1', [
+                    'number' => $number,
+                ]);
+
+            if (! $response->successful()) {
+                Log::warning('Fish Logistics API non-success', [
+                    'number' => $number,
+                    'status' => $response->status(),
+                ]);
+
+                return null;
+            }
+
+            $json = $response->json();
+            if (! is_array($json) || (int) ($json['code'] ?? 0) !== 200) {
+                return null;
+            }
+
+            $rows = $json['data']['data'] ?? [];
+            $tracks = [];
+            if (is_array($rows)) {
+                foreach ($rows as $row) {
+                    if (! is_array($row)) {
+                        continue;
+                    }
+                    $context = trim((string) ($row['context'] ?? ''));
+                    if ($context === '') {
+                        continue;
+                    }
+
+                    $tracks[] = [
+                        'en' => preg_replace('/\s+/u', ' ', $context) ?: $context,
+                        'cn' => '',
+                        'at' => trim((string) ($row['time'] ?? '')),
+                    ];
+                }
+            }
+
+            // Fish commonly returns newest first; normalize to chronological for timeline grouping.
+            $tracks = array_reverse($tracks);
+
+            return [
+                'tracks' => $tracks,
+                'raw' => $json,
+            ];
+        } catch (\Throwable $e) {
+            Log::warning('Fish Logistics API exception', [
+                'number' => $number,
                 'message' => $e->getMessage(),
             ]);
 

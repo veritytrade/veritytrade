@@ -16,9 +16,13 @@
             </div>
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Logistics Company *</label>
-                <input type="text" name="logistics_company" required
-                       class="w-full rounded-lg border border-gray-300 px-4 py-3 text-base focus:ring-2 focus:ring-green-500 focus:border-green-500"
-                       placeholder="e.g. DHL, FedEx">
+                <select name="logistics_company" required
+                        class="w-full rounded-lg border border-gray-300 px-4 py-3 text-base focus:ring-2 focus:ring-green-500 focus:border-green-500 min-h-[48px]">
+                    <option value="">Select logistics company</option>
+                    <option value="skycargo" {{ old('logistics_company') === 'skycargo' ? 'selected' : '' }}>SkyCargo</option>
+                    <option value="fish-logistics" {{ old('logistics_company') === 'fish-logistics' ? 'selected' : '' }}>Fish Logistics</option>
+                    <option value="other" {{ old('logistics_company') === 'other' ? 'selected' : '' }}>Other</option>
+                </select>
                 @error('logistics_company')<p class="text-red-600 text-sm mt-1">{{ $message }}</p>@enderror
             </div>
             <div>

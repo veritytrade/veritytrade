@@ -39,4 +39,8 @@ return [
         'base_url' => env('SKYCARGO_API_BASE_URL', 'https://sapi.skycargoltd.com/sky-sys/v1'),
     ],
 
+    'fishlogistics' => [
+        'base_url' => env('FISH_LOGISTICS_API_BASE_URL', 'https://api.fish-logistics.com/api/v1'),
+    ],
+
 ];

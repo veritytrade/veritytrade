@@ -51,6 +51,13 @@
                     </thead>
                     <tbody class="divide-y divide-gray-100">
                         @forelse($shipments as $s)
+                            @php
+                                $logisticsLabel = [
+                                    'skycargo' => 'SkyCargo',
+                                    'fish-logistics' => 'Fish Logistics',
+                                    'other' => 'Other',
+                                ][strtolower((string) $s->logistics_company)] ?? (string) $s->logistics_company;
+                            @endphp
                             <tr class="hover:bg-gray-50 transition">
                                 <td class="p-3 sm:p-4 font-medium text-gray-800">
                                     <div class="flex flex-col gap-0.5">
@@ -66,7 +73,7 @@
                                                 Copy
                                             </button>
                                         </span>
-                                        @php($logisticsShort = (string) \Illuminate\Support\Str::of($s->logistics_company)->before(' '))
+                                        @php($logisticsShort = (string) \Illuminate\Support\Str::of($logisticsLabel)->before(' '))
                                         @if($logisticsShort !== '')
                                             <span class="text-xs text-gray-500">
                                                 {{ $logisticsShort }}
@@ -74,7 +81,7 @@
                                         @endif
                                     </div>
                                 </td>
-                                <td class="p-3 sm:p-4 text-gray-600 hidden sm:table-cell">{{ $s->logistics_company }}</td>
+                                <td class="p-3 sm:p-4 text-gray-600 hidden sm:table-cell">{{ $logisticsLabel }}</td>
                                 <td class="p-3 sm:p-4">{{ $s->currentStage?->name ?? '—' }}</td>
                                 <td class="p-3 sm:p-4 text-center">{{ $s->orders_count }}</td>
                                 <td class="p-3 sm:p-4 text-center">

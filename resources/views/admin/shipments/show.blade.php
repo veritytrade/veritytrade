@@ -1,5 +1,12 @@
 <x-admin-layout>
 <div class="max-w-4xl mx-auto p-4 sm:p-6">
+    @php
+        $logisticsLabel = [
+            'skycargo' => 'SkyCargo',
+            'fish-logistics' => 'Fish Logistics',
+            'other' => 'Other',
+        ][strtolower((string) $shipment->logistics_company)] ?? (string) $shipment->logistics_company;
+    @endphp
     <nav class="mb-3 text-xs text-gray-500">
         <a href="{{ route('admin.dashboard') }}" class="hover:text-green-700">Dashboard</a>
         <span class="mx-1">/</span>
@@ -38,7 +45,7 @@
                 </button>
             </dd>
             <dt class="text-gray-500">Logistics</dt>
-            <dd class="font-medium text-gray-800">{{ $shipment->logistics_company }}</dd>
+            <dd class="font-medium text-gray-800">{{ $logisticsLabel }}</dd>
             <dt class="text-gray-500">Status</dt>
             <dd><span class="px-2 py-0.5 rounded {{ $shipment->status === 'active' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-700' }}">{{ ucfirst($shipment->status) }}</span></dd>
             <dt class="text-gray-500">Current Stage</dt>

@@ -38,7 +38,7 @@ class ShipmentController extends Controller
     {
         $valid = $request->validate([
             'chinese_tracking_code' => 'required|string|max:255',
-            'logistics_company' => 'required|string|max:255',
+            'logistics_company' => 'required|in:skycargo,fish-logistics,other',
             'current_stage_id' => 'nullable|exists:tracking_stages,id',
         ]);
 
@@ -74,7 +74,7 @@ class ShipmentController extends Controller
     {
         $valid = $request->validate([
             'chinese_tracking_code' => 'required|string|max:255',
-            'logistics_company' => 'required|string|max:255',
+            'logistics_company' => 'required|in:skycargo,fish-logistics,other',
             'status' => 'required|in:active,completed',
             'waybill_outstanding_ngn' => 'nullable|numeric|min:0|max:10000',
         ]);
@@ -134,7 +134,12 @@ class ShipmentController extends Controller
             return back()->with('error', 'Set a Chinese tracking code before refreshing carrier data.');
         }
 
-        $result = $skyCargo->fetchTracksByDocNo($code);
+        $provider = strtolower(trim((string) $shipment->logistics_company));
+        if ($provider === 'other') {
+            return back()->with('error', 'Carrier refresh is available only for SkyCargo and Fish Logistics.');
+        }
+
+        $result = $skyCargo->fetchTracks($provider, $code);
         if ($result === null) {
             return back()->with('error', 'Could not reach carrier or invalid response. Check the tracking code or try again later.');
         }
