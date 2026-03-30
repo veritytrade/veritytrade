@@ -106,13 +106,14 @@
                         $isLast = $idx === $stages->count() - 1;
                     @endphp
                     <li
-                        class="relative flex gap-3 mb-6 last:mb-1 tracking-vtl-step"
+                        class="relative flex gap-3 mb-7 last:mb-1 tracking-vtl-step"
                         style="animation: trackingFadeSlide 0.5s ease-out {{ $delayMs }}ms both;"
                     >
                         @unless($isLast)
-                            <div class="absolute left-[17px] top-9 h-[calc(100%-8px)] w-[2px] rounded-full {{ $done ? 'bg-green-500' : ($active ? 'bg-blue-500' : 'bg-gray-300') }}" aria-hidden="true"></div>
+                            <div class="absolute left-[16px] top-8 bottom-[-28px] w-[3px] rounded-full bg-gray-200 tracking-line-fill" aria-hidden="true"></div>
+                            <div class="absolute left-[16px] top-8 bottom-[-28px] w-[3px] rounded-full {{ $done ? 'bg-green-500' : ($active ? 'bg-blue-500' : 'bg-gray-300') }} opacity-90" aria-hidden="true"></div>
                         @endunless
-                        <div class="relative z-10 flex h-9 w-9 shrink-0 items-center justify-center rounded-full border-2 transition-all duration-300
+                        <div class="relative z-10 mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full border-2 transition-all duration-300
                             @if($done) border-green-600 bg-green-600 text-white shadow-[0_0_0_4px_rgba(22,163,74,0.20)]
                             @elseif($active) border-blue-600 bg-white text-blue-700 shadow-[0_0_0_4px_rgba(37,99,235,0.25)]
                             @else border-gray-300 bg-white text-gray-400 @endif">

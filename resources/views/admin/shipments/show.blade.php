@@ -79,6 +79,17 @@
             </dd>
         </dl>
 
+        <div class="mt-5 rounded-xl border border-sky-200 bg-sky-50/70 p-4">
+            <p class="text-xs font-semibold uppercase tracking-wide text-sky-700">Carrier Actions</p>
+            <p class="mt-1 text-xs text-sky-800/90">If tracking details are missing, use this button to fetch the latest carrier events now.</p>
+            <form method="POST" action="{{ route('admin.shipments.refresh-carrier-tracking', $shipment) }}" class="mt-3">
+                @csrf
+                <button type="submit" class="inline-flex w-full sm:w-auto items-center justify-center min-h-[44px] px-4 py-2 bg-sky-600 hover:bg-sky-700 text-white font-semibold rounded-lg shadow-sm">
+                    Refresh carrier tracking
+                </button>
+            </form>
+        </div>
+
         <form method="POST" action="{{ route('admin.shipments.update-stage', $shipment) }}" class="mt-6 flex flex-col sm:flex-row gap-3">
             @csrf
             <select name="current_stage_id" class="flex-1 rounded-lg border border-gray-300 px-4 py-3 min-h-[48px]">
