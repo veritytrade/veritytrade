@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Shipment;
 use App\Models\TrackingStage;
+use App\Services\SkyCargoLogisticsService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -44,6 +45,9 @@ class ShipmentController extends Controller
         $valid['created_by'] = auth()->id();
         $valid['updated_by'] = auth()->id();
         $valid['status'] = 'active';
+        if (empty($valid['current_stage_id'])) {
+            $valid['current_stage_id'] = TrackingStage::where('name', 'Processing')->value('id');
+        }
         Shipment::create($valid);
 
         return redirect()->route('admin.shipments.index')->with('success', 'Shipment created.');
@@ -52,7 +56,11 @@ class ShipmentController extends Controller
     public function show(Shipment $shipment): View
     {
         $shipment->load(['orders.user', 'orders.invoice', 'orders.currentStageOverride', 'currentStage']);
+        foreach ($shipment->orders as $order) {
+            $order->setRelation('shipment', $shipment);
+        }
         $stages = TrackingStage::orderBy('position')->get();
+
         return view('admin.shipments.show', compact('shipment', 'stages'));
     }
 
@@ -92,7 +100,7 @@ class ShipmentController extends Controller
             'updated_by' => auth()->id(),
         ]);
 
-        if ($stage && (int) $stage->position === 6) {
+        if ($stage && $stage->name === 'Delivered') {
             $shipment->orders()->whereNull('current_stage_id')->update(['status' => 'delivered']);
         }
 
@@ -112,10 +120,39 @@ class ShipmentController extends Controller
             'updated_by' => auth()->id(),
         ]);
 
-        if ($stage && (int) $stage->position === 6) {
+        if ($stage && $stage->name === 'Delivered') {
             $shipment->orders()->update(['status' => 'delivered']);
         }
 
         return back()->with('success', 'Stage applied to all orders.');
+    }
+
+    public function refreshCarrierTracking(Shipment $shipment, SkyCargoLogisticsService $skyCargo): RedirectResponse
+    {
+        $code = trim((string) $shipment->chinese_tracking_code);
+        if ($code === '') {
+            return back()->with('error', 'Set a Chinese tracking code before refreshing carrier data.');
+        }
+
+        $result = $skyCargo->fetchTracksByDocNo($code);
+        if ($result === null) {
+            return back()->with('error', 'Could not reach carrier or invalid response. Check the tracking code or try again later.');
+        }
+
+        $count = count($result['tracks'] ?? []);
+        $shipment->update([
+            'carrier_tracks_json' => [
+                'tracks' => $result['tracks'] ?? [],
+                'fetched_at' => now()->toIso8601String(),
+            ],
+            'carrier_tracks_synced_at' => now(),
+            'updated_by' => auth()->id(),
+        ]);
+
+        $msg = $count > 0
+            ? "Carrier tracking refreshed ({$count} updates stored)."
+            : 'Carrier responded; no tracking events were returned for this code.';
+
+        return back()->with('success', $msg);
     }
 }

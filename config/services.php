@@ -35,4 +35,8 @@ return [
         ],
     ],
 
+    'skycargo' => [
+        'base_url' => env('SKYCARGO_API_BASE_URL', 'https://sapi.skycargoltd.com/sky-sys/v1'),
+    ],
+
 ];

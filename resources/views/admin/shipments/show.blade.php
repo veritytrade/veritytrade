@@ -12,11 +12,19 @@
             <h2 class="text-xl sm:text-2xl font-bold text-gray-900">Shipment Details</h2>
             <p class="text-xs text-gray-400 mt-1">Last updated: {{ optional($shipment->updated_at)->format('d M Y H:i') ?? '—' }}</p>
         </div>
+        <div class="flex flex-col sm:flex-row gap-2 sm:items-center">
         @if(auth()->user()->hasPermission('update_shipment_stage'))
             <a href="{{ route('admin.shipments.edit', $shipment) }}" class="inline-flex items-center justify-center min-h-[44px] px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium rounded-lg">
                 Edit Shipment
             </a>
+            <form method="POST" action="{{ route('admin.shipments.refresh-carrier-tracking', $shipment) }}" class="inline" onsubmit="return confirm('Fetch latest logistics updates from Sky Cargo for this tracking code?');">
+                @csrf
+                <button type="submit" class="inline-flex items-center justify-center min-h-[44px] px-4 py-2 bg-sky-600 hover:bg-sky-700 text-white font-medium rounded-lg">
+                    Refresh carrier tracking
+                </button>
+            </form>
         @endif
+        </div>
     </div>
 
     <div class="bg-white rounded-xl border border-gray-200 p-4 sm:p-6 mb-6">
@@ -35,6 +43,17 @@
             <dd><span class="px-2 py-0.5 rounded {{ $shipment->status === 'active' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-700' }}">{{ ucfirst($shipment->status) }}</span></dd>
             <dt class="text-gray-500">Current Stage</dt>
             <dd class="font-medium">{{ $shipment->currentStage?->name ?? '—' }}</dd>
+            <dt class="text-gray-500">Carrier data</dt>
+            <dd class="font-medium text-gray-700">
+                @if($shipment->carrier_tracks_synced_at)
+                    Last refreshed {{ $shipment->carrier_tracks_synced_at->format('d M Y H:i') }}
+                    @if(is_array($shipment->carrier_tracks_json))
+                        · {{ count($shipment->carrier_tracks_json['tracks'] ?? []) }} event(s) stored
+                    @endif
+                @else
+                    Not loaded — use “Refresh carrier tracking”
+                @endif
+            </dd>
         </dl>
 
         @if(auth()->user()->hasPermission('update_shipment_stage'))
@@ -58,6 +77,18 @@
             </form>
         @endif
     </div>
+
+    @if($shipment->orders->isNotEmpty())
+        <div class="bg-white rounded-xl border border-gray-200 p-4 sm:p-6 mb-6">
+            <h3 class="font-bold text-gray-800 mb-2">Customer preview</h3>
+            <p class="text-xs text-gray-500 mb-4">Same tracking card as the linked customer sees (first order in this shipment).</p>
+            <x-tracking-vertical-timeline :order="$shipment->orders->first()" />
+        </div>
+    @else
+        <div class="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-6 text-sm text-amber-900">
+            Link at least one order to preview the customer tracking card. You can still refresh carrier data using the tracking code above.
+        </div>
+    @endif
 
     <div class="bg-white rounded-xl border border-gray-200 overflow-hidden">
         <h3 class="p-4 sm:p-6 font-bold text-gray-800 border-b border-gray-100">Linked Orders ({{ $shipment->orders->count() }})</h3>

@@ -12,6 +12,8 @@ class Shipment extends Model
     protected $fillable = [
         'chinese_tracking_code',
         'logistics_company',
+        'carrier_tracks_json',
+        'carrier_tracks_synced_at',
         'current_stage_id',
         'status',
         'waybill_outstanding_ngn',
@@ -21,6 +23,8 @@ class Shipment extends Model
 
     protected $casts = [
         'waybill_outstanding_ngn' => 'decimal:2',
+        'carrier_tracks_json' => 'array',
+        'carrier_tracks_synced_at' => 'datetime',
     ];
 
     public function currentStage(): BelongsTo

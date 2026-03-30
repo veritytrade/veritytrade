@@ -40,7 +40,7 @@ class DashboardController extends Controller
         // Recent orders: exclude delivered (only orders shipped yet to be delivered)
         $orders = Order::where('user_id', $user->id)
             ->where('status', '!=', 'delivered')
-            ->with(['shipment.currentStage', 'currentStageOverride', 'invoice'])
+            ->with(['shipment', 'currentStageOverride', 'invoice'])
             ->latest('id')
             ->take(5)
             ->get();
@@ -51,7 +51,7 @@ class DashboardController extends Controller
             ->where(function ($q) {
                 $q->whereNotNull('shipment_id')->orWhereNotNull('current_stage_id');
             })
-            ->with(['shipment.currentStage', 'currentStageOverride'])
+            ->with(['shipment', 'currentStageOverride'])
             ->latest('id')
             ->take(3)
             ->get();
@@ -134,7 +134,7 @@ class DashboardController extends Controller
             return back()->with('error', 'You can only confirm delivery when your package is dispatched or delivered.');
         }
 
-        $deliveredStage = \App\Models\TrackingStage::where('position', 6)->first();
+        $deliveredStage = \App\Models\TrackingStage::where('name', 'Delivered')->first();
         $order->update([
             'status' => 'delivered',
             'current_stage_id' => $deliveredStage?->id,
@@ -155,7 +155,7 @@ class DashboardController extends Controller
             ->where(function ($q) {
                 $q->whereNotNull('shipment_id')->orWhereNotNull('current_stage_id');
             })
-            ->with(['shipment.currentStage', 'currentStageOverride'])
+            ->with(['shipment', 'currentStageOverride'])
             ->latest('id')
             ->paginate(15);
 

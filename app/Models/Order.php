@@ -293,12 +293,13 @@ class Order extends Model
             $shipment = Shipment::with('currentStage')->find($shipmentId);
             $stage = $shipment?->currentStage;
         }
-        if ($stage && (int) $stage->position === 6) {
+        if ($stage && $stage->name === 'Delivered') {
             return 'delivered';
         }
-        if ($shipmentId || ($stage && (int) $stage->position >= 1)) {
+        if ($shipmentId || ($stage && (int) $stage->position >= 2)) {
             return 'shipped';
         }
+
         return 'processing';
     }
 
@@ -315,7 +316,7 @@ class Order extends Model
     public function syncStatusFromStage(): void
     {
         $stage = $this->effectiveStage();
-        if ($stage && (int) $stage->position === 6) {
+        if ($stage && $stage->name === 'Delivered') {
             $this->update(['status' => 'delivered']);
         }
     }
@@ -330,6 +331,6 @@ class Order extends Model
             return false;
         }
         $pos = (int) $stage->position;
-        return $pos >= 5; // Dispatched (5) or Delivered (6)
+        return $pos >= 6; // Sent to Final Destination (6) or Delivered (7)
     }
 }
