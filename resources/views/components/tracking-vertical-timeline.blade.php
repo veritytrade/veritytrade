@@ -41,10 +41,7 @@
             return ['stage' => 5, 'subsection' => 'At Nigeria airport'];
         }
 
-        if (str_contains($t, 'flying') || str_contains($t, 'addis') || str_contains($t, 'hong kong international airport') || str_contains($t, 'take-off')) {
-            return ['stage' => 4, 'subsection' => null]; // Flying to Nigeria
-        }
-
+        // Keep Guangzhou/HK security and transfer events under Arrived Logistics (not Flying).
         if (
             str_contains($t, 'truck') ||
             str_contains($t, 'guangzhou') ||
@@ -57,9 +54,14 @@
             str_contains($t, 'security check') ||
             str_contains($t, 'contraband') ||
             str_contains($t, 'returned by the airport') ||
-            str_contains($t, 'transferred to hong kong airport')
+            str_contains($t, 'transferred to hong kong airport') ||
+            str_contains($t, 'take-off')
         ) {
             return ['stage' => 3, 'subsection' => null]; // Arrived Logistics
+        }
+
+        if (str_contains($t, 'flying') || str_contains($t, 'addis') || str_contains($t, 'hong kong international airport')) {
+            return ['stage' => 4, 'subsection' => null]; // Flying to Nigeria
         }
 
         return ['stage' => 2, 'subsection' => null]; // Sent to Logistics
@@ -96,9 +98,11 @@
         @endif
     </div>
 
-    <div class="px-2 py-4 sm:px-4">
-        <div class="relative pl-2">
-            <div class="absolute left-[15px] top-2 bottom-2 w-0.5 bg-gradient-to-b from-emerald-300 via-emerald-300 to-emerald-100" aria-hidden="true"></div>
+    <div class="px-3 py-5 sm:px-5">
+        <div class="relative pl-1">
+            <div class="absolute left-[17px] top-2 bottom-2 w-[2px] bg-gray-200 rounded-full overflow-hidden" aria-hidden="true">
+                <div class="w-full h-full bg-gradient-to-b from-emerald-500 via-blue-500 to-gray-300 tracking-line-fill"></div>
+            </div>
 
             <ul class="space-y-0">
                 @foreach($stages as $idx => $stage)
@@ -106,29 +110,39 @@
                         $pos = (int) $stage->position;
                         $done = $currentPos > 0 && $pos < $currentPos; // Bottom-up flow: lower positions are completed.
                         $active = $currentPos > 0 && $pos === $currentPos;
-                        $delayMs = $idx * 55;
+                        $delayMs = $idx * 70;
                         $stageTracks = $groupedTracks[$pos] ?? [];
                     @endphp
                     <li
-                        class="relative flex gap-3 pb-6 last:pb-2 tracking-vtl-step"
-                        style="animation: trackingVtlIn 0.5s ease-out {{ $delayMs }}ms both;"
+                        class="relative flex gap-3 mb-6 last:mb-1 tracking-vtl-step"
+                        style="animation: trackingFadeSlide 0.5s ease-out {{ $delayMs }}ms both;"
                     >
-                        <div class="relative z-10 flex h-8 w-8 shrink-0 items-center justify-center rounded-full border-2 transition-all duration-300
-                            @if($done) border-emerald-500 bg-emerald-500 text-white shadow-[0_0_0_4px_rgba(16,185,129,0.2)]
-                            @elseif($active) border-emerald-600 bg-white text-emerald-700 shadow-[0_0_0_4px_rgba(16,185,129,0.35)] ring-2 ring-emerald-400/50
-                            @else border-gray-200 bg-white text-gray-400 @endif">
+                        <div class="relative z-10 flex h-9 w-9 shrink-0 items-center justify-center rounded-full border-2 transition-all duration-300
+                            @if($done) border-green-600 bg-green-600 text-white shadow-[0_0_0_4px_rgba(22,163,74,0.20)]
+                            @elseif($active) border-blue-600 bg-white text-blue-700 shadow-[0_0_0_4px_rgba(37,99,235,0.25)]
+                            @else border-gray-300 bg-white text-gray-400 @endif">
                             @if($done)
                                 <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
+                            @elseif($active)
+                                <span class="tracking-active-pulse inline-flex h-2.5 w-2.5 rounded-full bg-blue-600"></span>
                             @else
                                 <span class="text-[11px] font-bold">{{ $pos }}</span>
                             @endif
                         </div>
                         <div class="min-w-0 flex-1 pt-0.5">
-                            <p class="text-sm font-semibold leading-snug text-gray-900">
+                            <div class="flex items-center gap-2">
+                                <p class="text-sm font-semibold leading-snug {{ $active ? 'text-blue-700' : ($done ? 'text-gray-900' : 'text-gray-500') }}">
+                                    {{ $stage->name }}
+                                </p>
+                                @if($active)
+                                    <span class="inline-flex items-center rounded-full bg-blue-100 px-2 py-0.5 text-[10px] font-semibold text-blue-700">CURRENT</span>
+                                @endif
+                            </div>
+                            <p class="text-xs mt-0.5 {{ $active ? 'text-blue-600' : ($done ? 'text-gray-600' : 'text-gray-400') }}">
                                 {{ $stage->name }}
                             </p>
                             @if($stage->description)
-                                <p class="mt-0.5 text-xs {{ $active ? 'text-emerald-800/90' : 'text-gray-600' }}">{{ $stage->description }}</p>
+                                <p class="mt-0.5 text-xs {{ $active ? 'text-blue-700' : ($done ? 'text-gray-600' : 'text-gray-400') }}">{{ $stage->description }}</p>
                             @endif
 
                             @if(count($stageTracks) > 0)
@@ -150,13 +164,13 @@
                                     <div class="mt-2 space-y-2.5">
                                         @foreach($bySubsection as $subsection => $items)
                                             @if(count($items) > 0)
-                                                <div class="rounded-lg border border-gray-200 bg-white px-2.5 py-2">
+                                                <div class="rounded-lg border border-gray-200 bg-white px-3 py-2.5">
                                                     <p class="text-[11px] font-semibold uppercase tracking-wide text-gray-600">{{ $subsection }}</p>
                                                     <div class="mt-1.5 space-y-1.5">
                                                         @foreach($items as $item)
                                                             <p class="text-xs leading-snug text-gray-700">
                                                                 @if($item['at'] !== '')
-                                                                    <span class="font-semibold text-gray-900">[{{ $item['at'] }}]</span>
+                                                                    <span class="text-[11px] font-semibold text-gray-900">[{{ $item['at'] }}]</span>
                                                                 @endif
                                                                 {{ $item['title'] }}
                                                             </p>
@@ -169,10 +183,10 @@
                                 @else
                                     <div class="mt-2 space-y-2">
                                         @foreach($stageTracks as $item)
-                                            <div class="rounded-lg border border-gray-200 bg-white px-2.5 py-2">
+                                            <div class="rounded-lg border border-gray-200 bg-white px-3 py-2.5">
                                                 <p class="text-xs leading-snug text-gray-700">
                                                     @if($item['at'] !== '')
-                                                        <span class="font-semibold text-gray-900">[{{ $item['at'] }}]</span>
+                                                        <span class="text-[11px] font-semibold text-gray-900">[{{ $item['at'] }}]</span>
                                                     @endif
                                                     {{ $item['title'] }}
                                                 </p>
@@ -197,14 +211,33 @@
 </div>
 
 <style>
-    @keyframes trackingVtlIn {
+    @keyframes trackingFadeSlide {
         from {
             opacity: 0;
-            transform: translateY(10px);
+            transform: translateY(8px);
         }
         to {
             opacity: 1;
             transform: translateY(0);
         }
+    }
+
+    @keyframes trackingPulse {
+        0% { transform: scale(1); opacity: 1; }
+        50% { transform: scale(1.3); opacity: 0.6; }
+        100% { transform: scale(1); opacity: 1; }
+    }
+
+    @keyframes trackingLineGrow {
+        from { transform: scaleY(0); transform-origin: top; }
+        to { transform: scaleY(1); transform-origin: top; }
+    }
+
+    .tracking-active-pulse {
+        animation: trackingPulse 1.2s ease-in-out infinite;
+    }
+
+    .tracking-line-fill {
+        animation: trackingLineGrow 0.9s ease-out both;
     }
 </style>
