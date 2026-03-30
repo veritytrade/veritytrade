@@ -61,8 +61,20 @@
                     @if(is_array($shipment->carrier_tracks_json))
                         · {{ count($shipment->carrier_tracks_json['tracks'] ?? []) }} event(s) stored
                     @endif
+                    <form method="POST" action="{{ route('admin.shipments.refresh-carrier-tracking', $shipment) }}" class="inline ml-2">
+                        @csrf
+                        <button type="submit" class="inline-flex items-center justify-center min-h-[34px] px-3 py-1 bg-sky-600 hover:bg-sky-700 text-white font-medium text-xs rounded-lg">
+                            Refresh now
+                        </button>
+                    </form>
                 @else
-                    Not loaded — use “Refresh carrier tracking”
+                    Not loaded.
+                    <form method="POST" action="{{ route('admin.shipments.refresh-carrier-tracking', $shipment) }}" class="inline ml-2">
+                        @csrf
+                        <button type="submit" class="inline-flex items-center justify-center min-h-[34px] px-3 py-1 bg-sky-600 hover:bg-sky-700 text-white font-medium text-xs rounded-lg">
+                            Refresh carrier tracking
+                        </button>
+                    </form>
                 @endif
             </dd>
         </dl>
