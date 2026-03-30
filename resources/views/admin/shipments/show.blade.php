@@ -84,7 +84,7 @@
             <p class="mt-1 text-xs text-sky-800/90">If tracking details are missing, use this button to fetch the latest carrier events now.</p>
             <form method="POST" action="{{ route('admin.shipments.refresh-carrier-tracking', $shipment) }}" class="mt-3">
                 @csrf
-                <button type="submit" class="inline-flex w-full sm:w-auto items-center justify-center min-h-[44px] px-4 py-2 bg-sky-600 hover:bg-sky-700 text-white font-semibold rounded-lg shadow-sm">
+                <button type="submit" class="inline-flex w-full sm:w-auto items-center justify-center min-h-[44px] px-4 py-2 bg-sky-600 hover:bg-sky-700 text-white font-semibold rounded-lg shadow-sm" style="display:inline-flex;align-items:center;justify-content:center;min-height:44px;padding:10px 16px;border-radius:10px;background:#0284c7;color:#fff;font-weight:600;border:0;">
                     Refresh carrier tracking
                 </button>
             </form>

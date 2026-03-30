@@ -115,11 +115,15 @@
                         $delayMs = $idx * 70;
                         $stageTracks = $groupedTracks[$pos] ?? [];
                         $isLast = $idx === $stages->count() - 1;
+                        $connectorColor = $done ? '#22c55e' : ($active ? '#3b82f6' : '#d1d5db');
                     @endphp
                     <li
-                        class="relative flex gap-3 mb-7 last:mb-1 tracking-vtl-step"
+                        class="relative flex items-start gap-3 mb-7 last:mb-1 tracking-vtl-step"
                         style="animation: trackingFadeSlide 0.5s ease-out {{ $delayMs }}ms both;"
                     >
+                        @unless($isLast)
+                            <div class="absolute" style="left:17px;top:36px;bottom:-28px;width:3px;border-radius:9999px;background:{{ $connectorColor }};opacity:0.95;" aria-hidden="true"></div>
+                        @endunless
                         <div class="relative z-10 mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full border-2 transition-all duration-300
                             @if($done) border-green-600 bg-green-600 text-white shadow-[0_0_0_4px_rgba(22,163,74,0.20)]
                             @elseif($active) border-blue-600 bg-white text-blue-700 shadow-[0_0_0_4px_rgba(37,99,235,0.25)]
@@ -132,7 +136,7 @@
                                 <span class="text-[11px] font-bold">{{ $pos }}</span>
                             @endif
                         </div>
-                        <div class="min-w-0 flex-1 pt-0.5">
+                        <div class="min-w-0 flex-1 pt-1">
                             <div class="flex items-center gap-2">
                                 <p class="text-sm font-semibold leading-snug {{ $active ? 'text-blue-700' : ($done ? 'text-gray-900' : 'text-gray-500') }}">
                                     {{ $stage->name }}
