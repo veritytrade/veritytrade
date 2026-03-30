@@ -46,6 +46,8 @@
             str_contains($t, 'truck') ||
             str_contains($t, 'guangzhou') ||
             str_contains($t, 'baiyun') ||
+            str_contains($t, 'hong kong') ||
+            str_contains($t, 'hongkong') ||
             str_contains($t, 'received express goods') ||
             str_contains($t, 'collected') ||
             str_contains($t, 'custom declaration') ||
@@ -85,6 +87,14 @@
             'subsection' => $track['meta']['subsection'] ?? $classification['subsection'] ?? null,
         ];
     }
+
+    // Newest updates first within each stage for easier reading.
+    foreach ($groupedTracks as $pos => $items) {
+        usort($items, static function (array $a, array $b): int {
+            return strcmp((string) ($b['at'] ?? ''), (string) ($a['at'] ?? ''));
+        });
+        $groupedTracks[$pos] = $items;
+    }
 @endphp
 
 <div class="tracking-vtl mt-4 overflow-hidden rounded-2xl border border-gray-200/80 bg-gradient-to-b from-white to-gray-50/90 shadow-[0_8px_30px_rgba(0,0,0,0.06)]">
@@ -94,6 +104,7 @@
 
     <div class="px-3 py-5 sm:px-5">
         <div class="relative pl-1">
+            <div class="pointer-events-none absolute left-[16px] top-4 bottom-4 w-[3px] rounded-full bg-gray-300/90" aria-hidden="true"></div>
 
             <ul class="space-y-0">
                 @foreach($stages as $idx => $stage)
@@ -109,10 +120,6 @@
                         class="relative flex gap-3 mb-7 last:mb-1 tracking-vtl-step"
                         style="animation: trackingFadeSlide 0.5s ease-out {{ $delayMs }}ms both;"
                     >
-                        @unless($isLast)
-                            <div class="absolute left-[16px] top-8 bottom-[-28px] w-[3px] rounded-full bg-gray-200 tracking-line-fill" aria-hidden="true"></div>
-                            <div class="absolute left-[16px] top-8 bottom-[-28px] w-[3px] rounded-full {{ $done ? 'bg-green-500' : ($active ? 'bg-blue-500' : 'bg-gray-300') }} opacity-90" aria-hidden="true"></div>
-                        @endunless
                         <div class="relative z-10 mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full border-2 transition-all duration-300
                             @if($done) border-green-600 bg-green-600 text-white shadow-[0_0_0_4px_rgba(22,163,74,0.20)]
                             @elseif($active) border-blue-600 bg-white text-blue-700 shadow-[0_0_0_4px_rgba(37,99,235,0.25)]
