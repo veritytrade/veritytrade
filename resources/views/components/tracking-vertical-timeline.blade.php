@@ -60,7 +60,7 @@
             return ['stage' => 3, 'subsection' => null]; // Arrived Logistics
         }
 
-        if (str_contains($t, 'flying') || str_contains($t, 'addis') || str_contains($t, 'hong kong international airport')) {
+        if (str_contains($t, 'flying') || str_contains($t, 'addis')) {
             return ['stage' => 4, 'subsection' => null]; // Flying to Nigeria
         }
 
@@ -89,20 +89,11 @@
 
 <div class="tracking-vtl mt-4 overflow-hidden rounded-2xl border border-gray-200/80 bg-gradient-to-b from-white to-gray-50/90 shadow-[0_8px_30px_rgba(0,0,0,0.06)]">
     <div class="border-b border-gray-100 bg-white/90 px-4 py-4 sm:px-5">
-        <p class="text-[11px] font-semibold uppercase tracking-wider text-gray-500">Shipment status</p>
-        <p class="mt-1 text-lg font-bold tracking-tight text-gray-900 sm:text-xl">
-            {{ $current?->name ?? 'Pending' }}
-        </p>
-        @if($current?->description)
-            <p class="mt-1 text-sm text-gray-600">{{ $current->description }}</p>
-        @endif
+        <p class="text-[11px] font-semibold uppercase tracking-wider text-gray-500">Shipment timeline</p>
     </div>
 
     <div class="px-3 py-5 sm:px-5">
         <div class="relative pl-1">
-            <div class="absolute left-[17px] top-2 bottom-2 w-[2px] bg-gray-200 rounded-full overflow-hidden" aria-hidden="true">
-                <div class="w-full h-full bg-gradient-to-b from-emerald-500 via-blue-500 to-gray-300 tracking-line-fill"></div>
-            </div>
 
             <ul class="space-y-0">
                 @foreach($stages as $idx => $stage)
@@ -112,11 +103,15 @@
                         $active = $currentPos > 0 && $pos === $currentPos;
                         $delayMs = $idx * 70;
                         $stageTracks = $groupedTracks[$pos] ?? [];
+                        $isLast = $idx === $stages->count() - 1;
                     @endphp
                     <li
                         class="relative flex gap-3 mb-6 last:mb-1 tracking-vtl-step"
                         style="animation: trackingFadeSlide 0.5s ease-out {{ $delayMs }}ms both;"
                     >
+                        @unless($isLast)
+                            <div class="absolute left-[17px] top-9 h-[calc(100%-8px)] w-[2px] rounded-full {{ $done ? 'bg-green-500' : ($active ? 'bg-blue-500' : 'bg-gray-300') }}" aria-hidden="true"></div>
+                        @endunless
                         <div class="relative z-10 flex h-9 w-9 shrink-0 items-center justify-center rounded-full border-2 transition-all duration-300
                             @if($done) border-green-600 bg-green-600 text-white shadow-[0_0_0_4px_rgba(22,163,74,0.20)]
                             @elseif($active) border-blue-600 bg-white text-blue-700 shadow-[0_0_0_4px_rgba(37,99,235,0.25)]
@@ -138,12 +133,6 @@
                                     <span class="inline-flex items-center rounded-full bg-blue-100 px-2 py-0.5 text-[10px] font-semibold text-blue-700">CURRENT</span>
                                 @endif
                             </div>
-                            <p class="text-xs mt-0.5 {{ $active ? 'text-blue-600' : ($done ? 'text-gray-600' : 'text-gray-400') }}">
-                                {{ $stage->name }}
-                            </p>
-                            @if($stage->description)
-                                <p class="mt-0.5 text-xs {{ $active ? 'text-blue-700' : ($done ? 'text-gray-600' : 'text-gray-400') }}">{{ $stage->description }}</p>
-                            @endif
 
                             @if(count($stageTracks) > 0)
                                 @if($pos === 5)
@@ -194,8 +183,6 @@
                                         @endforeach
                                     </div>
                                 @endif
-                            @elseif($active)
-                                <p class="mt-2 text-[11px] text-gray-500">Waiting for carrier details for this stage.</p>
                             @endif
                         </div>
                     </li>
