@@ -43,4 +43,8 @@ return [
         'base_url' => env('FISH_LOGISTICS_API_BASE_URL', 'https://api.fish-logistics.com/api/v1'),
     ],
 
+    'ingestion' => [
+        'api_key' => env('INGESTION_API_KEY'),
+    ],
+
 ];
