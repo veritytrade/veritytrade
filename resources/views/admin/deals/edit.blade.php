@@ -87,7 +87,6 @@
                 <label class="block mb-1 font-medium text-gray-700">Expiry Date/Time <span class="text-red-500">*</span></label>
                 <input type="datetime-local" name="expires_at"
                        value="{{ old('expires_at', $deal->expires_at->format('Y-m-d\TH:i')) }}"
-                       min="{{ now()->format('Y-m-d\TH:i') }}"
                        class="w-full border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition"
                        required>
                 <p class="text-xs text-gray-500 mt-1">

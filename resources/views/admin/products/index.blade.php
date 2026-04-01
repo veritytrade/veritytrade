@@ -5,19 +5,19 @@
             <span class="mx-1">/</span>
             <span class="text-gray-700 font-medium">Products</span>
         </nav>
-        <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4 md:p-6 mb-6">
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 md:p-6 mb-6">
             <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                 <div>
-                    <h2 class="text-xl md:text-2xl font-bold text-blue-700">Products</h2>
-                    <p class="text-sm text-gray-500 mt-1">Review, edit, publish, archive, or delete ingested listings.</p>
+                    <h2 class="text-xl md:text-2xl font-bold text-gray-900">Products</h2>
+                    <p class="text-sm text-gray-500 mt-1">Review and approve items into Hot Deals.</p>
                 </div>
             </div>
         </div>
 
-        <div class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
             <div class="overflow-x-auto">
                 <table class="w-full text-sm">
-                    <thead class="bg-blue-600 text-white">
+                    <thead class="bg-gray-50 border-b border-gray-200 text-gray-700">
                         <tr>
                             <th class="p-3 text-left font-semibold">Title</th>
                             <th class="p-3 text-left font-semibold">Description</th>
@@ -30,7 +30,11 @@
                     <tbody class="divide-y divide-gray-100">
                         @forelse($products as $product)
                             <tr class="hover:bg-gray-50">
-                                <td class="p-3 text-gray-800 font-medium max-w-xs truncate" title="{{ $product->title }}">{{ $product->title }}</td>
+                                <td class="p-3 text-gray-800 font-medium max-w-xs truncate" title="{{ $product->title }}">
+                                    <a href="{{ route('admin.products.show', $product) }}" class="text-green-600 hover:text-green-700">
+                                        {{ $product->title }}
+                                    </a>
+                                </td>
                                 <td class="p-3 text-gray-600 max-w-sm truncate" title="{{ $product->description_en }}">{{ $product->description_en ?: 'No description' }}</td>
                                 <td class="p-3 text-gray-700">₦{{ number_format((int) $product->price_ngn) }}</td>
                                 <td class="p-3 text-gray-700">{{ $product->images_count }}</td>

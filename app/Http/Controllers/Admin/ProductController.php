@@ -11,6 +11,8 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\View\View;
@@ -143,34 +145,47 @@ class ProductController extends Controller
 
     public function approve(Product $product): RedirectResponse
     {
-        $deal = DB::transaction(function () use ($product) {
-            $product->update(['status' => 'active']);
+        try {
+            $deal = DB::transaction(function () use ($product) {
+                $product->update(['status' => 'active']);
 
-            $deal = Deal::query()->firstOrNew([
-                'source_product_id' => $product->id,
+                $canLinkSourceProduct = Schema::hasColumn('deals', 'source_product_id');
+                $deal = $canLinkSourceProduct
+                    ? Deal::query()->firstOrNew(['source_product_id' => $product->id])
+                    : new Deal();
+
+                if (! $deal->exists) {
+                    $deal->position = ((int) Deal::max('position')) + 1;
+                    $deal->created_by = Auth::id();
+                }
+
+                $deal->title = $product->title;
+                $deal->description = $this->buildDealDescription($product);
+                $deal->price_display = '₦' . number_format((int) $product->price_ngn);
+                $deal->whatsapp_message = null;
+                $deal->expires_at = $deal->expires_at ?? now()->addDays(7);
+                $deal->is_active = true;
+                if ($canLinkSourceProduct) {
+                    $deal->source_product_id = $product->id;
+                }
+                $deal->save();
+
+                $this->syncDealImagesFromProduct($product, $deal);
+
+                return $deal;
+            });
+
+            return redirect()
+                ->route('admin.deals.edit', ['deal' => $deal, 'from_product' => $product->id])
+                ->with('success', 'Approved. Review and publish in Hot Deals.');
+        } catch (\Throwable $e) {
+            Log::error('Product approval to hot deal failed', [
+                'product_id' => $product->id,
+                'message' => $e->getMessage(),
             ]);
 
-            if (! $deal->exists) {
-                $deal->position = ((int) Deal::max('position')) + 1;
-                $deal->created_by = Auth::id();
-            }
-
-            $deal->title = $product->title;
-            $deal->description = $this->buildDealDescription($product);
-            $deal->price_display = '₦' . number_format((int) $product->price_ngn);
-            $deal->whatsapp_message = null;
-            $deal->expires_at = $deal->expires_at ?? now()->addDays(7);
-            $deal->is_active = true;
-            $deal->save();
-
-            $this->syncDealImagesFromProduct($product, $deal);
-
-            return $deal;
-        });
-
-        return redirect()
-            ->route('admin.deals.edit', ['deal' => $deal, 'from_product' => $product->id])
-            ->with('success', 'Approved. Review and publish in Hot Deals.');
+            return back()->with('error', 'Could not approve to hot deal. Please refresh and try again.');
+        }
     }
 
     public function archive(Product $product): RedirectResponse
