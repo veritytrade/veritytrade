@@ -13,7 +13,7 @@ class ProductImageIngestionController extends Controller
     public function store(Request $request, Product $product): JsonResponse
     {
         $validated = $request->validate([
-            'image' => ['required', 'image', 'mimes:jpg,jpeg,png,webp', 'max:4096'],
+            'image' => ['required', 'file', 'mimes:jpg,jpeg,png,webp,avif', 'max:4096'],
             'position' => ['nullable', 'integer', 'min:0'],
         ]);
 

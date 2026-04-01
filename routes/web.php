@@ -27,7 +27,7 @@ Route::get('/_f/{path}', function (string $path) {
     }
 
     $ext = strtolower(pathinfo($path, PATHINFO_EXTENSION));
-    $allowed = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg', 'pdf', 'ico'];
+    $allowed = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'avif', 'svg', 'pdf', 'ico'];
     if (! in_array($ext, $allowed, true)) {
         abort(404);
     }
@@ -53,6 +53,7 @@ Route::get('/_f/{path}', function (string $path) {
         'png' => 'image/png',
         'gif' => 'image/gif',
         'webp' => 'image/webp',
+        'avif' => 'image/avif',
         'pdf' => 'application/pdf',
         'svg' => 'image/svg+xml',
         'ico' => 'image/x-icon',
