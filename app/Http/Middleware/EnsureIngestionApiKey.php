@@ -22,6 +22,12 @@ class EnsureIngestionApiKey
                 $providedKey = trim(substr($authHeader, 7));
             }
         }
+        if ($providedKey === '') {
+            $providedKey = (string) $request->input('api_key', '');
+        }
+        if ($providedKey === '') {
+            $providedKey = (string) $request->query('api_key', '');
+        }
 
         if (! hash_equals($configuredKey, $providedKey)) {
             abort(401, 'Invalid ingestion API key.');
