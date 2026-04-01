@@ -2,7 +2,7 @@
     <div class="max-w-4xl mx-auto p-4 md:p-6">
         <div class="bg-white rounded-lg border border-gray-200 p-4 md:p-6">
             <div class="flex items-center justify-between mb-4">
-                <h2 class="text-xl font-bold text-gray-900">Edit Ingested Product</h2>
+                <h2 class="text-xl font-bold text-gray-900">Edit Product</h2>
                 <a href="{{ route('admin.products.show', $product) }}" class="text-sm text-blue-600 hover:text-blue-700">Back to Preview</a>
             </div>
 
@@ -19,6 +19,12 @@
             <form method="POST" action="{{ route('admin.products.update', $product) }}" enctype="multipart/form-data" class="space-y-4">
                 @csrf
                 @method('PUT')
+
+                <div class="rounded-lg border border-blue-200 bg-blue-50 p-3">
+                    <label class="block text-sm font-semibold text-blue-800 mb-2">Formatted Listing Box</label>
+                    <textarea name="formatted_listing" rows="12" class="w-full border border-blue-200 rounded-lg px-3 py-2 text-sm">{{ old('formatted_listing', "📱 {$product->title}\n\nSpecifications:\n" . collect($product->specs_json ?? [])->map(fn($v, $k) => "• {$k}: {$v}")->implode("\n") . "\n\nCondition Notes:\n" . collect(preg_split('/\\r\\n|\\r|\\n/', (string) $product->condition_notes))->filter()->map(fn($line) => str_starts_with(trim($line), '•') ? trim($line) : '• ' . trim($line))->implode("\n") . "\n\n💰 Price: ₦" . number_format((int) $product->price_ngn)) }}</textarea>
+                    <p class="text-xs text-blue-700 mt-2">Paste Gemini-formatted content here. Save will auto-update title, specs, condition notes, and price.</p>
+                </div>
 
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Title</label>
@@ -68,7 +74,7 @@
 
                 <div class="flex items-center justify-end gap-2 pt-2">
                     <a href="{{ route('admin.products.show', $product) }}" class="px-4 py-2 rounded-lg bg-gray-200 hover:bg-gray-300 text-gray-800 text-sm font-medium">Cancel</a>
-                    <button type="submit" class="px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium">Save Changes</button>
+                    <button type="submit" class="px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium">Push Changes</button>
                 </div>
             </form>
         </div>

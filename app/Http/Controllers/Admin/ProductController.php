@@ -12,22 +12,15 @@ use Illuminate\View\View;
 
 class ProductController extends Controller
 {
-    public function index(Request $request): View
+    public function index(): View
     {
-        $status = (string) $request->query('status', '');
-
         $products = Product::query()
             ->withCount('images')
-            ->when(in_array($status, ['draft', 'active', 'archived'], true), function ($query) use ($status) {
-                $query->where('status', $status);
-            })
             ->latest()
-            ->paginate(20)
-            ->withQueryString();
+            ->paginate(20);
 
         return view('admin.products.index', [
             'products' => $products,
-            'statusFilter' => $status,
         ]);
     }
 
@@ -48,8 +41,9 @@ class ProductController extends Controller
     public function update(Request $request, Product $product): RedirectResponse
     {
         $validated = $request->validate([
-            'title' => ['required', 'string', 'max:255'],
-            'price_ngn' => ['required', 'integer', 'min:0'],
+            'formatted_listing' => ['nullable', 'string'],
+            'title' => ['nullable', 'string', 'max:255'],
+            'price_ngn' => ['nullable', 'integer', 'min:0'],
             'description_en' => ['nullable', 'string'],
             'specs_json_text' => ['nullable', 'string'],
             'condition_notes' => ['nullable', 'string'],
@@ -58,8 +52,15 @@ class ProductController extends Controller
             'images.*' => ['nullable', 'file', 'max:4096'],
         ]);
 
+        $parsed = null;
+        if (filled($validated['formatted_listing'] ?? null)) {
+            $parsed = $this->parseFormattedListing((string) $validated['formatted_listing']);
+        }
+
         $specs = null;
-        if (filled($validated['specs_json_text'] ?? null)) {
+        if ($parsed && $parsed['specs_json'] !== []) {
+            $specs = $parsed['specs_json'];
+        } elseif (filled($validated['specs_json_text'] ?? null)) {
             $rawSpecs = trim((string) $validated['specs_json_text']);
             $decoded = json_decode($rawSpecs, true);
 
@@ -89,12 +90,20 @@ class ProductController extends Controller
             }
         }
 
+        $title = $parsed['title'] ?? ($validated['title'] ?? $product->title);
+        $priceNgn = $parsed['price_ngn'] ?? ($validated['price_ngn'] ?? $product->price_ngn);
+        if (blank($title) || ! is_numeric((string) $priceNgn)) {
+            return back()
+                ->withErrors(['formatted_listing' => 'Provide at least title and price.'])
+                ->withInput();
+        }
+
         $product->update([
-            'title' => $validated['title'],
-            'price_ngn' => $validated['price_ngn'],
-            'description_en' => $validated['description_en'] ?? null,
+            'title' => (string) $title,
+            'price_ngn' => (int) $priceNgn,
+            'description_en' => $parsed['description_en'] ?? ($validated['description_en'] ?? null),
             'specs_json' => $specs,
-            'condition_notes' => $validated['condition_notes'] ?? null,
+            'condition_notes' => $parsed['condition_notes'] ?? ($validated['condition_notes'] ?? null),
             'status' => $validated['status'],
             'stock' => $validated['stock'],
         ]);
@@ -146,5 +155,80 @@ class ProductController extends Controller
         $image->delete();
 
         return back()->with('success', 'Image removed.');
+    }
+
+    public function destroy(Product $product): RedirectResponse
+    {
+        foreach ($product->images as $image) {
+            if (Storage::disk('public')->exists($image->image_path)) {
+                Storage::disk('public')->delete($image->image_path);
+            }
+        }
+        $product->delete();
+
+        return redirect()->route('admin.products.index')->with('success', 'Product deleted.');
+    }
+
+    private function parseFormattedListing(string $text): array
+    {
+        $lines = preg_split('/\r\n|\r|\n/', trim($text)) ?: [];
+        $title = '';
+        $descriptionLines = [];
+        $specs = [];
+        $condition = [];
+        $mode = 'desc';
+        $price = null;
+
+        foreach ($lines as $raw) {
+            $line = trim($raw);
+            if ($line === '') {
+                continue;
+            }
+            if ($title === '') {
+                $title = preg_replace('/^[•\-\s\p{So}]+/u', '', $line) ?: $line;
+                continue;
+            }
+            if (strtolower($line) === 'specifications:') {
+                $mode = 'spec';
+                continue;
+            }
+            if (strtolower($line) === 'condition notes:') {
+                $mode = 'cond';
+                continue;
+            }
+            if (preg_match('/^💰\s*Price:\s*₦\s*([\d,]+(?:\.\d+)?)\s*([kKmM])?$/u', $line, $m)) {
+                $num = (float) str_replace(',', '', $m[1]);
+                $suffix = strtolower($m[2] ?? '');
+                if ($suffix === 'm') {
+                    $price = (int) round($num * 1000000);
+                } elseif ($suffix === 'k') {
+                    $price = (int) round($num * 1000);
+                } else {
+                    $price = (int) round($num);
+                }
+                continue;
+            }
+
+            if ($mode === 'spec' && str_starts_with($line, '•') && str_contains($line, ':')) {
+                [$k, $v] = array_map('trim', explode(':', ltrim($line, "• \t"), 2));
+                if ($k !== '' && $v !== '') {
+                    $specs[$k] = $v;
+                }
+                continue;
+            }
+            if ($mode === 'cond' && str_starts_with($line, '•')) {
+                $condition[] = trim($line);
+                continue;
+            }
+            $descriptionLines[] = $line;
+        }
+
+        return [
+            'title' => $title,
+            'price_ngn' => $price,
+            'description_en' => $descriptionLines ? implode("\n", $descriptionLines) : null,
+            'specs_json' => $specs,
+            'condition_notes' => $condition ? implode("\n", $condition) : null,
+        ];
     }
 }

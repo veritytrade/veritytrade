@@ -259,6 +259,8 @@ Route::prefix('admin')
             ->name('admin.products.archive');
         Route::delete('/products/{product}/images/{image}', [\App\Http\Controllers\Admin\ProductController::class, 'deleteImage'])
             ->name('admin.products.images.destroy');
+        Route::delete('/products/{product}', [\App\Http\Controllers\Admin\ProductController::class, 'destroy'])
+            ->name('admin.products.destroy');
         });
 
         Route::middleware('permission:approve_users')->group(function () {

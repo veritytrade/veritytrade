@@ -20,6 +20,11 @@
                             <button type="submit" class="px-3 py-2 rounded-lg bg-red-600 hover:bg-red-700 text-white text-sm font-medium">Archive</button>
                         </form>
                     @endif
+                    <form method="POST" action="{{ route('admin.products.destroy', $product) }}" onsubmit="return confirm('Delete this product and all media? This cannot be undone.');">
+                        @csrf
+                        @method('DELETE')
+                        <button type="submit" class="px-3 py-2 rounded-lg bg-red-900 hover:bg-black text-white text-sm font-medium">Delete</button>
+                    </form>
                 </div>
             </div>
         </div>
