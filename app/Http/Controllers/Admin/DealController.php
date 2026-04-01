@@ -96,11 +96,9 @@ class DealController extends Controller
             'description' => 'required|string',
             'price_display' => 'nullable|string|max:100',
             'whatsapp_message' => 'nullable|string|max:500',
-            'expires_at' => 'required|date|after:now',
+            'expires_at' => 'required|date',
             'is_active' => 'nullable|boolean',
             'images.*' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
-        ], [
-            'expires_at.after' => 'Expiry date must be in the future',
         ]);
 
         // --- CLEAN DESCRIPTION LOGIC ---

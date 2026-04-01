@@ -32,8 +32,16 @@ class ProductController extends Controller
     public function show(Product $product): View
     {
         $product->loadMissing('images');
+        $previousProduct = Product::query()
+            ->where('id', '>', $product->id)
+            ->orderBy('id')
+            ->first();
+        $nextProduct = Product::query()
+            ->where('id', '<', $product->id)
+            ->orderByDesc('id')
+            ->first();
 
-        return view('admin.products.show', compact('product'));
+        return view('admin.products.show', compact('product', 'previousProduct', 'nextProduct'));
     }
 
     public function edit(Product $product): View

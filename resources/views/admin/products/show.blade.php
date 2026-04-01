@@ -1,9 +1,17 @@
 <x-admin-layout>
     <div class="max-w-4xl mx-auto p-4 md:p-6 space-y-4">
+        <nav class="text-xs text-gray-500">
+            <a href="{{ route('admin.dashboard') }}" class="hover:text-green-700">Dashboard</a>
+            <span class="mx-1">/</span>
+            <a href="{{ route('admin.products.index') }}" class="hover:text-green-700">Products</a>
+            <span class="mx-1">/</span>
+            <span class="text-gray-700 font-medium truncate inline-block align-bottom max-w-[200px]">{{ $product->title }}</span>
+        </nav>
         <div class="bg-white rounded-lg border border-gray-200 p-4 md:p-6">
             <div class="flex flex-col md:flex-row md:items-start md:justify-between gap-3">
                 <h2 class="text-xl font-bold text-gray-900">{{ $product->title }}</h2>
                 <div class="flex items-center gap-2">
+                    <a href="{{ route('admin.products.index') }}" class="px-3 py-2 rounded-lg bg-gray-200 hover:bg-gray-300 text-gray-800 text-sm font-medium">Back to Products</a>
                     <a href="{{ route('admin.products.edit', $product) }}" class="px-3 py-2 rounded-lg bg-gray-700 hover:bg-gray-800 text-white text-sm font-medium">Edit</a>
                     @if($product->status !== 'active')
                         <form method="POST" action="{{ route('admin.products.approve', $product) }}">
@@ -11,13 +19,20 @@
                             <button type="submit" class="px-3 py-2 rounded-lg bg-green-600 hover:bg-green-700 text-white text-sm font-medium">Approve to Hot Deal</button>
                         </form>
                     @endif
-                    @if($product->status !== 'archived')
-                        <form method="POST" action="{{ route('admin.products.archive', $product) }}">
-                            @csrf
-                            <button type="submit" class="px-3 py-2 rounded-lg bg-red-600 hover:bg-red-700 text-white text-sm font-medium">Hide from Frontend</button>
-                        </form>
-                    @endif
                 </div>
+            </div>
+        </div>
+
+        <div class="flex items-center justify-between">
+            <div>
+                @if(isset($previousProduct) && $previousProduct)
+                    <a href="{{ route('admin.products.show', $previousProduct) }}" class="text-sm text-blue-600 hover:text-blue-800">← Previous Product</a>
+                @endif
+            </div>
+            <div>
+                @if(isset($nextProduct) && $nextProduct)
+                    <a href="{{ route('admin.products.show', $nextProduct) }}" class="text-sm text-blue-600 hover:text-blue-800">Next Product →</a>
+                @endif
             </div>
         </div>
 
