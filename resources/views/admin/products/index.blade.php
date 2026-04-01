@@ -34,14 +34,14 @@
                     <tbody class="divide-y divide-gray-100">
                         @forelse($products as $product)
                             <tr class="hover:bg-gray-50">
-                                <td class="p-3 text-gray-800 font-medium">{{ $product->title }}</td>
+                                <td class="p-3 text-gray-800 font-medium max-w-xs truncate" title="{{ $product->title }}">{{ $product->title }}</td>
                                 <td class="p-3 text-gray-700">₦{{ number_format((int) $product->price_ngn) }}</td>
                                 <td class="p-3">
                                     <span class="px-2 py-1 rounded-full text-xs font-semibold {{ $product->status === 'active' ? 'bg-green-100 text-green-700' : ($product->status === 'draft' ? 'bg-yellow-100 text-yellow-700' : 'bg-gray-100 text-gray-700') }}">
                                         {{ strtoupper($product->status) }}
                                     </span>
                                 </td>
-                                <td class="p-3 text-gray-600">{{ $product->source_site }} / {{ $product->source_item_id }}</td>
+                                <td class="p-3 text-gray-600 max-w-xs truncate" title="{{ $product->source_site }} / {{ $product->source_item_id }}">{{ $product->source_site }} / {{ $product->source_item_id }}</td>
                                 <td class="p-3 text-gray-700">{{ $product->images_count }}</td>
                                 <td class="p-3">
                                     <div class="flex items-center gap-2">
