@@ -223,6 +223,22 @@ Route::prefix('admin')
 
         Route::delete('/deals/image/{image}', [\App\Http\Controllers\Admin\DealController::class, 'deleteImage'])
             ->name('admin.deals.image.destroy');
+
+        // Ingested products review/approval workflow
+        Route::get('/products', [\App\Http\Controllers\Admin\ProductController::class, 'index'])
+            ->name('admin.products.index');
+        Route::get('/products/{product}', [\App\Http\Controllers\Admin\ProductController::class, 'show'])
+            ->name('admin.products.show');
+        Route::get('/products/{product}/edit', [\App\Http\Controllers\Admin\ProductController::class, 'edit'])
+            ->name('admin.products.edit');
+        Route::put('/products/{product}', [\App\Http\Controllers\Admin\ProductController::class, 'update'])
+            ->name('admin.products.update');
+        Route::post('/products/{product}/approve', [\App\Http\Controllers\Admin\ProductController::class, 'approve'])
+            ->name('admin.products.approve');
+        Route::post('/products/{product}/archive', [\App\Http\Controllers\Admin\ProductController::class, 'archive'])
+            ->name('admin.products.archive');
+        Route::delete('/products/{product}/images/{image}', [\App\Http\Controllers\Admin\ProductController::class, 'deleteImage'])
+            ->name('admin.products.images.destroy');
         });
 
         Route::middleware('permission:approve_users')->group(function () {

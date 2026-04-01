@@ -18,12 +18,15 @@ class ProductIngestionController extends Controller
             'description_en' => ['nullable', 'string'],
             'specs_json' => ['nullable', 'array'],
             'condition_notes' => ['nullable', 'string'],
-            'status' => ['required', 'string', Rule::in(['draft', 'active', 'archived'])],
+            'status' => ['nullable', 'string', Rule::in(['draft', 'active', 'archived'])],
             'stock' => ['required', 'integer', 'min:0'],
             'source_site' => ['required', 'string', 'max:100'],
             'source_item_id' => ['required', 'string', 'max:191'],
             'source_url_private' => ['nullable', 'string', 'max:2048'],
         ]);
+
+        // Safety-first publishing: ingestion always lands as draft for admin review.
+        $validated['status'] = 'draft';
 
         $product = Product::updateOrCreate(
             [

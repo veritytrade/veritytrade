@@ -29,6 +29,7 @@
                 @endif
                 @if($user->hasPermission('manage_deals'))
                     <li><a href="{{ route('admin.deals.index') }}" class="flex items-center px-4 py-3 text-sm font-medium rounded-lg {{ request()->routeIs('admin.deals.*') ? 'bg-white text-green-700' : 'text-green-100 hover:bg-green-600 hover:text-white' }}">Hot Deals</a></li>
+                    <li><a href="{{ route('admin.products.index') }}" class="flex items-center px-4 py-3 text-sm font-medium rounded-lg {{ request()->routeIs('admin.products.*') ? 'bg-white text-green-700' : 'text-green-100 hover:bg-green-600 hover:text-white' }}">Ingested Products</a></li>
                 @endif
                 <li><a href="{{ route('admin.phones.brands.index') }}" class="flex items-center px-4 py-3 text-sm font-medium rounded-lg {{ request()->routeIs('admin.phones.*') ? 'bg-white text-green-700' : 'text-green-100 hover:bg-green-600 hover:text-white' }}">Phones</a></li>
                 @if($user->hasPermission('view_tracking'))
