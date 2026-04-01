@@ -18,7 +18,7 @@
             </div>
         </div>
 
-        <div class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+        <div class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden hidden md:block">
             <div class="overflow-x-auto">
                 <table class="w-full text-sm">
                     <thead class="bg-blue-600 text-white">
@@ -58,6 +58,29 @@
                     </tbody>
                 </table>
             </div>
+        </div>
+
+        <div class="space-y-3 md:hidden">
+            @forelse($products as $product)
+                <article class="bg-white rounded-lg border border-gray-200 p-3 shadow-sm">
+                    <h3 class="text-sm font-semibold text-gray-900">{{ $product->title }}</h3>
+                    <p class="text-xs text-gray-600 mt-1">₦{{ number_format((int) $product->price_ngn) }} • {{ $product->images_count }} image(s)</p>
+                    <p class="text-xs text-gray-500 mt-1 break-all">{{ $product->source_site }} / {{ $product->source_item_id }}</p>
+                    <div class="mt-2">
+                        <span class="px-2 py-1 rounded-full text-[11px] font-semibold {{ $product->status === 'active' ? 'bg-green-100 text-green-700' : ($product->status === 'draft' ? 'bg-yellow-100 text-yellow-700' : 'bg-gray-100 text-gray-700') }}">
+                            {{ strtoupper($product->status) }}
+                        </span>
+                    </div>
+                    <div class="mt-3 flex items-center gap-2">
+                        <a href="{{ route('admin.products.show', $product) }}" class="flex-1 text-center px-3 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium">Preview</a>
+                        <a href="{{ route('admin.products.edit', $product) }}" class="flex-1 text-center px-3 py-2 rounded-lg bg-gray-700 hover:bg-gray-800 text-white text-xs font-medium">Edit</a>
+                    </div>
+                </article>
+            @empty
+                <div class="bg-white rounded-lg border border-gray-200 p-5 text-center text-sm text-gray-500">
+                    No ingested products yet.
+                </div>
+            @endforelse
         </div>
 
         <div class="mt-4">

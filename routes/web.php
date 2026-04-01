@@ -28,7 +28,8 @@ Route::get('/_f/{path}', function (string $path) {
 
     $ext = strtolower(pathinfo($path, PATHINFO_EXTENSION));
     $allowed = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'avif', 'svg', 'pdf', 'ico'];
-    if (! in_array($ext, $allowed, true)) {
+    $isLegacyProductsBin = ($ext === 'bin') && str_starts_with($path, 'products/');
+    if (! in_array($ext, $allowed, true) && ! $isLegacyProductsBin) {
         abort(404);
     }
 
@@ -59,6 +60,25 @@ Route::get('/_f/{path}', function (string $path) {
         'ico' => 'image/x-icon',
         default => 'application/octet-stream',
     };
+
+    // Backward compatibility for early ingested image files saved as .bin.
+    if ($isLegacyProductsBin) {
+        $signature = @file_get_contents($real, false, null, 0, 16);
+        if ($signature === false || $signature === '') {
+            abort(404);
+        }
+        if (str_starts_with($signature, "\xFF\xD8\xFF")) {
+            $mime = 'image/jpeg';
+        } elseif (str_starts_with($signature, "\x89PNG\x0D\x0A\x1A\x0A")) {
+            $mime = 'image/png';
+        } elseif (substr($signature, 0, 4) === 'RIFF' && substr($signature, 8, 4) === 'WEBP') {
+            $mime = 'image/webp';
+        } elseif (strlen($signature) >= 12 && substr($signature, 4, 8) === 'ftypavif') {
+            $mime = 'image/avif';
+        } else {
+            abort(404);
+        }
+    }
 
     return response()->file($real, [
         'Content-Type' => $mime,

@@ -60,13 +60,33 @@ class ProductController extends Controller
 
         $specs = null;
         if (filled($validated['specs_json_text'] ?? null)) {
-            $decoded = json_decode((string) $validated['specs_json_text'], true);
-            if (json_last_error() !== JSON_ERROR_NONE || (! is_array($decoded) && ! is_null($decoded))) {
-                return back()
-                    ->withErrors(['specs_json_text' => 'Specs JSON must be valid JSON object/array.'])
-                    ->withInput();
+            $rawSpecs = trim((string) $validated['specs_json_text']);
+            $decoded = json_decode($rawSpecs, true);
+
+            if (json_last_error() === JSON_ERROR_NONE && (is_array($decoded) || is_null($decoded))) {
+                $specs = $decoded;
+            } else {
+                // Mobile-friendly fallback: allow "Key: Value" lines and convert to JSON map.
+                $lines = preg_split('/\r\n|\r|\n/', $rawSpecs) ?: [];
+                $pairs = [];
+                foreach ($lines as $line) {
+                    $line = trim($line);
+                    if ($line === '' || ! str_contains($line, ':')) {
+                        continue;
+                    }
+                    [$k, $v] = array_map('trim', explode(':', $line, 2));
+                    if ($k !== '' && $v !== '') {
+                        $pairs[$k] = $v;
+                    }
+                }
+
+                if ($pairs === []) {
+                    return back()
+                        ->withErrors(['specs_json_text' => 'Specs must be valid JSON or Key: Value lines.'])
+                        ->withInput();
+                }
+                $specs = $pairs;
             }
-            $specs = $decoded;
         }
 
         $product->update([

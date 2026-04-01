@@ -52,6 +52,7 @@
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Specs JSON</label>
                     <textarea name="specs_json_text" rows="8" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm font-mono">{{ old('specs_json_text', json_encode($product->specs_json, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE)) }}</textarea>
+                    <p class="text-xs text-gray-500 mt-1">You can paste JSON or simple lines like <code>RAM: 12GB</code>.</p>
                 </div>
 
                 <div>
