@@ -241,7 +241,7 @@ Route::prefix('admin')
         Route::post('/deals/{deal}/toggle', [\App\Http\Controllers\Admin\DealController::class, 'toggle'])
             ->name('admin.deals.toggle');
 
-        Route::delete('/deals/image/{image}', [\App\Http\Controllers\Admin\DealController::class, 'deleteImage'])
+        Route::delete('/deals/{deal}/images/{imageId}', [\App\Http\Controllers\Admin\DealController::class, 'deleteImage'])
             ->name('admin.deals.image.destroy');
 
         // Ingested products review/approval workflow

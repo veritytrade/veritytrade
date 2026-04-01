@@ -155,8 +155,13 @@ class DealController extends Controller
     }
 
     // Delete single image
-    public function deleteImage(DealImage $image)
+    public function deleteImage(Deal $deal, int $imageId)
     {
+        $image = DealImage::query()
+            ->where('deal_id', $deal->id)
+            ->where('id', $imageId)
+            ->firstOrFail();
+
         if (Storage::disk('public')->exists($image->image_path)) {
             Storage::disk('public')->delete($image->image_path);
         }

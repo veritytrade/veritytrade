@@ -161,7 +161,7 @@ class ProductController extends Controller
         });
 
         return redirect()
-            ->route('admin.deals.edit', $deal)
+            ->route('admin.deals.edit', ['deal' => $deal, 'from_product' => $product->id])
             ->with('success', 'Approved. Review and publish in Hot Deals.');
     }
 

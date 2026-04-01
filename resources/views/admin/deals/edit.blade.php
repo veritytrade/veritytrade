@@ -2,10 +2,18 @@
     <div class="p-6 max-w-3xl mx-auto">
         <div class="flex justify-between items-center mb-6">
             <h2 class="text-2xl font-bold text-blue-700">Edit Hot Deal</h2>
-            <a href="{{ route('admin.deals.index') }}"
-               class="text-blue-600 hover:text-blue-800">
-                ← Back to Deals
-            </a>
+            <div class="flex items-center gap-4">
+                @if(request()->filled('from_product'))
+                    <a href="{{ route('admin.products.show', request('from_product')) }}"
+                       class="text-green-600 hover:text-green-800">
+                        ← Back to Product
+                    </a>
+                @endif
+                <a href="{{ route('admin.deals.index') }}"
+                   class="text-blue-600 hover:text-blue-800">
+                    ← Back to Deals
+                </a>
+            </div>
         </div>
 
         @if($errors->any())
@@ -118,7 +126,7 @@
                                     class="w-full aspect-square object-cover">
                                 <div class="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-20 transition flex items-center justify-center">
                                     <form method="POST"
-                                        action="{{ route('admin.deals.image.destroy', $image) }}"
+                                        action="{{ route('admin.deals.image.destroy', ['deal' => $deal, 'imageId' => $image->id]) }}"
                                         class="opacity-0 group-hover:opacity-100 transition"
                                         onsubmit="return confirm('Delete this image?')">
                                         @csrf
