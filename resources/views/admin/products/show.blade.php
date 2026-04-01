@@ -14,7 +14,7 @@
                     @if($product->status !== 'archived')
                         <form method="POST" action="{{ route('admin.products.archive', $product) }}">
                             @csrf
-                            <button type="submit" class="px-3 py-2 rounded-lg bg-red-600 hover:bg-red-700 text-white text-sm font-medium">Archive</button>
+                            <button type="submit" class="px-3 py-2 rounded-lg bg-red-600 hover:bg-red-700 text-white text-sm font-medium">Hide from Frontend</button>
                         </form>
                     @endif
                 </div>

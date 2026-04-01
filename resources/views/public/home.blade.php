@@ -59,8 +59,11 @@
                             <div class="space-y-2.5">
                                 @foreach($section['deals'] as $deal)
                                     @php
-                                        $image = ($deal->images ?? collect())->first();
-                                        $imageUrl = $image ? storage_asset($image->image_path) : null;
+                                        $imageUrls = ($deal->images ?? collect())
+                                            ->pluck('image_path')
+                                            ->map(fn ($p) => storage_asset($p))
+                                            ->values();
+                                        $imageUrl = $imageUrls->first();
                                         $priceText = preg_replace('/\s+/u', '', trim((string) ($deal->price_display ?? '')));
                                         $priceValue = preg_replace('/^(?:₦|NGN|N)/u', '', $priceText);
                                         $priceValue = $priceValue !== '' ? $priceValue : $priceText;
@@ -158,7 +161,12 @@
                                                 <a href="{{ $detailUrl }}"
                                                    class="w-20 h-20 sm:w-24 sm:h-24 rounded-lg bg-gray-100 overflow-hidden shrink-0 block">
                                                     @if($imageUrl)
-                                                        <img src="{{ $imageUrl }}" alt="{{ $deal->title }}" class="w-full h-full object-contain p-1.5">
+                                                        <img
+                                                            src="{{ $imageUrl }}"
+                                                            alt="{{ $deal->title }}"
+                                                            class="w-full h-full object-contain p-1.5 js-deal-rotator"
+                                                            data-images='@json($imageUrls)'
+                                                        >
                                                     @else
                                                         <div class="w-full h-full flex items-center justify-center text-xs text-gray-400">No image</div>
                                                     @endif
@@ -166,7 +174,12 @@
                                             @else
                                                 <div class="w-20 h-20 sm:w-24 sm:h-24 rounded-lg bg-gray-100 overflow-hidden shrink-0">
                                                     @if($imageUrl)
-                                                        <img src="{{ $imageUrl }}" alt="{{ $deal->title }}" class="w-full h-full object-contain p-1.5">
+                                                        <img
+                                                            src="{{ $imageUrl }}"
+                                                            alt="{{ $deal->title }}"
+                                                            class="w-full h-full object-contain p-1.5 js-deal-rotator"
+                                                            data-images='@json($imageUrls)'
+                                                        >
                                                     @else
                                                         <div class="w-full h-full flex items-center justify-center text-xs text-gray-400">No image</div>
                                                     @endif
@@ -284,6 +297,23 @@
 
                     sections.forEach((section) => observer.observe(section));
                 }
+
+                // Rotate deal images on list cards when multiple photos exist.
+                const rotators = document.querySelectorAll('.js-deal-rotator');
+                rotators.forEach((imgEl) => {
+                    let images = [];
+                    try {
+                        images = JSON.parse(imgEl.getAttribute('data-images') || '[]');
+                    } catch (e) {
+                        images = [];
+                    }
+                    if (!Array.isArray(images) || images.length < 2) return;
+                    let idx = 0;
+                    setInterval(() => {
+                        idx = (idx + 1) % images.length;
+                        imgEl.src = images[idx];
+                    }, 2500);
+                });
             });
         </script>
 

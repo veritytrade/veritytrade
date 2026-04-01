@@ -135,7 +135,7 @@ class DealController extends Controller
             }
         }
 
-        return redirect()->route('admin.deals.index')
+        return redirect()->route('admin.deals.edit', $deal)
                        ->with('success', 'Hot deal updated successfully!');
     }
 
