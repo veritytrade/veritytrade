@@ -3,11 +3,16 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\Deal;
+use App\Models\DealImage;
 use App\Models\Product;
 use App\Models\ProductImage;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use Illuminate\View\View;
 
 class ProductController extends Controller
@@ -130,9 +135,34 @@ class ProductController extends Controller
 
     public function approve(Product $product): RedirectResponse
     {
-        $product->update(['status' => 'active']);
+        $deal = DB::transaction(function () use ($product) {
+            $product->update(['status' => 'active']);
 
-        return back()->with('success', 'Product approved and now visible publicly.');
+            $deal = Deal::query()->firstOrNew([
+                'source_product_id' => $product->id,
+            ]);
+
+            if (! $deal->exists) {
+                $deal->position = ((int) Deal::max('position')) + 1;
+                $deal->created_by = Auth::id();
+            }
+
+            $deal->title = $product->title;
+            $deal->description = $this->buildDealDescription($product);
+            $deal->price_display = '₦' . number_format((int) $product->price_ngn);
+            $deal->whatsapp_message = null;
+            $deal->expires_at = $deal->expires_at ?? now()->addDays(7);
+            $deal->is_active = true;
+            $deal->save();
+
+            $this->syncDealImagesFromProduct($product, $deal);
+
+            return $deal;
+        });
+
+        return redirect()
+            ->route('admin.deals.edit', $deal)
+            ->with('success', 'Approved. Review and publish in Hot Deals.');
     }
 
     public function archive(Product $product): RedirectResponse
@@ -230,5 +260,70 @@ class ProductController extends Controller
             'specs_json' => $specs,
             'condition_notes' => $condition ? implode("\n", $condition) : null,
         ];
+    }
+
+    private function buildDealDescription(Product $product): string
+    {
+        $lines = [$product->title, ''];
+
+        if (is_array($product->specs_json) && $product->specs_json !== []) {
+            $lines[] = 'Specifications:';
+            foreach ($product->specs_json as $key => $value) {
+                $lines[] = '• ' . trim((string) $key) . ': ' . trim((string) $value);
+            }
+            $lines[] = '';
+        }
+
+        if (filled($product->condition_notes)) {
+            $lines[] = 'Condition Notes:';
+            $notes = preg_split('/\r\n|\r|\n/', (string) $product->condition_notes) ?: [];
+            foreach ($notes as $note) {
+                $note = trim($note);
+                if ($note === '') {
+                    continue;
+                }
+                $lines[] = str_starts_with($note, '•') ? $note : '• ' . $note;
+            }
+            $lines[] = '';
+        }
+
+        if (filled($product->description_en)) {
+            $lines[] = trim((string) $product->description_en);
+            $lines[] = '';
+        }
+
+        $lines[] = '💰 Price: ₦' . number_format((int) $product->price_ngn);
+
+        return trim(implode("\n", $lines));
+    }
+
+    private function syncDealImagesFromProduct(Product $product, Deal $deal): void
+    {
+        foreach ($deal->images as $existingImage) {
+            if (Storage::disk('public')->exists($existingImage->image_path)) {
+                Storage::disk('public')->delete($existingImage->image_path);
+            }
+            $existingImage->delete();
+        }
+
+        $images = $product->images()->orderBy('position')->get();
+        foreach ($images as $index => $image) {
+            $oldPath = (string) $image->image_path;
+            $ext = strtolower(pathinfo($oldPath, PATHINFO_EXTENSION));
+            if ($ext === '') {
+                $ext = 'jpg';
+            }
+            $newPath = 'deals/' . Str::random(40) . '.' . $ext;
+            $copied = Storage::disk('public')->copy($oldPath, $newPath);
+            if (! $copied) {
+                continue;
+            }
+
+            DealImage::create([
+                'deal_id' => $deal->id,
+                'image_path' => $newPath,
+                'position' => $index,
+            ]);
+        }
     }
 }

@@ -23,6 +23,7 @@ class Deal extends Model
         'is_active',
         'position',
         'created_by',
+        'source_product_id',
     ];
 
     protected $casts = [
@@ -47,6 +48,11 @@ class Deal extends Model
     public function creator(): BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by');
+    }
+
+    public function sourceProduct(): BelongsTo
+    {
+        return $this->belongsTo(Product::class, 'source_product_id');
     }
 
     public function scopeAvailable($query)
