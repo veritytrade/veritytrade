@@ -20,7 +20,6 @@
                     <thead class="bg-gray-50 border-b border-gray-200 text-gray-700">
                         <tr>
                             <th class="p-3 text-left font-semibold">Title</th>
-                            <th class="p-3 text-left font-semibold">Description</th>
                             <th class="p-3 text-left font-semibold">Price</th>
                             <th class="p-3 text-left font-semibold">Images</th>
                             <th class="p-3 text-left font-semibold">Status</th>
@@ -35,7 +34,6 @@
                                         {{ $product->title }}
                                     </a>
                                 </td>
-                                <td class="p-3 text-gray-600 max-w-sm truncate" title="{{ $product->description_en }}">{{ $product->description_en ?: 'No description' }}</td>
                                 <td class="p-3 text-gray-700">₦{{ number_format((int) $product->price_ngn) }}</td>
                                 <td class="p-3 text-gray-700">{{ $product->images_count }}</td>
                                 <td class="p-3 text-gray-700">{{ strtoupper($product->status) }}</td>
@@ -52,7 +50,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="6" class="p-8 text-center text-gray-500">No ingested products yet.</td>
+                                <td colspan="5" class="p-8 text-center text-gray-500">No ingested products yet.</td>
                             </tr>
                         @endforelse
                     </tbody>

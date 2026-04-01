@@ -38,8 +38,9 @@
 
         <div class="bg-white rounded-lg border border-gray-200 p-4 md:p-6 space-y-4">
             <div>
-                <h3 class="font-semibold text-gray-900 mb-2">Description</h3>
-                <p class="text-sm text-gray-700 whitespace-pre-line">{{ $product->description_en ?: 'No description yet.' }}</p>
+                <h3 class="font-semibold text-gray-900 mb-2">Hot Deal body (preview)</h3>
+                <p class="text-xs text-gray-500 mb-2">This is the same text used when you approve to Hot Deal (specs, notes, extra description, and price line).</p>
+                <p class="text-sm text-gray-700 whitespace-pre-line font-mono bg-gray-50 border border-gray-100 rounded-lg p-3">{{ $dealBodyPreview ?? '' }}</p>
             </div>
 
             <div class="rounded-lg border border-gray-200 bg-gray-50 p-3">

@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Deal;
 use App\Models\DealImage;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 
 class DealController extends Controller
@@ -101,40 +102,55 @@ class DealController extends Controller
             'images.*' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
         ]);
 
-        // --- CLEAN DESCRIPTION LOGIC ---
-        $cleanDesc = preg_replace('/^Model\s*[:\-].*$/im', '', $request->description);
-        $cleanDesc = preg_replace('/^(?:Price|Cost|Amount)\s*[:\-].*$/im', '', $cleanDesc);
-        $cleanDesc = preg_replace('/^[^\S\n]*[📱💰⚠️✅]*\s*(?:Price|Cost|Amount)\s*[:\-].*$/imu', '', $cleanDesc);
-        $cleanDesc = preg_replace('/^\s+|\s+$/m', '', $cleanDesc);
-        $cleanDesc = preg_replace('/\n{2,}/', "\n", $cleanDesc);
-        $cleanDesc = trim($cleanDesc);
+        try {
+            // --- CLEAN DESCRIPTION LOGIC ---
+            $cleanDesc = preg_replace('/^Model\s*[:\-].*$/im', '', $request->description);
+            $cleanDesc = preg_replace('/^(?:Price|Cost|Amount)\s*[:\-].*$/im', '', $cleanDesc);
+            $cleanDesc = preg_replace('/^[^\S\n]*[📱💰⚠️✅]*\s*(?:Price|Cost|Amount)\s*[:\-].*$/imu', '', $cleanDesc);
+            $cleanDesc = preg_replace('/^\s+|\s+$/m', '', $cleanDesc);
+            $cleanDesc = preg_replace('/\n{2,}/', "\n", $cleanDesc);
+            $cleanDesc = trim($cleanDesc);
 
-        // ✅ FIXED: Added expires_at (was MISSING)
-        $deal->update([
-            'title' => $request->title,
-            'description' => $cleanDesc,
-            'price_display' => $request->price_display,
-            'whatsapp_message' => $request->whatsapp_message,
-            'expires_at' => $request->expires_at, // ✅ CRITICAL FIX
-            // Keep or update active flag; default to true if not present.
-            'is_active' => $request->boolean('is_active', true),
-        ]);
+            $deal->update([
+                'title' => $request->title,
+                'description' => $cleanDesc,
+                'price_display' => $request->price_display,
+                'whatsapp_message' => $request->whatsapp_message,
+                'expires_at' => $request->expires_at,
+                'is_active' => $request->boolean('is_active', true),
+            ]);
 
-        // Handle new images
-        if ($request->hasFile('images')) {
-            foreach ($request->file('images') as $index => $image) {
-                $path = $image->store('deals', 'public');
-                
-                DealImage::create([
-                    'deal_id' => $deal->id,
-                    'image_path' => $path,
-                    'position' => $deal->images->count() + $index,
-                ]);
+            if ($request->hasFile('images')) {
+                foreach ($request->file('images') as $index => $image) {
+                    $path = $image->store('deals', 'public');
+
+                    DealImage::create([
+                        'deal_id' => $deal->id,
+                        'image_path' => $path,
+                        'position' => $deal->images->count() + $index,
+                    ]);
+                }
             }
+        } catch (\Throwable $e) {
+            Log::error('Hot deal update failed', [
+                'deal_id' => $deal->id,
+                'message' => $e->getMessage(),
+            ]);
+
+            return back()
+                ->withInput()
+                ->with('error', 'Could not save the hot deal. Please try again.');
+        }
+
+        $fromProduct = $request->input('from_product');
+        if ($fromProduct !== null && $fromProduct !== '' && ctype_digit((string) $fromProduct)) {
+            return redirect()
+                ->route('admin.products.index')
+                ->with('success', 'Hot deal updated successfully.');
         }
 
         return redirect()->route('admin.deals.edit', $deal)
-                       ->with('success', 'Hot deal updated successfully!');
+            ->with('success', 'Hot deal updated successfully.');
     }
 
     // Delete deal

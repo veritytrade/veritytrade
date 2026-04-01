@@ -38,6 +38,9 @@
               enctype="multipart/form-data">
             @csrf
             @method('PUT')
+            @if(request()->filled('from_product') || filled(old('from_product')))
+                <input type="hidden" name="from_product" value="{{ old('from_product', request('from_product')) }}">
+            @endif
 
             <!-- Title -->
             <div class="mb-4">

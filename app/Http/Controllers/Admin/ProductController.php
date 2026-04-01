@@ -43,7 +43,9 @@ class ProductController extends Controller
             ->orderByDesc('id')
             ->first();
 
-        return view('admin.products.show', compact('product', 'previousProduct', 'nextProduct'));
+        $dealBodyPreview = $this->buildDealDescription($product);
+
+        return view('admin.products.show', compact('product', 'previousProduct', 'nextProduct', 'dealBodyPreview'));
     }
 
     public function edit(Product $product): View
@@ -310,14 +312,46 @@ class ProductController extends Controller
             $lines[] = '';
         }
 
-        if (filled($product->description_en)) {
-            $lines[] = trim((string) $product->description_en);
+        $extraDesc = $this->extraDescriptionForDeal($product);
+        if (filled($extraDesc)) {
+            $lines[] = $extraDesc;
             $lines[] = '';
         }
 
         $lines[] = '💰 Price: ₦' . number_format((int) $product->price_ngn);
 
         return trim(implode("\n", $lines));
+    }
+
+    /**
+     * Strip lines from description_en that duplicate the product title (common after ingest / Gemini).
+     */
+    private function extraDescriptionForDeal(Product $product): ?string
+    {
+        if (! filled($product->description_en)) {
+            return null;
+        }
+
+        $title = trim((string) $product->title);
+        $rawLines = preg_split('/\r\n|\r|\n/', (string) $product->description_en) ?: [];
+        $kept = [];
+
+        foreach ($rawLines as $line) {
+            $t = trim($line);
+            if ($t === '') {
+                continue;
+            }
+            if (strcasecmp($t, $title) === 0) {
+                continue;
+            }
+            $kept[] = $line;
+        }
+
+        if ($kept === []) {
+            return null;
+        }
+
+        return trim(implode("\n", $kept));
     }
 
     private function syncDealImagesFromProduct(Product $product, Deal $deal): void
