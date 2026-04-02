@@ -18,27 +18,48 @@
         $t = strtolower(trim($text));
 
         if ($t === '') {
-            return ['stage' => 2, 'subsection' => null]; // Sent to Logistics fallback
+            return ['stage' => 2, 'subsection' => null, 'ignore' => false]; // Sent to Logistics fallback
         }
 
-        if (str_contains($t, 'picked up goods') || str_contains($t, 'customer has picked up') || str_contains($t, 'delivered') || str_contains($t, 'signed')) {
-            return ['stage' => 7, 'subsection' => null]; // Delivered
+        // Carrier billing/announcement blasts should not pollute movement timeline.
+        if (
+            str_contains($t, 'dear customer') ||
+            str_contains($t, 'bill information') ||
+            str_contains($t, 'company account') ||
+            str_contains($t, 'warehouse address') ||
+            str_contains($t, 'reserve the right to auction') ||
+            str_contains($t, 'ask rate and confirm shipping money')
+        ) {
+            return ['stage' => 2, 'subsection' => null, 'ignore' => true];
+        }
+
+        // "customer has picked up goods" in this workflow means Verity/Fish pickup agent handled it.
+        if (str_contains($t, 'picked up goods') || str_contains($t, 'customer has picked up')) {
+            return ['stage' => 5, 'subsection' => 'Agent pickup', 'ignore' => false];
+        }
+
+        if (str_contains($t, 'already signed') || str_contains($t, 'delivered') || str_contains($t, 'signed')) {
+            return ['stage' => 7, 'subsection' => null, 'ignore' => false]; // Delivered
+        }
+
+        if (str_contains($t, 'to sign for it')) {
+            return ['stage' => 5, 'subsection' => 'At logistics warehouse', 'ignore' => false];
         }
 
         if (str_contains($t, 'package collected by verity agent') || str_contains($t, 'collected by agent')) {
-            return ['stage' => 5, 'subsection' => 'Agent pickup'];
+            return ['stage' => 5, 'subsection' => 'Agent pickup', 'ignore' => false];
         }
 
         if (str_contains($t, 'lagos') || str_contains($t, 'nigeria') || str_contains($t, 'clearance') || str_contains($t, 'airport express')) {
             if (str_contains($t, 'pickup warehouse') || str_contains($t, 'warehouse')) {
-                return ['stage' => 5, 'subsection' => 'At logistics warehouse'];
+                return ['stage' => 5, 'subsection' => 'At logistics warehouse', 'ignore' => false];
             }
 
             if (str_contains($t, 'clearance') || str_contains($t, 'clearing') || str_contains($t, 'customs')) {
-                return ['stage' => 5, 'subsection' => 'Customs clearance'];
+                return ['stage' => 5, 'subsection' => 'Customs clearance', 'ignore' => false];
             }
 
-            return ['stage' => 5, 'subsection' => 'At Nigeria airport'];
+            return ['stage' => 5, 'subsection' => 'At Nigeria airport', 'ignore' => false];
         }
 
         // Keep Guangzhou/HK security and transfer events under Arrived Logistics (not Flying).
@@ -48,6 +69,7 @@
             str_contains($t, 'baiyun') ||
             str_contains($t, 'hong kong') ||
             str_contains($t, 'hongkong') ||
+            str_contains($t, 'collected by [') ||
             str_contains($t, 'received express goods') ||
             str_contains($t, 'collected') ||
             str_contains($t, 'custom declaration') ||
@@ -59,14 +81,41 @@
             str_contains($t, 'transferred to hong kong airport') ||
             str_contains($t, 'take-off')
         ) {
-            return ['stage' => 3, 'subsection' => null]; // Arrived Logistics
+            return ['stage' => 3, 'subsection' => null, 'ignore' => false]; // Arrived Logistics
         }
 
-        if (str_contains($t, 'flying') || str_contains($t, 'addis')) {
-            return ['stage' => 4, 'subsection' => null]; // Flying to Nigeria
+        if (str_contains($t, 'flying') || str_contains($t, 'addis') || str_contains($t, 'hamad international airport')) {
+            return ['stage' => 4, 'subsection' => null, 'ignore' => false]; // Flying to Nigeria
         }
 
-        return ['stage' => 2, 'subsection' => null]; // Sent to Logistics
+        return ['stage' => 2, 'subsection' => null, 'ignore' => false]; // Sent to Logistics
+    };
+
+    $parseTrackTimeWeight = static function (?string $timeText): int {
+        $raw = trim((string) $timeText);
+        if ($raw === '') {
+            return 0;
+        }
+
+        $normalized = preg_replace('/\s+/u', ' ', $raw) ?: $raw;
+        $formats = ['Y-m-d H:i:s', 'dMY H:i:s', 'd M Y H:i:s', 'd M H:i:s', 'dMY H:i'];
+
+        foreach ($formats as $fmt) {
+            try {
+                $dt = \Illuminate\Support\Carbon::createFromFormat($fmt, strtoupper($normalized), config('app.timezone'));
+                if ($dt !== false) {
+                    return $dt->timestamp;
+                }
+            } catch (\Throwable $e) {
+                // Keep trying other known formats.
+            }
+        }
+
+        try {
+            return \Illuminate\Support\Carbon::parse($normalized, config('app.timezone'))->timestamp;
+        } catch (\Throwable $e) {
+            return 0;
+        }
     };
 
     foreach ($carrierTracks as $track) {
@@ -76,14 +125,20 @@
         }
 
         $classification = $classifyTrackToStage($title);
+        if (($classification['ignore'] ?? false) === true) {
+            continue;
+        }
+
         $mappedPos = (int) ($classification['stage'] ?? 2);
         if (! array_key_exists($mappedPos, $groupedTracks)) {
             $mappedPos = 2;
         }
 
+        $at = trim((string) ($track['at'] ?? ''));
         $groupedTracks[$mappedPos][] = [
             'title' => $title,
-            'at' => trim((string) ($track['at'] ?? '')),
+            'at' => $at,
+            'sort_weight' => $parseTrackTimeWeight($at),
             'subsection' => $track['meta']['subsection'] ?? $classification['subsection'] ?? null,
         ];
     }
@@ -91,6 +146,11 @@
     // Newest updates first within each stage for easier reading.
     foreach ($groupedTracks as $pos => $items) {
         usort($items, static function (array $a, array $b): int {
+            $bw = (int) ($b['sort_weight'] ?? 0);
+            $aw = (int) ($a['sort_weight'] ?? 0);
+            if ($bw !== $aw) {
+                return $bw <=> $aw;
+            }
             return strcmp((string) ($b['at'] ?? ''), (string) ($a['at'] ?? ''));
         });
         $groupedTracks[$pos] = $items;
