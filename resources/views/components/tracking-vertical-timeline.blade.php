@@ -2,16 +2,28 @@
 
 @php
     $stages = \App\Models\TrackingStage::orderByDesc('position')->get();
-    $current = $order->effectiveStage();
-    $currentPos = $current ? (int) $current->position : 0;
-    $shipment = $order->shipment;
+    $currentPos = 0;
+    $carrierSynced = null;
+
+    if ($order instanceof \App\Models\Order) {
+        try {
+            $current = $order->effectiveStage();
+            $currentPos = $current ? (int) $current->position : 0;
+        } catch (\Throwable) {
+            $currentPos = 0;
+        }
+        $shipment = $order->shipment;
+        $carrierSynced = $shipment?->carrier_tracks_synced_at;
+    } else {
+        $shipment = null;
+    }
+
     $carrierPayload = $shipment?->carrier_tracks_json;
     $carrierTracksRaw = is_array($carrierPayload) ? ($carrierPayload['tracks'] ?? []) : [];
     $carrierTracks = array_values(array_filter(
         is_array($carrierTracksRaw) ? $carrierTracksRaw : [],
         static fn ($row) => is_array($row)
     ));
-    $carrierSynced = $shipment?->carrier_tracks_synced_at;
 
     // Resolve positions by stage name so carrier rows land under the same headings after DB changes (e.g. Processing added).
     $posByName = \App\Models\TrackingStage::query()
@@ -84,31 +96,35 @@
         return ['stage' => $posSent, 'subsection' => null];
     };
 
-    foreach ($carrierTracks as $track) {
-        try {
-            $title = trim((string) ($track['en'] ?? $track['cn'] ?? ''));
-            if ($title === '') {
+    if ($order instanceof \App\Models\Order) {
+        foreach ($carrierTracks as $track) {
+            try {
+                $title = trim((string) ($track['en'] ?? $track['cn'] ?? ''));
+                if ($title === '') {
+                    continue;
+                }
+
+                $classification = $classifyTrackToStage($title);
+                $mappedPos = (int) ($classification['stage'] ?? $posSent);
+                if (! array_key_exists($mappedPos, $groupedTracks)) {
+                    $mappedPos = $posSent;
+                }
+
+                $groupedTracks[$mappedPos][] = [
+                    'title' => $title,
+                    'at' => trim((string) ($track['at'] ?? '')),
+                    'subsection' => data_get($track, 'meta.subsection') ?? $classification['subsection'] ?? null,
+                ];
+            } catch (\Throwable) {
                 continue;
             }
-
-            $classification = $classifyTrackToStage($title);
-            $mappedPos = (int) ($classification['stage'] ?? $posSent);
-            if (! array_key_exists($mappedPos, $groupedTracks)) {
-                $mappedPos = $posSent;
-            }
-
-            $groupedTracks[$mappedPos][] = [
-                'title' => $title,
-                'at' => trim((string) ($track['at'] ?? '')),
-                'subsection' => data_get($track, 'meta.subsection') ?? $classification['subsection'] ?? null,
-            ];
-        } catch (\Throwable) {
-            continue;
         }
     }
 
-    // Newest first: same rules as admin refresh (CarrierTrackTimestamp::compareTracksNewestFirst).
-    $sortByNewestAt = [\App\Support\CarrierTrackTimestamp::class, 'compareTracksNewestFirst'];
+    // Closure (not [Class, 'method']) avoids rare Blade/opcache issues with callables in @php.
+    $sortByNewestAt = static function (mixed $a, mixed $b): int {
+        return \App\Support\CarrierTrackTimestamp::compareTracksNewestFirst($a, $b);
+    };
 
     // Newest date at the top within each stage (and within each Nigeria subsection below).
     foreach ($groupedTracks as $pos => $items) {
@@ -214,11 +230,12 @@
                                                 </div>
                                                 <div class="mt-1.5 space-y-1.5">
                                                     @foreach($block['items'] as $item)
+                                                        @continue(! is_array($item))
                                                         <p class="text-xs leading-snug text-gray-700">
-                                                            @if($item['at'] !== '')
+                                                            @if(($item['at'] ?? '') !== '')
                                                                 <span class="text-[11px] font-semibold text-gray-900">[{{ $item['at'] }}]</span>
                                                             @endif
-                                                            {{ $item['title'] }}
+                                                            {{ $item['title'] ?? '' }}
                                                         </p>
                                                     @endforeach
                                                 </div>
@@ -228,12 +245,13 @@
                                 @else
                                     <div class="mt-2 space-y-2">
                                         @foreach($stageTracks as $item)
+                                            @continue(! is_array($item))
                                             <div class="rounded-lg border border-gray-200 bg-white px-3 py-2.5">
                                                 <p class="text-xs leading-snug text-gray-700">
-                                                    @if($item['at'] !== '')
+                                                    @if(($item['at'] ?? '') !== '')
                                                         <span class="text-[11px] font-semibold text-gray-900">[{{ $item['at'] }}]</span>
                                                     @endif
-                                                    {{ $item['title'] }}
+                                                    {{ $item['title'] ?? '' }}
                                                 </p>
                                             </div>
                                         @endforeach
