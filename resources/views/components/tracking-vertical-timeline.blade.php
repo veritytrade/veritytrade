@@ -201,11 +201,6 @@
                 @endforeach
             </ul>
         </div>
-        @if($carrierSynced)
-            <p class="mt-3 text-center text-[10px] text-gray-400">Logistics data last synced {{ $carrierSynced->timezone(config('app.timezone'))->format('M j, Y g:i A') }}</p>
-        @elseif(count($carrierTracks) === 0)
-            <p class="mt-3 text-center text-[10px] text-gray-400">No carrier updates yet. Timeline still works from main shipment stages.</p>
-        @endif
     </div>
 </div>
 

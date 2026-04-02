@@ -8,11 +8,6 @@
             <span class="text-gray-700 font-medium truncate inline-block align-bottom max-w-[200px]">{{ $product->title }}</span>
         </nav>
         <div class="bg-white rounded-lg border border-gray-200 p-4 md:p-6">
-            <p class="text-xs text-gray-500 mb-3">
-                <strong class="text-gray-700">Products ↔ Hot Deals:</strong>
-                Use <strong>Approve to Hot Deal</strong> to create or refresh a deal from this row (text + images are copied; the deal is linked via <code class="text-[11px] bg-gray-100 px-1 rounded">source_product_id</code>).
-                Use <strong>Deals → Create Hot Deal</strong> for a standalone deal with no product link.
-            </p>
             @if($product->sourceDeal && filled($product->sourceDeal->ops_reference))
                 <p class="text-xs text-gray-600 mb-3">
                     WhatsApp / admin trace ref: <code class="bg-gray-100 px-1 rounded font-mono">{{ $product->sourceDeal->ops_reference }}</code>
