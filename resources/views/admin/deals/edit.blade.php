@@ -172,7 +172,7 @@
                 <p class="text-xs text-gray-500 mt-1">
                     • Square images work best (1:1 ratio)<br>
                     • First new image will be added to existing<br>
-                    • Max 3 new images, 2MB each<br>
+                    • Max 3 new images, 12MB each<br>
                     • Recommended size: 600x600px
                 </p>
 
@@ -207,8 +207,8 @@ function previewImages(event) {
         const limitedFiles = [...files].slice(0, 3);
 
         limitedFiles.forEach((file, index) => {
-            if (file.size > 2 * 1024 * 1024) {
-                alert(`⚠️ ${file.name} exceeds 2MB limit and will be skipped.`);
+            if (file.size > 12 * 1024 * 1024) {
+                alert(`⚠️ ${file.name} exceeds 12MB limit and will be skipped.`);
                 return;
             }
 

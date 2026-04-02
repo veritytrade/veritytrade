@@ -202,14 +202,29 @@ class ProductController extends Controller
                 }
                 $deal->save();
 
-                $this->syncDealImagesFromProduct($product, $deal);
-
                 return $deal;
             });
 
+            $syncError = null;
+            try {
+                // Copying images can be slow on shared hosting; keep DB transaction short.
+                $this->syncDealImagesFromProduct($product, $deal);
+            } catch (\Throwable $e) {
+                $syncError = $e->getMessage();
+                Log::error('Deal image sync from product failed', [
+                    'product_id' => $product->id,
+                    'deal_id' => $deal->id,
+                    'message' => $syncError,
+                ]);
+            }
+
+            $successMessage = $syncError
+                ? 'Approved. Deal created, but images may not be fully synced. Please check the deal gallery.'
+                : 'Approved. Review and publish in Hot Deals.';
+
             return redirect()
                 ->route('admin.deals.edit', ['deal' => $deal, 'from_product' => $product->id])
-                ->with('success', 'Approved. Review and publish in Hot Deals.');
+                ->with('success', $successMessage);
         } catch (\Throwable $e) {
             Log::error('Product approval to hot deal failed', [
                 'product_id' => $product->id,
