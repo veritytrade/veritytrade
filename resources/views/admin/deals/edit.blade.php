@@ -27,7 +27,16 @@
             </div>
         @endif
 
-        {{-- Flash success/error: shown in admin layout header --}}
+        @if(session('success'))
+            <div class="mb-4 rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-sm font-medium text-green-900 shadow-sm" role="status">
+                {{ session('success') }}
+            </div>
+        @endif
+        @if(session('error'))
+            <div class="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-900 shadow-sm" role="alert">
+                {{ session('error') }}
+            </div>
+        @endif
 
         <form method="POST"
               action="{{ route('admin.deals.update', $deal) }}"

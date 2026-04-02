@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Deal;
 use App\Models\DealImage;
+use App\Support\DealDescriptionSanitizer;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
@@ -43,18 +44,11 @@ class DealController extends Controller
             'whatsapp_message' => 'nullable|string|max:500',
             'expires_at' => 'required|date|after:now',
             'is_active' => 'nullable|boolean',
-            'images.*' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
+            'images.*' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:12288',
         ]);
 
-        // --- CLEAN DESCRIPTION LOGIC (remove Model/Price lines) ---
-        $cleanDesc = preg_replace('/^Model\s*[:\-].*$/im', '', $request->description);
-        $cleanDesc = preg_replace('/^(?:Price|Cost|Amount)\s*[:\-].*$/im', '', $cleanDesc);
-        $cleanDesc = preg_replace('/^[^\S\n]*[📱💰⚠️✅]*\s*(?:Price|Cost|Amount)\s*[:\-].*$/imu', '', $cleanDesc);
-        $cleanDesc = preg_replace('/^\s+|\s+$/m', '', $cleanDesc);
-        $cleanDesc = preg_replace('/\n{2,}/', "\n", $cleanDesc);
-        $cleanDesc = trim($cleanDesc);
+        $cleanDesc = DealDescriptionSanitizer::clean((string) $request->description);
 
-        // ✅ FIXED: Save ACTUAL expires_at value (was validation string)
         $deal = Deal::create([
             'title' => $request->title,
             'description' => $cleanDesc,
@@ -99,17 +93,11 @@ class DealController extends Controller
             'whatsapp_message' => 'nullable|string|max:500',
             'expires_at' => 'required|date',
             'is_active' => 'nullable|boolean',
-            'images.*' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
+            'images.*' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:12288',
         ]);
 
         try {
-            // --- CLEAN DESCRIPTION LOGIC ---
-            $cleanDesc = preg_replace('/^Model\s*[:\-].*$/im', '', $request->description);
-            $cleanDesc = preg_replace('/^(?:Price|Cost|Amount)\s*[:\-].*$/im', '', $cleanDesc);
-            $cleanDesc = preg_replace('/^[^\S\n]*[📱💰⚠️✅]*\s*(?:Price|Cost|Amount)\s*[:\-].*$/imu', '', $cleanDesc);
-            $cleanDesc = preg_replace('/^\s+|\s+$/m', '', $cleanDesc);
-            $cleanDesc = preg_replace('/\n{2,}/', "\n", $cleanDesc);
-            $cleanDesc = trim($cleanDesc);
+            $cleanDesc = DealDescriptionSanitizer::clean((string) $request->description);
 
             $deal->update([
                 'title' => $request->title,
@@ -121,13 +109,15 @@ class DealController extends Controller
             ]);
 
             if ($request->hasFile('images')) {
+                $deal->load('images');
+                $base = (int) $deal->images->count();
                 foreach ($request->file('images') as $index => $image) {
                     $path = $image->store('deals', 'public');
 
                     DealImage::create([
                         'deal_id' => $deal->id,
                         'image_path' => $path,
-                        'position' => $deal->images->count() + $index,
+                        'position' => $base + $index,
                     ]);
                 }
             }
@@ -149,7 +139,15 @@ class DealController extends Controller
                 ->with('success', 'Hot deal updated successfully.');
         }
 
-        return redirect()->route('admin.deals.edit', $deal)
+        $deal->refresh();
+
+        $editParams = ['deal' => $deal];
+        $fp = $request->input('from_product');
+        if ($fp !== null && $fp !== '' && ctype_digit((string) $fp)) {
+            $editParams['from_product'] = $fp;
+        }
+
+        return redirect()->route('admin.deals.edit', $editParams)
             ->with('success', 'Hot deal updated successfully.');
     }
 

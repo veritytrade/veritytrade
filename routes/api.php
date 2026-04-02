@@ -12,7 +12,9 @@ Route::prefix('ingestion')
         Route::post('/products/{product}/images', [ProductImageIngestionController::class, 'store']);
     });
 
-Route::prefix('products')->group(function () {
-    Route::get('/', [ProductController::class, 'index']);
-    Route::get('/{product}', [ProductController::class, 'show']);
-});
+Route::prefix('products')
+    ->middleware('ingestion.key')
+    ->group(function () {
+        Route::get('/', [ProductController::class, 'index']);
+        Route::get('/{product}', [ProductController::class, 'show']);
+    });

@@ -7,6 +7,7 @@ use App\Models\Deal;
 use App\Models\DealImage;
 use App\Models\Product;
 use App\Models\ProductImage;
+use App\Support\DealDescriptionSanitizer;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -191,7 +192,7 @@ class ProductController extends Controller
                 }
 
                 $deal->title = $product->title;
-                $deal->description = $this->buildDealDescription($product);
+                $deal->description = DealDescriptionSanitizer::clean($this->buildDealDescription($product));
                 $deal->price_display = '₦' . number_format((int) $product->price_ngn);
                 $deal->whatsapp_message = null;
                 $deal->expires_at = $deal->expires_at ?? now()->addDays(7);
