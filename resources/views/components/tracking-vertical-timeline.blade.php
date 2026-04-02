@@ -88,11 +88,19 @@
         ];
     }
 
-    // Newest updates first within each stage for easier reading.
+    $sortByNewestAt = static function (array $a, array $b): int {
+        $ta = strtotime(trim((string) ($a['at'] ?? ''))) ?: 0;
+        $tb = strtotime(trim((string) ($b['at'] ?? ''))) ?: 0;
+        if ($tb !== $ta) {
+            return $tb <=> $ta;
+        }
+
+        return strcmp((string) ($a['title'] ?? ''), (string) ($b['title'] ?? ''));
+    };
+
+    // Newest date at the top within each stage (and within each Nigeria subsection below).
     foreach ($groupedTracks as $pos => $items) {
-        usort($items, static function (array $a, array $b): int {
-            return strcmp((string) ($b['at'] ?? ''), (string) ($a['at'] ?? ''));
-        });
+        usort($items, $sortByNewestAt);
         $groupedTracks[$pos] = $items;
     }
 @endphp
@@ -160,6 +168,9 @@
                                                 $bySubsection[$name] = [];
                                             }
                                             $bySubsection[$name][] = $item;
+                                        }
+                                        foreach ($bySubsection as $subName => $subItems) {
+                                            usort($bySubsection[$subName], $sortByNewestAt);
                                         }
                                     @endphp
                                     <div class="mt-2 space-y-2.5">

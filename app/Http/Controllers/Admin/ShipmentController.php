@@ -144,10 +144,13 @@ class ShipmentController extends Controller
             return back()->with('error', 'Could not reach carrier or invalid response. Check the tracking code or try again later.');
         }
 
-        $count = count($result['tracks'] ?? []);
+        $tracks = $result['tracks'] ?? [];
+        self::sortCarrierTracksNewestFirst($tracks);
+
+        $count = count($tracks);
         $shipment->update([
             'carrier_tracks_json' => [
-                'tracks' => $result['tracks'] ?? [],
+                'tracks' => $tracks,
                 'fetched_at' => now()->toIso8601String(),
             ],
             'carrier_tracks_synced_at' => now(),
@@ -190,6 +193,8 @@ class ShipmentController extends Controller
             ];
         }
 
+        self::sortCarrierTracksNewestFirst($tracks);
+
         $payload['tracks'] = $tracks;
         $payload['fetched_at'] = now()->toIso8601String();
 
@@ -200,5 +205,21 @@ class ShipmentController extends Controller
         ]);
 
         return back()->with('success', 'Marked: package collected by agent. Customer timeline updated.');
+    }
+
+    /**
+     * @param  array<int, array{en?: string, cn?: string, at?: string, meta?: array}>  $tracks
+     */
+    private static function sortCarrierTracksNewestFirst(array &$tracks): void
+    {
+        usort($tracks, static function (array $a, array $b): int {
+            $ta = strtotime(trim((string) ($a['at'] ?? ''))) ?: 0;
+            $tb = strtotime(trim((string) ($b['at'] ?? ''))) ?: 0;
+            if ($tb !== $ta) {
+                return $tb <=> $ta;
+            }
+
+            return strcmp((string) ($a['en'] ?? $a['cn'] ?? ''), (string) ($b['en'] ?? $b['cn'] ?? ''));
+        });
     }
 }

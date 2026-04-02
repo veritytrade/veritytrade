@@ -81,8 +81,7 @@ class SkyCargoLogisticsService
                 }
             }
 
-            // API returns newest first; display chronological (oldest first) in vertical timeline
-            $tracks = array_reverse($tracks);
+            // API returns newest first; keep that order so UI can show latest at top per section.
 
             return [
                 'tracks' => $tracks,
@@ -175,8 +174,7 @@ class SkyCargoLogisticsService
                 return null;
             }
 
-            // Fish commonly returns newest first; normalize to chronological for timeline grouping.
-            $tracks = array_reverse($tracks);
+            // Fish commonly returns newest first; keep for latest-first display after grouping.
 
             return [
                 'tracks' => $tracks,
