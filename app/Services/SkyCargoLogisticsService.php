@@ -111,44 +111,68 @@ class SkyCargoLogisticsService
         }
 
         try {
-            $response = Http::timeout(25)
-                ->acceptJson()
-                ->get($this->fishBaseUrl.'/oms/international1', [
-                    'number' => $number,
-                ]);
+            // Try Fish Express first (existing behavior), then Sea as fallback.
+            $attempts = [
+                ['type' => 'express', 'endpoint' => '/oms/international1'],
+                ['type' => 'sea', 'endpoint' => '/oms/internal'],
+            ];
 
-            if (! $response->successful()) {
-                Log::warning('Fish Logistics API non-success', [
-                    'number' => $number,
-                    'status' => $response->status(),
-                ]);
-
-                return null;
-            }
-
-            $json = $response->json();
-            if (! is_array($json) || (int) ($json['code'] ?? 0) !== 200) {
-                return null;
-            }
-
-            $rows = $json['data']['data'] ?? [];
             $tracks = [];
-            if (is_array($rows)) {
-                foreach ($rows as $row) {
-                    if (! is_array($row)) {
-                        continue;
-                    }
-                    $context = trim((string) ($row['context'] ?? ''));
-                    if ($context === '') {
-                        continue;
-                    }
+            $json = null;
+            $usedType = null;
 
-                    $tracks[] = [
-                        'en' => preg_replace('/\s+/u', ' ', $context) ?: $context,
-                        'cn' => '',
-                        'at' => trim((string) ($row['time'] ?? '')),
-                    ];
+            foreach ($attempts as $attempt) {
+                $response = Http::timeout(25)
+                    ->acceptJson()
+                    ->get($this->fishBaseUrl.$attempt['endpoint'], [
+                        'number' => $number,
+                    ]);
+
+                if (! $response->successful()) {
+                    Log::warning('Fish Logistics API non-success', [
+                        'number' => $number,
+                        'status' => $response->status(),
+                        'endpoint' => $attempt['endpoint'],
+                    ]);
+                    continue;
                 }
+
+                $jsonCandidate = $response->json();
+                if (! is_array($jsonCandidate) || (int) ($jsonCandidate['code'] ?? 0) !== 200) {
+                    continue;
+                }
+
+                $rows = $jsonCandidate['data']['data'] ?? [];
+                $parsed = [];
+                if (is_array($rows)) {
+                    foreach ($rows as $row) {
+                        if (! is_array($row)) {
+                            continue;
+                        }
+                        $context = trim((string) ($row['context'] ?? ''));
+                        if ($context === '') {
+                            continue;
+                        }
+
+                        $parsed[] = [
+                            'en' => preg_replace('/\s+/u', ' ', $context) ?: $context,
+                            'cn' => '',
+                            'at' => trim((string) ($row['time'] ?? '')),
+                        ];
+                    }
+                }
+
+                // Use first endpoint that returns actual track rows.
+                if (! empty($parsed)) {
+                    $tracks = $parsed;
+                    $json = $jsonCandidate;
+                    $usedType = $attempt['type'];
+                    break;
+                }
+            }
+
+            if (empty($tracks)) {
+                return null;
             }
 
             // Fish commonly returns newest first; normalize to chronological for timeline grouping.
@@ -156,7 +180,7 @@ class SkyCargoLogisticsService
 
             return [
                 'tracks' => $tracks,
-                'raw' => $json,
+                'raw' => array_merge((array) $json, ['resolved_type' => $usedType]),
             ];
         } catch (\Throwable $e) {
             Log::warning('Fish Logistics API exception', [
