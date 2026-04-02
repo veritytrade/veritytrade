@@ -18,7 +18,9 @@ return [
     |
     */
 
-    'driver' => env('SESSION_DRIVER', 'database'),
+    // Use a safe default fallback for production environments where DB sessions
+    // may be missing/misconfigured (prevents CSRF 419 "Page Expired" loops).
+    'driver' => env('SESSION_DRIVER', 'file'),
 
     /*
     |--------------------------------------------------------------------------
