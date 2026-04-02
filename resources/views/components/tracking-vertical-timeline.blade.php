@@ -99,20 +99,8 @@
         ];
     }
 
-    // Sort by parsed datetime: `at` plus text like [2026-04-02 04:01] or [24MAR 16:59:44] (see CarrierTrackTimestamp).
-    $extractBestTimestamp = static function (array $item): int {
-        return \App\Support\CarrierTrackTimestamp::extract($item);
-    };
-
-    $sortByNewestAt = static function (array $a, array $b) use ($extractBestTimestamp): int {
-        $ta = $extractBestTimestamp($a);
-        $tb = $extractBestTimestamp($b);
-        if ($tb !== $ta) {
-            return $tb <=> $ta;
-        }
-
-        return strcmp((string) ($a['title'] ?? ''), (string) ($b['title'] ?? ''));
-    };
+    // Newest first: same rules as admin refresh (CarrierTrackTimestamp::compareTracksNewestFirst).
+    $sortByNewestAt = [\App\Support\CarrierTrackTimestamp::class, 'compareTracksNewestFirst'];
 
     // Newest date at the top within each stage (and within each Nigeria subsection below).
     foreach ($groupedTracks as $pos => $items) {
@@ -145,7 +133,7 @@
             }
             $latestTs = 0;
             foreach ($items as $it) {
-                $latestTs = max($latestTs, $extractBestTimestamp($it));
+                $latestTs = max($latestTs, \App\Support\CarrierTrackTimestamp::extract($it));
             }
             $nigeriaSubsectionBlocks[] = [
                 'subsection' => $subsection,

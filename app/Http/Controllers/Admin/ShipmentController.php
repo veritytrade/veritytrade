@@ -213,14 +213,6 @@ class ShipmentController extends Controller
      */
     private static function sortCarrierTracksNewestFirst(array &$tracks): void
     {
-        usort($tracks, static function (array $a, array $b): int {
-            $ta = CarrierTrackTimestamp::extract($a);
-            $tb = CarrierTrackTimestamp::extract($b);
-            if ($tb !== $ta) {
-                return $tb <=> $ta;
-            }
-
-            return strcmp((string) ($a['en'] ?? $a['cn'] ?? ''), (string) ($b['en'] ?? $b['cn'] ?? ''));
-        });
+        usort($tracks, [CarrierTrackTimestamp::class, 'compareTracksNewestFirst']);
     }
 }

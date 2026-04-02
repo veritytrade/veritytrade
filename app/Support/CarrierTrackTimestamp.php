@@ -3,8 +3,8 @@
 namespace App\Support;
 
 /**
- * Derives a sortable unix timestamp from carrier `at` plus embedded datetimes in the message text.
- * Logistics lines often look like: [2026-04-02 04:01] ... or [24MAR 16:59:44] fish logistics ...
+ * Single sortable unix timestamp per carrier row: prefer API "at", else first datetime in message text.
+ * Using max() across all dates in text caused wrong order (newest not at top).
  */
 final class CarrierTrackTimestamp
 {
@@ -21,78 +21,118 @@ final class CarrierTrackTimestamp
     }
 
     /**
+     * Sort callback: newest event first (compare timestamps desc), then by raw `at` string desc, then message text.
+     *
+     * @param  array{at?: string, title?: string, en?: string, cn?: string}  $a
+     * @param  array{at?: string, title?: string, en?: string, cn?: string}  $b
+     */
+    public static function compareTracksNewestFirst(array $a, array $b): int
+    {
+        $ta = self::extract($a);
+        $tb = self::extract($b);
+        if ($tb !== $ta) {
+            return $tb <=> $ta;
+        }
+
+        $atA = trim((string) ($a['at'] ?? ''));
+        $atB = trim((string) ($b['at'] ?? ''));
+        if ($atB !== $atA) {
+            return strcmp($atB, $atA);
+        }
+
+        return strcmp(
+            (string) ($a['title'] ?? $a['en'] ?? $a['cn'] ?? ''),
+            (string) ($b['title'] ?? $b['en'] ?? $b['cn'] ?? '')
+        );
+    }
+
+    /**
      * @param  array{at?: string, title?: string, en?: string, cn?: string}  $track
      */
     private static function doExtract(array $track): int
     {
-        $best = 0;
         $at = self::scrubUtf8(trim((string) ($track['at'] ?? '')));
         if ($at !== '') {
-            $t = strtotime($at);
-            if ($t !== false) {
-                $best = max($best, $t);
+            $fromAt = self::parseAtField($at);
+            if ($fromAt > 0) {
+                // Carrier-supplied time is authoritative when it parses.
+                return $fromAt;
             }
         }
 
         $title = self::scrubUtf8(trim((string) ($track['title'] ?? $track['en'] ?? $track['cn'] ?? '')));
         if ($title === '') {
-            return $best;
+            return 0;
         }
 
-        // Bracketed timestamps: [2026-04-02 04:01], [24MAR 16:59:44], etc.
-        if (preg_match_all('/\[\s*([^\]]+)\s*\]/', $title, $bm)) {
-            foreach ($bm[1] as $inner) {
-                $inner = trim((string) $inner);
-                if ($inner === '') {
-                    continue;
-                }
+        // First leading bracket only — event time is almost always there.
+        if (preg_match('/\[\s*([^\]]+)\s*\]/', $title, $bm)) {
+            $inner = trim((string) ($bm[1]);
+            if ($inner !== '') {
                 $parsed = self::parseLooseDatetimeFragment($inner);
                 if ($parsed > 0) {
-                    $best = max($best, $parsed);
+                    return $parsed;
                 }
             }
         }
 
-        // Unbracketed ISO-style
-        if (preg_match_all('/\d{4}[-/]\d{1,2}[-/]\d{1,2}(?:[ T]\d{1,2}:\d{2}(?::\d{2})?)?/', $title, $m)) {
-            foreach ($m[0] as $fragment) {
-                $t = strtotime(str_replace('/', '-', $fragment));
-                if ($t !== false) {
-                    $best = max($best, $t);
-                }
+        // First ISO-like date in text (left-to-right), not max of all matches.
+        if (preg_match('/\d{4}[-/]\d{1,2}[-/]\d{1,2}(?:[ T]\d{1,2}:\d{2}(?::\d{2})?)?/', $title, $m)) {
+            $t = strtotime(str_replace('/', '-', $m[0]));
+            if ($t !== false && self::isPlausibleUnix($t)) {
+                return $t;
             }
         }
 
-        if (preg_match_all('/\d{1,2}\/\d{1,2}\/\d{4}(?:[ T]\d{1,2}:\d{2}(?::\d{2})?)?/', $title, $m)) {
-            foreach ($m[0] as $fragment) {
-                $t = strtotime($fragment);
-                if ($t !== false) {
-                    $best = max($best, $t);
-                }
+        if (preg_match('/\d{1,2}\/\d{1,2}\/\d{4}(?:[ T]\d{1,2}:\d{2}(?::\d{2})?)?/', $title, $m)) {
+            $t = strtotime($m[0]);
+            if ($t !== false && self::isPlausibleUnix($t)) {
+                return $t;
             }
         }
 
-        // Unbracketed "24MAR 16:59:44" (no brackets)
-        if (preg_match_all('/\b(\d{1,2})\s*([A-Za-z]{3})\s+(\d{1,2}:\d{2}(?::\d{2})?)\b/', $title, $rows, PREG_SET_ORDER)) {
-            foreach ($rows as $row) {
-                $parsed = self::dayMonthAbbrTimeToTs($row[1], $row[2], $row[3]);
-                if ($parsed > 0) {
-                    $best = max($best, $parsed);
-                }
+        // First "24MAR 16:59:44" style in text.
+        if (preg_match('/\b(\d{1,2})\s*([A-Za-z]{3})\s+(\d{1,2}:\d{2}(?::\d{2})?)\b/', $title, $row)) {
+            $parsed = self::dayMonthAbbrTimeToTs($row[1], $row[2], $row[3]);
+            if ($parsed > 0) {
+                return $parsed;
             }
         }
 
-        return $best;
+        return 0;
+    }
+
+    private static function parseAtField(string $at): int
+    {
+        $t = strtotime($at);
+        if ($t !== false && self::isPlausibleUnix($t)) {
+            return $t;
+        }
+
+        // ISO 8601 with T — sometimes strtotime is picky.
+        if (preg_match('/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/', $at)) {
+            $t = strtotime(str_replace('T', ' ', substr($at, 0, 19)));
+            if ($t !== false && self::isPlausibleUnix($t)) {
+                return $t;
+            }
+        }
+
+        return 0;
+    }
+
+    private static function isPlausibleUnix(int $t): bool
+    {
+        // ~2000–2100 — rejects garbage strtotime hits.
+        return $t > 946684800 && $t < 4102444800;
     }
 
     private static function parseLooseDatetimeFragment(string $inner): int
     {
         $t = strtotime($inner);
-        if ($t !== false) {
+        if ($t !== false && self::isPlausibleUnix($t)) {
             return $t;
         }
 
-        // e.g. 24MAR 16:59:44 (no space between day and month)
         if (preg_match('/^(\d{1,2})\s*([A-Za-z]{3})\s+(\d{1,2}:\d{2}(?::\d{2})?)$/i', $inner, $m)) {
             return self::dayMonthAbbrTimeToTs($m[1], $m[2], $m[3]);
         }
@@ -108,10 +148,12 @@ final class CarrierTrackTimestamp
         if ($candidate === false) {
             return 0;
         }
-        // Year omitted: if result looks far in the future, use previous year (Dec/Jan boundary).
+        if (! self::isPlausibleUnix($candidate)) {
+            return 0;
+        }
         if ($candidate > time() + 86400 * 45) {
             $candidate2 = strtotime(sprintf('%d %s %d %s', (int) $day, $monNorm, $y - 1, $time));
-            if ($candidate2 !== false) {
+            if ($candidate2 !== false && self::isPlausibleUnix($candidate2)) {
                 return $candidate2;
             }
         }
