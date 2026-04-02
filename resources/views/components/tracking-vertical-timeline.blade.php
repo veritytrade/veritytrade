@@ -95,12 +95,14 @@
         $groupedTracks[$mappedPos][] = [
             'title' => $title,
             'at' => trim((string) ($track['at'] ?? '')),
-            'subsection' => $track['meta']['subsection'] ?? $classification['subsection'] ?? null,
+            'subsection' => data_get($track, 'meta.subsection') ?? $classification['subsection'] ?? null,
         ];
     }
 
     // Sort by parsed datetime: `at` plus text like [2026-04-02 04:01] or [24MAR 16:59:44] (see CarrierTrackTimestamp).
-    $extractBestTimestamp = static fn (array $item): int => \App\Support\CarrierTrackTimestamp::extract($item);
+    $extractBestTimestamp = static function (array $item): int {
+        return \App\Support\CarrierTrackTimestamp::extract($item);
+    };
 
     $sortByNewestAt = static function (array $a, array $b) use ($extractBestTimestamp): int {
         $ta = $extractBestTimestamp($a);

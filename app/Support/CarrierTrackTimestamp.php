@@ -13,8 +13,20 @@ final class CarrierTrackTimestamp
      */
     public static function extract(array $track): int
     {
+        try {
+            return self::doExtract($track);
+        } catch (\Throwable) {
+            return 0;
+        }
+    }
+
+    /**
+     * @param  array{at?: string, title?: string, en?: string, cn?: string}  $track
+     */
+    private static function doExtract(array $track): int
+    {
         $best = 0;
-        $at = trim((string) ($track['at'] ?? ''));
+        $at = self::scrubUtf8(trim((string) ($track['at'] ?? '')));
         if ($at !== '') {
             $t = strtotime($at);
             if ($t !== false) {
@@ -22,7 +34,7 @@ final class CarrierTrackTimestamp
             }
         }
 
-        $title = trim((string) ($track['title'] ?? $track['en'] ?? $track['cn'] ?? ''));
+        $title = self::scrubUtf8(trim((string) ($track['title'] ?? $track['en'] ?? $track['cn'] ?? '')));
         if ($title === '') {
             return $best;
         }
@@ -105,5 +117,20 @@ final class CarrierTrackTimestamp
         }
 
         return $candidate;
+    }
+
+    private static function scrubUtf8(string $s): string
+    {
+        if ($s === '') {
+            return '';
+        }
+        if (function_exists('mb_scrub')) {
+            return mb_scrub($s, 'UTF-8');
+        }
+        if (mb_check_encoding($s, 'UTF-8')) {
+            return $s;
+        }
+
+        return mb_convert_encoding($s, 'UTF-8', 'UTF-8');
     }
 }
