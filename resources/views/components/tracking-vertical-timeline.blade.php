@@ -9,36 +9,47 @@
     $carrierTracks = is_array($carrierPayload) ? ($carrierPayload['tracks'] ?? []) : [];
     $carrierSynced = $shipment?->carrier_tracks_synced_at;
 
+    // Resolve positions by stage name so carrier rows land under the same headings after DB changes (e.g. Processing added).
+    $posByName = \App\Models\TrackingStage::query()
+        ->pluck('position', 'name')
+        ->map(fn ($p) => (int) $p)
+        ->all();
+    $posSent = (int) ($posByName['Sent to Logistics'] ?? 2);
+    $posArrivedLogistics = (int) ($posByName['Arrived Logistics'] ?? 3);
+    $posFlying = (int) ($posByName['Flying to Nigeria'] ?? 4);
+    $posArrivedNigeria = (int) ($posByName['Arrived Nigeria'] ?? 5);
+    $posDelivered = (int) ($posByName['Delivered'] ?? 7);
+
     $groupedTracks = [];
     foreach ($stages as $stage) {
         $groupedTracks[(int) $stage->position] = [];
     }
 
-    $classifyTrackToStage = static function (string $text): array {
+    $classifyTrackToStage = static function (string $text) use ($posSent, $posArrivedLogistics, $posFlying, $posArrivedNigeria, $posDelivered): array {
         $t = strtolower(trim($text));
 
         if ($t === '') {
-            return ['stage' => 2, 'subsection' => null]; // Sent to Logistics fallback
+            return ['stage' => $posSent, 'subsection' => null];
         }
 
         if (str_contains($t, 'picked up goods') || str_contains($t, 'customer has picked up') || str_contains($t, 'delivered') || str_contains($t, 'signed')) {
-            return ['stage' => 7, 'subsection' => null]; // Delivered
+            return ['stage' => $posDelivered, 'subsection' => null];
         }
 
         if (str_contains($t, 'package collected by verity agent') || str_contains($t, 'collected by agent')) {
-            return ['stage' => 5, 'subsection' => 'Agent pickup'];
+            return ['stage' => $posArrivedNigeria, 'subsection' => 'Agent pickup'];
         }
 
         if (str_contains($t, 'lagos') || str_contains($t, 'nigeria') || str_contains($t, 'clearance') || str_contains($t, 'airport express')) {
             if (str_contains($t, 'pickup warehouse') || str_contains($t, 'warehouse')) {
-                return ['stage' => 5, 'subsection' => 'At logistics warehouse'];
+                return ['stage' => $posArrivedNigeria, 'subsection' => 'At logistics warehouse'];
             }
 
             if (str_contains($t, 'clearance') || str_contains($t, 'clearing') || str_contains($t, 'customs')) {
-                return ['stage' => 5, 'subsection' => 'Customs clearance'];
+                return ['stage' => $posArrivedNigeria, 'subsection' => 'Customs clearance'];
             }
 
-            return ['stage' => 5, 'subsection' => 'At Nigeria airport'];
+            return ['stage' => $posArrivedNigeria, 'subsection' => 'At Nigeria airport'];
         }
 
         // Keep Guangzhou/HK security and transfer events under Arrived Logistics (not Flying).
@@ -59,14 +70,14 @@
             str_contains($t, 'transferred to hong kong airport') ||
             str_contains($t, 'take-off')
         ) {
-            return ['stage' => 3, 'subsection' => null]; // Arrived Logistics
+            return ['stage' => $posArrivedLogistics, 'subsection' => null];
         }
 
         if (str_contains($t, 'flying') || str_contains($t, 'addis')) {
-            return ['stage' => 4, 'subsection' => null]; // Flying to Nigeria
+            return ['stage' => $posFlying, 'subsection' => null];
         }
 
-        return ['stage' => 2, 'subsection' => null]; // Sent to Logistics
+        return ['stage' => $posSent, 'subsection' => null];
     };
 
     foreach ($carrierTracks as $track) {
@@ -76,9 +87,9 @@
         }
 
         $classification = $classifyTrackToStage($title);
-        $mappedPos = (int) ($classification['stage'] ?? 2);
+        $mappedPos = (int) ($classification['stage'] ?? $posSent);
         if (! array_key_exists($mappedPos, $groupedTracks)) {
-            $mappedPos = 2;
+            $mappedPos = $posSent;
         }
 
         $groupedTracks[$mappedPos][] = [
@@ -88,9 +99,40 @@
         ];
     }
 
-    $sortByNewestAt = static function (array $a, array $b): int {
-        $ta = strtotime(trim((string) ($a['at'] ?? ''))) ?: 0;
-        $tb = strtotime(trim((string) ($b['at'] ?? ''))) ?: 0;
+    // Prefer carrier `at`; also scan title for embedded datetimes so ordering matches visible dates.
+    $extractBestTimestamp = static function (array $item): int {
+        $best = 0;
+        $at = trim((string) ($item['at'] ?? ''));
+        if ($at !== '') {
+            $t = strtotime($at);
+            if ($t !== false) {
+                $best = max($best, $t);
+            }
+        }
+        $title = (string) ($item['title'] ?? '');
+        if ($title !== '' && preg_match_all('/\b\d{4}[-/]\d{1,2}[-/]\d{1,2}(?:[ T]\d{1,2}:\d{2}(?::\d{2})?)?\b/u', $title, $m)) {
+            foreach ($m[0] as $fragment) {
+                $t = strtotime(str_replace('/', '-', $fragment));
+                if ($t !== false) {
+                    $best = max($best, $t);
+                }
+            }
+        }
+        if ($title !== '' && preg_match_all('/\b\d{1,2}\/\d{1,2}\/\d{4}(?:[ T]\d{1,2}:\d{2}(?::\d{2})?)?\b/u', $title, $m)) {
+            foreach ($m[0] as $fragment) {
+                $t = strtotime($fragment);
+                if ($t !== false) {
+                    $best = max($best, $t);
+                }
+            }
+        }
+
+        return $best;
+    };
+
+    $sortByNewestAt = static function (array $a, array $b) use ($extractBestTimestamp): int {
+        $ta = $extractBestTimestamp($a);
+        $tb = $extractBestTimestamp($b);
         if ($tb !== $ta) {
             return $tb <=> $ta;
         }
@@ -155,7 +197,7 @@
                             </div>
 
                             @if(count($stageTracks) > 0)
-                                @if($pos === 5)
+                                @if($pos === $posArrivedNigeria)
                                     @php
                                         $subsectionOrder = ['At Nigeria airport', 'Customs clearance', 'At logistics warehouse', 'Agent pickup'];
                                         $bySubsection = [];
@@ -176,8 +218,20 @@
                                     <div class="mt-2 space-y-2.5">
                                         @foreach($bySubsection as $subsection => $items)
                                             @if(count($items) > 0)
+                                                @php
+                                                    $latestTs = 0;
+                                                    foreach ($items as $it) {
+                                                        $latestTs = max($latestTs, $extractBestTimestamp($it));
+                                                    }
+                                                    $latestDisplay = $latestTs > 0 ? date('Y-m-d H:i', $latestTs) : '';
+                                                @endphp
                                                 <div class="rounded-lg border border-gray-200 bg-white px-3 py-2.5">
-                                                    <p class="text-[11px] font-semibold uppercase tracking-wide text-gray-600">{{ $subsection }}</p>
+                                                    <div class="flex flex-wrap items-baseline justify-between gap-x-2 gap-y-0.5">
+                                                        <p class="text-[11px] font-semibold uppercase tracking-wide text-gray-600">{{ $subsection }}</p>
+                                                        @if($latestDisplay !== '')
+                                                            <p class="text-[11px] font-semibold text-gray-900">[{{ $latestDisplay }}]</p>
+                                                        @endif
+                                                    </div>
                                                     <div class="mt-1.5 space-y-1.5">
                                                         @foreach($items as $item)
                                                             <p class="text-xs leading-snug text-gray-700">
