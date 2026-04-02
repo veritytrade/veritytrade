@@ -96,7 +96,7 @@
                 <div x-data="{ show: true, progress: 100 }"
                      x-show="show"
                      x-init="
-                        const total = 3500;
+                        const total = 8000;
                         const started = Date.now();
                         const timer = setInterval(() => {
                             const elapsed = Date.now() - started;

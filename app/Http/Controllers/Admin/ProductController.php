@@ -33,7 +33,8 @@ class ProductController extends Controller
 
     public function show(Product $product): View
     {
-        $product->loadMissing('images');
+        $product->loadMissing(['images', 'sourceDeal']);
+        $canApproveToHotDeal = $this->canApproveToHotDeal($product);
         $previousProduct = Product::query()
             ->where('id', '>', $product->id)
             ->orderBy('id')
@@ -45,7 +46,13 @@ class ProductController extends Controller
 
         $dealBodyPreview = $this->buildDealDescription($product);
 
-        return view('admin.products.show', compact('product', 'previousProduct', 'nextProduct', 'dealBodyPreview'));
+        return view('admin.products.show', compact(
+            'product',
+            'previousProduct',
+            'nextProduct',
+            'dealBodyPreview',
+            'canApproveToHotDeal',
+        ));
     }
 
     public function edit(Product $product): View
@@ -147,18 +154,40 @@ class ProductController extends Controller
 
     public function approve(Product $product): RedirectResponse
     {
+        $product->loadMissing('sourceDeal');
+
+        if ($product->status === 'archived') {
+            return back()->with('error', 'Archived products cannot be approved to a hot deal.');
+        }
+
+        if (Schema::hasColumn('deals', 'source_product_id') && $product->sourceDeal) {
+            return redirect()
+                ->route('admin.deals.edit', ['deal' => $product->sourceDeal, 'from_product' => $product->id])
+                ->with('success', 'This product already has a hot deal. Edit it below, or update the product and save again.');
+        }
+
         try {
             $deal = DB::transaction(function () use ($product) {
                 $product->update(['status' => 'active']);
 
                 $canLinkSourceProduct = Schema::hasColumn('deals', 'source_product_id');
-                $deal = $canLinkSourceProduct
-                    ? Deal::query()->firstOrNew(['source_product_id' => $product->id])
-                    : new Deal();
-
-                if (! $deal->exists) {
-                    $deal->position = ((int) Deal::max('position')) + 1;
-                    $deal->created_by = Auth::id();
+                if ($canLinkSourceProduct) {
+                    $deal = Deal::withTrashed()
+                        ->where('source_product_id', $product->id)
+                        ->first();
+                    if ($deal === null) {
+                        $deal = new Deal;
+                        $deal->position = ((int) Deal::max('position')) + 1;
+                        $deal->created_by = Auth::id();
+                    } elseif ($deal->trashed()) {
+                        $deal->restore();
+                    }
+                } else {
+                    $deal = new Deal;
+                    if (! $deal->exists) {
+                        $deal->position = ((int) Deal::max('position')) + 1;
+                        $deal->created_by = Auth::id();
+                    }
                 }
 
                 $deal->title = $product->title;
@@ -352,6 +381,23 @@ class ProductController extends Controller
         }
 
         return trim(implode("\n", $kept));
+    }
+
+    /**
+     * Show "Approve to Hot Deal" when the product is not archived and not already linked to a deal.
+     * (Ingest used to mark items active before a deal existed, which hid the button under the old rule.)
+     */
+    private function canApproveToHotDeal(Product $product): bool
+    {
+        if ($product->status === 'archived') {
+            return false;
+        }
+
+        if (! Schema::hasColumn('deals', 'source_product_id')) {
+            return $product->status !== 'active';
+        }
+
+        return $product->sourceDeal === null;
     }
 
     private function syncDealImagesFromProduct(Product $product, Deal $deal): void

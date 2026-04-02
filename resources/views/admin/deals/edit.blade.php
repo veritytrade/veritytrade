@@ -27,11 +27,7 @@
             </div>
         @endif
 
-        @if(session('success'))
-            <div class="bg-green-100 border-l-4 border-green-500 text-green-700 p-4 mb-6 rounded">
-                {{ session('success') }}
-            </div>
-        @endif
+        {{-- Flash success/error: shown in admin layout header --}}
 
         <form method="POST"
               action="{{ route('admin.deals.update', $deal) }}"
