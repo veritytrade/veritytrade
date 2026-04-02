@@ -52,6 +52,14 @@ class AppServiceProvider extends ServiceProvider
         // Ensure public disk uses current runtime path (avoids wrong path when config was cached elsewhere)
         Config::set('filesystems.disks.public.root', storage_path('app/public'));
 
+        // Production hardening:
+        // Some shared hosting setups have broken/missing DB session tables which causes
+        // Laravel CSRF validation to fail and produce a "419 Page Expired" loop.
+        // For all admin routes, force file sessions to keep admin login stable.
+        if (request()->is('admin', 'admin/*')) {
+            Config::set('session.driver', 'file');
+        }
+
         try {
             $fromAddress = FeatureFlag::value('mail_from_address', config('mail.from.address'));
             $fromName = FeatureFlag::value('mail_from_name', config('mail.from.name'));
