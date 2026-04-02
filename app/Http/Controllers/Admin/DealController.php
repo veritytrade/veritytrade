@@ -44,7 +44,8 @@ class DealController extends Controller
             'whatsapp_message' => 'nullable|string|max:500',
             'expires_at' => 'required|date|after:now',
             'is_active' => 'nullable|boolean',
-            'images.*' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:12288',
+            // UI suggests 2MB per image; keep backend aligned to reduce upload timeouts/resets.
+            'images.*' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
         ]);
 
         $cleanDesc = DealDescriptionSanitizer::clean((string) $request->description);
@@ -56,7 +57,7 @@ class DealController extends Controller
             'whatsapp_message' => $request->whatsapp_message,
             'expires_at' => $request->expires_at, // ✅ CRITICAL FIX
             // New deals default to active unless explicitly unchecked.
-            'is_active' => $request->boolean('is_active', true),
+            'is_active' => $request->boolean('is_active', false),
             'position' => Deal::max('position') + 1,
         ]);
 
@@ -94,7 +95,8 @@ class DealController extends Controller
             'whatsapp_message' => 'nullable|string|max:500',
             'expires_at' => 'required|date',
             'is_active' => 'nullable|boolean',
-            'images.*' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:12288',
+            // UI suggests 2MB per image; keep backend aligned to reduce upload timeouts/resets.
+            'images.*' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
         ]);
 
         try {
@@ -106,7 +108,7 @@ class DealController extends Controller
                 'price_display' => $request->price_display,
                 'whatsapp_message' => $request->whatsapp_message,
                 'expires_at' => $request->expires_at,
-                'is_active' => $request->boolean('is_active', true),
+                'is_active' => $request->boolean('is_active', false),
             ]);
 
             if ($request->hasFile('images')) {
