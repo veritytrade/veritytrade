@@ -73,7 +73,7 @@ class ProductController extends Controller
             'condition_notes' => ['nullable', 'string'],
             'status' => ['required', 'in:draft,active,archived'],
             'stock' => ['required', 'integer', 'min:0'],
-            'images.*' => ['nullable', 'file', 'max:4096'],
+            'images.*' => ['nullable', 'file', 'max:12288'],
         ]);
 
         $parsed = null;

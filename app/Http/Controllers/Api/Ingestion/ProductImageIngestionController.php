@@ -7,6 +7,7 @@ use App\Models\Product;
 use App\Models\ProductImage;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
 class ProductImageIngestionController extends Controller
@@ -14,7 +15,8 @@ class ProductImageIngestionController extends Controller
     public function store(Request $request, Product $product): JsonResponse
     {
         $validated = $request->validate([
-            'image' => ['required', 'file', 'max:4096'],
+            // kilobytes; 12288 = 12 MB headroom for full-res phone JPEGs without recompression on save
+            'image' => ['required', 'file', 'max:12288'],
             'position' => ['nullable', 'integer', 'min:0'],
         ]);
 
@@ -35,6 +37,8 @@ class ProductImageIngestionController extends Controller
             'position' => $position,
         ]);
 
+        $bytesStored = Storage::disk('public')->size($imagePath);
+
         return response()->json([
             'ok' => true,
             'image' => [
@@ -42,6 +46,7 @@ class ProductImageIngestionController extends Controller
                 'product_id' => $image->product_id,
                 'position' => $image->position,
                 'image_url' => storage_asset($image->image_path),
+                'bytes_stored' => $bytesStored,
             ],
         ], 201);
     }
