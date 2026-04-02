@@ -146,6 +146,9 @@ class ShipmentController extends Controller
         }
 
         $tracks = $result['tracks'] ?? [];
+        if (! is_array($tracks)) {
+            $tracks = [];
+        }
         self::sortCarrierTracksNewestFirst($tracks);
 
         $count = count($tracks);
@@ -209,10 +212,11 @@ class ShipmentController extends Controller
     }
 
     /**
-     * @param  array<int, array{en?: string, cn?: string, at?: string, meta?: array}>  $tracks
+     * @param  array<int, mixed>  $tracks
      */
     private static function sortCarrierTracksNewestFirst(array &$tracks): void
     {
+        $tracks = array_values(array_filter($tracks, static fn ($row) => is_array($row)));
         usort($tracks, [CarrierTrackTimestamp::class, 'compareTracksNewestFirst']);
     }
 }

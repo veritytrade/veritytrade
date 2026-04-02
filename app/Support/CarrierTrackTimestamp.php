@@ -11,8 +11,15 @@ final class CarrierTrackTimestamp
     /**
      * @param  array{at?: string, title?: string, en?: string, cn?: string}  $track
      */
-    public static function extract(array $track): int
+    /**
+     * @param  mixed  $track  Row from carrier_tracks_json; non-arrays return 0 (avoids TypeError in usort).
+     */
+    public static function extract(mixed $track): int
     {
+        if (! is_array($track)) {
+            return 0;
+        }
+
         try {
             return self::doExtract($track);
         } catch (\Throwable) {
@@ -22,12 +29,12 @@ final class CarrierTrackTimestamp
 
     /**
      * Sort callback: newest event first (compare timestamps desc), then by raw `at` string desc, then message text.
-     *
-     * @param  array{at?: string, title?: string, en?: string, cn?: string}  $a
-     * @param  array{at?: string, title?: string, en?: string, cn?: string}  $b
      */
-    public static function compareTracksNewestFirst(array $a, array $b): int
+    public static function compareTracksNewestFirst(mixed $a, mixed $b): int
     {
+        $a = is_array($a) ? $a : [];
+        $b = is_array($b) ? $b : [];
+
         $ta = self::extract($a);
         $tb = self::extract($b);
         if ($tb !== $ta) {
@@ -52,6 +59,9 @@ final class CarrierTrackTimestamp
     private static function doExtract(array $track): int
     {
         $at = self::scrubUtf8(trim((string) ($track['at'] ?? '')));
+        if (strlen($at) > 500) {
+            $at = substr($at, 0, 500);
+        }
         if ($at !== '') {
             $fromAt = self::parseAtField($at);
             if ($fromAt > 0) {
@@ -63,6 +73,9 @@ final class CarrierTrackTimestamp
         $title = self::scrubUtf8(trim((string) ($track['title'] ?? $track['en'] ?? $track['cn'] ?? '')));
         if ($title === '') {
             return 0;
+        }
+        if (strlen($title) > 20000) {
+            $title = substr($title, 0, 20000);
         }
 
         // First leading bracket only — event time is almost always there.
@@ -161,6 +174,9 @@ final class CarrierTrackTimestamp
         return $candidate;
     }
 
+    /**
+     * Safe on hosts without mbstring (calling mb_check_encoding without the ext fatals).
+     */
     private static function scrubUtf8(string $s): string
     {
         if ($s === '') {
@@ -169,10 +185,20 @@ final class CarrierTrackTimestamp
         if (function_exists('mb_scrub')) {
             return mb_scrub($s, 'UTF-8');
         }
-        if (mb_check_encoding($s, 'UTF-8')) {
-            return $s;
+        if (function_exists('mb_check_encoding') && function_exists('mb_convert_encoding')) {
+            if (mb_check_encoding($s, 'UTF-8')) {
+                return $s;
+            }
+
+            return mb_convert_encoding($s, 'UTF-8', 'UTF-8');
+        }
+        if (function_exists('iconv')) {
+            $clean = @iconv('UTF-8', 'UTF-8//IGNORE', $s);
+            if ($clean !== false && $clean !== '') {
+                return $clean;
+            }
         }
 
-        return mb_convert_encoding($s, 'UTF-8', 'UTF-8');
+        return $s;
     }
 }

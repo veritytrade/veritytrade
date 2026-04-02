@@ -6,7 +6,11 @@
     $currentPos = $current ? (int) $current->position : 0;
     $shipment = $order->shipment;
     $carrierPayload = $shipment?->carrier_tracks_json;
-    $carrierTracks = is_array($carrierPayload) ? ($carrierPayload['tracks'] ?? []) : [];
+    $carrierTracksRaw = is_array($carrierPayload) ? ($carrierPayload['tracks'] ?? []) : [];
+    $carrierTracks = array_values(array_filter(
+        is_array($carrierTracksRaw) ? $carrierTracksRaw : [],
+        static fn ($row) => is_array($row)
+    ));
     $carrierSynced = $shipment?->carrier_tracks_synced_at;
 
     // Resolve positions by stage name so carrier rows land under the same headings after DB changes (e.g. Processing added).
@@ -81,22 +85,26 @@
     };
 
     foreach ($carrierTracks as $track) {
-        $title = trim((string) ($track['en'] ?? $track['cn'] ?? ''));
-        if ($title === '') {
+        try {
+            $title = trim((string) ($track['en'] ?? $track['cn'] ?? ''));
+            if ($title === '') {
+                continue;
+            }
+
+            $classification = $classifyTrackToStage($title);
+            $mappedPos = (int) ($classification['stage'] ?? $posSent);
+            if (! array_key_exists($mappedPos, $groupedTracks)) {
+                $mappedPos = $posSent;
+            }
+
+            $groupedTracks[$mappedPos][] = [
+                'title' => $title,
+                'at' => trim((string) ($track['at'] ?? '')),
+                'subsection' => data_get($track, 'meta.subsection') ?? $classification['subsection'] ?? null,
+            ];
+        } catch (\Throwable) {
             continue;
         }
-
-        $classification = $classifyTrackToStage($title);
-        $mappedPos = (int) ($classification['stage'] ?? $posSent);
-        if (! array_key_exists($mappedPos, $groupedTracks)) {
-            $mappedPos = $posSent;
-        }
-
-        $groupedTracks[$mappedPos][] = [
-            'title' => $title,
-            'at' => trim((string) ($track['at'] ?? '')),
-            'subsection' => data_get($track, 'meta.subsection') ?? $classification['subsection'] ?? null,
-        ];
     }
 
     // Newest first: same rules as admin refresh (CarrierTrackTimestamp::compareTracksNewestFirst).
