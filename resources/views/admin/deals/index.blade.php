@@ -18,24 +18,7 @@
             </div>
         </div>
 
-        {{-- Flash Messages --}}
-        @if(session('success'))
-            <div x-data="{ show: true }" 
-                x-init="setTimeout(() => show = false, 3000)"
-                x-show="show"
-                class="fixed top-4 right-4 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg z-50 transition-opacity">
-                {{ session('success') }}
-            </div>
-        @endif
-
-        @if(session('error'))
-            <div x-data="{ show: true }" 
-                x-init="setTimeout(() => show = false, 5000)"
-                x-show="show"
-                class="fixed top-4 right-4 bg-red-500 text-white px-6 py-3 rounded-lg shadow-lg z-50 transition-opacity">
-                {{ session('error') }}
-            </div>
-        @endif
+        {{-- Flash: primary banners live in <x-admin-layout> (no Alpine; always visible). --}}
 
         {{-- Deals Table --}}
         <div class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">

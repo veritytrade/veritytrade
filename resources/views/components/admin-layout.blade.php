@@ -93,26 +93,15 @@
 
         <main class="p-4 md:p-6">
             @if(session('success'))
-                <div x-data="{ show: true, progress: 100 }"
-                     x-show="show"
-                     x-init="
-                        const total = 8000;
-                        const started = Date.now();
-                        const timer = setInterval(() => {
-                            const elapsed = Date.now() - started;
-                            progress = Math.max(0, 100 - Math.floor((elapsed / total) * 100));
-                            if (elapsed >= total) { clearInterval(timer); show = false; }
-                        }, 100);
-                     "
-                     class="mb-4 rounded-lg border border-green-200 bg-green-50 text-green-800 px-4 py-3 shadow-sm">
-                    <div class="text-sm font-medium">{{ session('success') }}</div>
-                    <div class="mt-2 h-1.5 w-full rounded bg-green-100 overflow-hidden">
-                        <div class="h-full bg-green-500 transition-all duration-100" :style="`width: ${progress}%`"></div>
-                    </div>
+                <div class="mb-4 rounded-lg border border-green-200 bg-green-50 text-green-900 px-4 py-3 shadow-sm"
+                     role="status"
+                     aria-live="polite">
+                    <p class="text-sm font-medium">{{ session('success') }}</p>
                 </div>
             @endif
             @if(session('error'))
-                <div class="mb-4 rounded-lg border border-red-200 bg-red-50 text-red-800 px-4 py-3 shadow-sm text-sm font-medium">
+                <div class="mb-4 rounded-lg border border-red-200 bg-red-50 text-red-800 px-4 py-3 shadow-sm text-sm font-medium"
+                     role="alert">
                     {{ session('error') }}
                 </div>
             @endif

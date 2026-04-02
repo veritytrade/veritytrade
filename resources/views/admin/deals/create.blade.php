@@ -19,6 +19,17 @@
             </div>
         @endif
 
+        @if(session('success'))
+            <div class="mb-4 rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-sm font-medium text-green-900" role="status">
+                {{ session('success') }}
+            </div>
+        @endif
+        @if(session('error'))
+            <div class="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-900" role="alert">
+                {{ session('error') }}
+            </div>
+        @endif
+
         <form method="POST" action="{{ route('admin.deals.store') }}" enctype="multipart/form-data" id="deal-form">
             @csrf
 
