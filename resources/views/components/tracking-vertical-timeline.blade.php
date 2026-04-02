@@ -99,37 +99,8 @@
         ];
     }
 
-    // Prefer carrier `at`; also scan title for embedded datetimes so ordering matches visible dates.
-    $extractBestTimestamp = static function (array $item): int {
-        $best = 0;
-        $at = trim((string) ($item['at'] ?? ''));
-        if ($at !== '') {
-            $t = strtotime($at);
-            if ($t !== false) {
-                $best = max($best, $t);
-            }
-        }
-        $title = (string) ($item['title'] ?? '');
-        // ASCII-only patterns (no /u) so invalid UTF-8 in mixed CN/EN carrier text cannot break preg_match.
-        if ($title !== '' && @preg_match_all('/\b\d{4}[-/]\d{1,2}[-/]\d{1,2}(?:[ T]\d{1,2}:\d{2}(?::\d{2})?)?\b/', $title, $m) && ! empty($m[0])) {
-            foreach ($m[0] as $fragment) {
-                $t = strtotime(str_replace('/', '-', $fragment));
-                if ($t !== false) {
-                    $best = max($best, $t);
-                }
-            }
-        }
-        if ($title !== '' && @preg_match_all('/\b\d{1,2}\/\d{1,2}\/\d{4}(?:[ T]\d{1,2}:\d{2}(?::\d{2})?)?\b/', $title, $m) && ! empty($m[0])) {
-            foreach ($m[0] as $fragment) {
-                $t = strtotime($fragment);
-                if ($t !== false) {
-                    $best = max($best, $t);
-                }
-            }
-        }
-
-        return $best;
-    };
+    // Sort by parsed datetime: `at` plus text like [2026-04-02 04:01] or [24MAR 16:59:44] (see CarrierTrackTimestamp).
+    $extractBestTimestamp = static fn (array $item): int => \App\Support\CarrierTrackTimestamp::extract($item);
 
     $sortByNewestAt = static function (array $a, array $b) use ($extractBestTimestamp): int {
         $ta = $extractBestTimestamp($a);

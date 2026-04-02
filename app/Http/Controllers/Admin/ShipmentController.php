@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Shipment;
 use App\Models\TrackingStage;
 use App\Services\SkyCargoLogisticsService;
+use App\Support\CarrierTrackTimestamp;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -213,8 +214,8 @@ class ShipmentController extends Controller
     private static function sortCarrierTracksNewestFirst(array &$tracks): void
     {
         usort($tracks, static function (array $a, array $b): int {
-            $ta = strtotime(trim((string) ($a['at'] ?? ''))) ?: 0;
-            $tb = strtotime(trim((string) ($b['at'] ?? ''))) ?: 0;
+            $ta = CarrierTrackTimestamp::extract($a);
+            $tb = CarrierTrackTimestamp::extract($b);
             if ($tb !== $ta) {
                 return $tb <=> $ta;
             }
