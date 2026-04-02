@@ -110,7 +110,8 @@
             }
         }
         $title = (string) ($item['title'] ?? '');
-        if ($title !== '' && preg_match_all('/\b\d{4}[-/]\d{1,2}[-/]\d{1,2}(?:[ T]\d{1,2}:\d{2}(?::\d{2})?)?\b/u', $title, $m)) {
+        // ASCII-only patterns (no /u) so invalid UTF-8 in mixed CN/EN carrier text cannot break preg_match.
+        if ($title !== '' && @preg_match_all('/\b\d{4}[-/]\d{1,2}[-/]\d{1,2}(?:[ T]\d{1,2}:\d{2}(?::\d{2})?)?\b/', $title, $m) && ! empty($m[0])) {
             foreach ($m[0] as $fragment) {
                 $t = strtotime(str_replace('/', '-', $fragment));
                 if ($t !== false) {
@@ -118,7 +119,7 @@
                 }
             }
         }
-        if ($title !== '' && preg_match_all('/\b\d{1,2}\/\d{1,2}\/\d{4}(?:[ T]\d{1,2}:\d{2}(?::\d{2})?)?\b/u', $title, $m)) {
+        if ($title !== '' && @preg_match_all('/\b\d{1,2}\/\d{1,2}\/\d{4}(?:[ T]\d{1,2}:\d{2}(?::\d{2})?)?\b/', $title, $m) && ! empty($m[0])) {
             foreach ($m[0] as $fragment) {
                 $t = strtotime($fragment);
                 if ($t !== false) {
@@ -144,6 +145,41 @@
     foreach ($groupedTracks as $pos => $items) {
         usort($items, $sortByNewestAt);
         $groupedTracks[$pos] = $items;
+    }
+
+    // Build Nigeria subsections here so the template does not rely on nested @php (closures are not in scope there → 500).
+    $nigeriaSubsectionBlocks = [];
+    $nigeriaTracks = $groupedTracks[$posArrivedNigeria] ?? [];
+    if (count($nigeriaTracks) > 0) {
+        $subsectionOrder = ['At Nigeria airport', 'Customs clearance', 'At logistics warehouse', 'Agent pickup'];
+        $bySubsection = [];
+        foreach ($subsectionOrder as $name) {
+            $bySubsection[$name] = [];
+        }
+        foreach ($nigeriaTracks as $item) {
+            $name = $item['subsection'] ?? 'At Nigeria airport';
+            if (! array_key_exists($name, $bySubsection)) {
+                $bySubsection[$name] = [];
+            }
+            $bySubsection[$name][] = $item;
+        }
+        foreach ($bySubsection as $subName => $subItems) {
+            usort($bySubsection[$subName], $sortByNewestAt);
+        }
+        foreach ($bySubsection as $subsection => $items) {
+            if (count($items) === 0) {
+                continue;
+            }
+            $latestTs = 0;
+            foreach ($items as $it) {
+                $latestTs = max($latestTs, $extractBestTimestamp($it));
+            }
+            $nigeriaSubsectionBlocks[] = [
+                'subsection' => $subsection,
+                'items' => $items,
+                'latestDisplay' => $latestTs > 0 ? date('Y-m-d H:i', $latestTs) : '',
+            ];
+        }
     }
 @endphp
 
@@ -198,52 +234,26 @@
 
                             @if(count($stageTracks) > 0)
                                 @if($pos === $posArrivedNigeria)
-                                    @php
-                                        $subsectionOrder = ['At Nigeria airport', 'Customs clearance', 'At logistics warehouse', 'Agent pickup'];
-                                        $bySubsection = [];
-                                        foreach ($subsectionOrder as $name) {
-                                            $bySubsection[$name] = [];
-                                        }
-                                        foreach ($stageTracks as $item) {
-                                            $name = $item['subsection'] ?? 'At Nigeria airport';
-                                            if (! array_key_exists($name, $bySubsection)) {
-                                                $bySubsection[$name] = [];
-                                            }
-                                            $bySubsection[$name][] = $item;
-                                        }
-                                        foreach ($bySubsection as $subName => $subItems) {
-                                            usort($bySubsection[$subName], $sortByNewestAt);
-                                        }
-                                    @endphp
                                     <div class="mt-2 space-y-2.5">
-                                        @foreach($bySubsection as $subsection => $items)
-                                            @if(count($items) > 0)
-                                                @php
-                                                    $latestTs = 0;
-                                                    foreach ($items as $it) {
-                                                        $latestTs = max($latestTs, $extractBestTimestamp($it));
-                                                    }
-                                                    $latestDisplay = $latestTs > 0 ? date('Y-m-d H:i', $latestTs) : '';
-                                                @endphp
-                                                <div class="rounded-lg border border-gray-200 bg-white px-3 py-2.5">
-                                                    <div class="flex flex-wrap items-baseline justify-between gap-x-2 gap-y-0.5">
-                                                        <p class="text-[11px] font-semibold uppercase tracking-wide text-gray-600">{{ $subsection }}</p>
-                                                        @if($latestDisplay !== '')
-                                                            <p class="text-[11px] font-semibold text-gray-900">[{{ $latestDisplay }}]</p>
-                                                        @endif
-                                                    </div>
-                                                    <div class="mt-1.5 space-y-1.5">
-                                                        @foreach($items as $item)
-                                                            <p class="text-xs leading-snug text-gray-700">
-                                                                @if($item['at'] !== '')
-                                                                    <span class="text-[11px] font-semibold text-gray-900">[{{ $item['at'] }}]</span>
-                                                                @endif
-                                                                {{ $item['title'] }}
-                                                            </p>
-                                                        @endforeach
-                                                    </div>
+                                        @foreach($nigeriaSubsectionBlocks as $block)
+                                            <div class="rounded-lg border border-gray-200 bg-white px-3 py-2.5">
+                                                <div class="flex flex-wrap items-baseline justify-between gap-x-2 gap-y-0.5">
+                                                    <p class="text-[11px] font-semibold uppercase tracking-wide text-gray-600">{{ $block['subsection'] }}</p>
+                                                    @if(($block['latestDisplay'] ?? '') !== '')
+                                                        <p class="text-[11px] font-semibold text-gray-900">[{{ $block['latestDisplay'] }}]</p>
+                                                    @endif
                                                 </div>
-                                            @endif
+                                                <div class="mt-1.5 space-y-1.5">
+                                                    @foreach($block['items'] as $item)
+                                                        <p class="text-xs leading-snug text-gray-700">
+                                                            @if($item['at'] !== '')
+                                                                <span class="text-[11px] font-semibold text-gray-900">[{{ $item['at'] }}]</span>
+                                                            @endif
+                                                            {{ $item['title'] }}
+                                                        </p>
+                                                    @endforeach
+                                                </div>
+                                            </div>
                                         @endforeach
                                     </div>
                                 @else
