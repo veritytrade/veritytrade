@@ -14,6 +14,12 @@
             </div>
         </div>
 
+        @if(request('notice') === 'deal_updated')
+            <div class="mb-4 rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-sm font-medium text-green-900 shadow-sm" role="status">
+                Hot deal updated successfully.
+            </div>
+        @endif
+
         <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
             <div class="overflow-x-auto">
                 <table class="w-full text-sm">

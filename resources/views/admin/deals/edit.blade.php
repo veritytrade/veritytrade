@@ -1,7 +1,15 @@
 <x-admin-layout>
     <div class="p-6 max-w-3xl mx-auto">
         <div class="flex justify-between items-center mb-6">
-            <h2 class="text-2xl font-bold text-blue-700">Edit Hot Deal</h2>
+            <div>
+                <h2 class="text-2xl font-bold text-blue-700">Edit Hot Deal</h2>
+                @if(filled($deal->ops_reference))
+                    <p class="text-xs text-gray-500 mt-1">
+                        Trace ref: <code class="bg-gray-100 px-1 rounded font-mono text-gray-800">{{ $deal->ops_reference }}</code>
+                        — search this in the header bar; customers only see it inside WhatsApp as “Ref: …” (no source URL on the site).
+                    </p>
+                @endif
+            </div>
             <div class="flex items-center gap-4">
                 @if(request()->filled('from_product'))
                     <a href="{{ route('admin.products.show', request('from_product')) }}"
@@ -27,9 +35,9 @@
             </div>
         @endif
 
-        @if(session('success'))
+        @if(session('success') || request('notice') === 'updated')
             <div class="mb-4 rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-sm font-medium text-green-900 shadow-sm" role="status">
-                {{ session('success') }}
+                {{ session('success') ?? 'Hot deal saved successfully.' }}
             </div>
         @endif
         @if(session('error'))

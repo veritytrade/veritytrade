@@ -13,6 +13,12 @@
                 Use <strong>Approve to Hot Deal</strong> to create or refresh a deal from this row (text + images are copied; the deal is linked via <code class="text-[11px] bg-gray-100 px-1 rounded">source_product_id</code>).
                 Use <strong>Deals → Create Hot Deal</strong> for a standalone deal with no product link.
             </p>
+            @if($product->sourceDeal && filled($product->sourceDeal->ops_reference))
+                <p class="text-xs text-gray-600 mb-3">
+                    WhatsApp / admin trace ref: <code class="bg-gray-100 px-1 rounded font-mono">{{ $product->sourceDeal->ops_reference }}</code>
+                    — paste into the top search to open this product. The original marketplace URL stays admin-only below.
+                </p>
+            @endif
             <div class="flex flex-col md:flex-row md:items-start md:justify-between gap-3">
                 <h2 class="text-xl font-bold text-gray-900">{{ $product->title }}</h2>
                 <div class="flex items-center gap-2">

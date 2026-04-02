@@ -38,6 +38,19 @@ class Deal extends Model
                 $deal->uuid = (string) Str::uuid();
             }
         });
+
+        static::saving(function (Deal $deal): void {
+            if ($deal->source_product_id) {
+                $deal->ops_reference = 'VTP' . (int) $deal->source_product_id;
+            }
+        });
+
+        static::created(function (Deal $deal): void {
+            if ($deal->source_product_id || filled($deal->ops_reference)) {
+                return;
+            }
+            $deal->forceFill(['ops_reference' => 'VTD' . $deal->id])->saveQuietly();
+        });
     }
 
     public function images(): HasMany

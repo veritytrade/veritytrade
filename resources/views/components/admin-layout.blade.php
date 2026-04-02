@@ -82,7 +82,7 @@
                     <input type="text"
                            name="q"
                            class="flex-1 rounded-lg border border-gray-300 px-3 py-1.5 text-sm focus:ring-2 focus:ring-green-500 focus:border-green-500"
-                           placeholder="Quick search: customer, order, shipment, invoice">
+                           placeholder="Search: VTP12 / VTD5 / listing id, customer, order…">
                     <button type="submit"
                             class="px-3 py-1.5 rounded-lg bg-green-600 hover:bg-green-700 text-white text-xs font-medium">
                         Search

@@ -73,8 +73,9 @@ class DealController extends Controller
             }
         }
 
-        return redirect()->route('admin.deals.index')
-                       ->with('success', 'Hot deal created successfully!');
+        return redirect()
+            ->route('admin.deals.index', ['notice' => 'created'])
+            ->with('success', 'Hot deal created successfully!');
     }
 
     // Show edit form
@@ -135,19 +136,20 @@ class DealController extends Controller
         $fromProduct = $request->input('from_product');
         if ($fromProduct !== null && $fromProduct !== '' && ctype_digit((string) $fromProduct)) {
             return redirect()
-                ->route('admin.products.index')
+                ->route('admin.products.index', ['notice' => 'deal_updated'])
                 ->with('success', 'Hot deal updated successfully.');
         }
 
         $deal->refresh();
 
-        $editParams = ['deal' => $deal];
+        $editParams = ['deal' => $deal, 'notice' => 'updated'];
         $fp = $request->input('from_product');
         if ($fp !== null && $fp !== '' && ctype_digit((string) $fp)) {
             $editParams['from_product'] = $fp;
         }
 
-        return redirect()->route('admin.deals.edit', $editParams)
+        return redirect()
+            ->route('admin.deals.edit', $editParams)
             ->with('success', 'Hot deal updated successfully.');
     }
 

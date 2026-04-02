@@ -18,7 +18,11 @@
             </div>
         </div>
 
-        {{-- Flash: primary banners live in <x-admin-layout> (no Alpine; always visible). --}}
+        @if(request('notice') === 'created')
+            <div class="mb-4 rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-sm font-medium text-green-900 shadow-sm" role="status">
+                Hot deal created successfully.
+            </div>
+        @endif
 
         {{-- Deals Table --}}
         <div class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">

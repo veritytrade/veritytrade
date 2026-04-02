@@ -40,15 +40,21 @@ class LandingController extends Controller
 
     public function whatsapp(Deal $deal)
     {
-        $message = $deal->whatsapp_message ?? 
+        $message = $deal->whatsapp_message ??
                    "Hello, I'm interested in this hot deal:\n\n" .
                    "*{$deal->title}*\n" .
                    "Price: {$deal->price_display}\n\n" .
                    "Is it still available?";
 
+        $message = trim((string) $message);
+
+        if (filled($deal->ops_reference)) {
+            $message .= "\n\nRef: {$deal->ops_reference}";
+        }
+
         $whatsappNumber = site_setting('whatsapp_number', site_setting('whatsapp_business_number', '2347084117779'));
-        
-        return redirect("https://wa.me/{$whatsappNumber}?text=" . urlencode($message));
+
+        return redirect('https://wa.me/' . $whatsappNumber . '?text=' . rawurlencode($message));
     }
 
     public function show(Deal $deal)

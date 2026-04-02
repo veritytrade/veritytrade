@@ -3,8 +3,10 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\Deal;
 use App\Models\Invoice;
 use App\Models\Order;
+use App\Models\Product;
 use App\Models\Shipment;
 use App\Models\User;
 use Illuminate\Http\RedirectResponse;
@@ -16,7 +18,32 @@ class AdminSearchController extends Controller
     {
         $q = trim((string) $request->input('q', ''));
         if ($q === '') {
-            return back()->with('error', 'Enter something to search (customer, order ID, shipment, invoice, supplier order number, or supplier logistics code).');
+            return back()->with('error', 'Enter something to search (VTP/VTD ref, listing ID, customer, order ID, shipment, invoice, or supplier refs).');
+        }
+
+        // Ops refs from WhatsApp (deal / ingested product) — never exposes source URL on the storefront
+        if (preg_match('/^VTP(\d+)$/i', $q, $m)) {
+            $product = Product::query()->find((int) $m[1]);
+            if ($product) {
+                return redirect()->route('admin.products.show', $product);
+            }
+        }
+        if (preg_match('/^VTD(\d+)$/i', $q, $m)) {
+            $deal = Deal::query()->find((int) $m[1]);
+            if ($deal) {
+                return redirect()->route('admin.deals.edit', $deal);
+            }
+        }
+
+        $productBySource = Product::query()->where('source_item_id', $q)->first();
+        if (! $productBySource && strlen($q) >= 8) {
+            $productBySource = Product::query()
+                ->where('source_item_id', 'like', '%' . $q . '%')
+                ->orderByDesc('id')
+                ->first();
+        }
+        if ($productBySource) {
+            return redirect()->route('admin.products.show', $productBySource);
         }
 
         // 0. Supplier references on orders (fastest recovery path in operations)
@@ -71,7 +98,7 @@ class AdminSearchController extends Controller
             return redirect()->route('admin.invoices.index', ['invoice_number' => $invoice->invoice_number]);
         }
 
-        return back()->with('error', 'No matching customer, order, shipment, invoice, or supplier reference found.');
+        return back()->with('error', 'No match. Try VTP (product) / VTD (deal) refs, marketplace listing id, customer email, order id, shipment, invoice, or supplier refs.');
     }
 }
 
