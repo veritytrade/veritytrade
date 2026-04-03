@@ -1,5 +1,10 @@
 @props(['order'])
 
+@if(! isset($order) || ! $order)
+    <div class="mt-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+        Tracking is unavailable (no order linked).
+    </div>
+@else
 @php
     $stages = \App\Models\TrackingStage::orderByDesc('position')->get();
     $current = $order->effectiveStage();
@@ -92,26 +97,26 @@
     };
 
     $parseTrackTimeWeight = static function (?string $timeText): int {
-        $raw = trim((string) $timeText);
-        if ($raw === '') {
-            return 0;
-        }
-
-        $normalized = preg_replace('/\s+/u', ' ', $raw) ?: $raw;
-        $formats = ['Y-m-d H:i:s', 'dMY H:i:s', 'd M Y H:i:s', 'd M H:i:s', 'dMY H:i'];
-
-        foreach ($formats as $fmt) {
-            try {
-                $dt = \Illuminate\Support\Carbon::createFromFormat($fmt, strtoupper($normalized), config('app.timezone'));
-                if ($dt !== false) {
-                    return $dt->timestamp;
-                }
-            } catch (\Throwable $e) {
-                // Keep trying other known formats.
-            }
-        }
-
         try {
+            $raw = trim((string) $timeText);
+            if ($raw === '') {
+                return 0;
+            }
+
+            $normalized = preg_replace('/\s+/u', ' ', $raw) ?: $raw;
+            $formats = ['Y-m-d H:i:s', 'dMY H:i:s', 'd M Y H:i:s', 'd M H:i:s', 'dMY H:i'];
+
+            foreach ($formats as $fmt) {
+                try {
+                    $dt = \Illuminate\Support\Carbon::createFromFormat($fmt, strtoupper($normalized), config('app.timezone'));
+                    if ($dt !== false) {
+                        return $dt->timestamp;
+                    }
+                } catch (\Throwable $e) {
+                    // Keep trying other known formats.
+                }
+            }
+
             return \Illuminate\Support\Carbon::parse($normalized, config('app.timezone'))->timestamp;
         } catch (\Throwable $e) {
             return 0;
@@ -119,6 +124,9 @@
     };
 
     foreach ($carrierTracks as $track) {
+        if (! is_array($track)) {
+            continue;
+        }
         $title = trim((string) ($track['en'] ?? $track['cn'] ?? ''));
         if ($title === '') {
             continue;
@@ -134,12 +142,15 @@
             $mappedPos = 2;
         }
 
+        $meta = $track['meta'] ?? null;
+        $metaSubsection = (is_array($meta) && array_key_exists('subsection', $meta)) ? $meta['subsection'] : null;
+
         $at = trim((string) ($track['at'] ?? ''));
         $groupedTracks[$mappedPos][] = [
             'title' => $title,
             'at' => $at,
             'sort_weight' => $parseTrackTimeWeight($at),
-            'subsection' => $track['meta']['subsection'] ?? $classification['subsection'] ?? null,
+            'subsection' => $metaSubsection ?? $classification['subsection'] ?? null,
         ];
     }
 
@@ -295,3 +306,4 @@
         animation: trackingLineGrow 0.9s ease-out both;
     }
 </style>
+@endif

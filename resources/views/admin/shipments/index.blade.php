@@ -63,7 +63,7 @@
                                     <div class="flex flex-col gap-0.5">
                                         <span class="inline-flex items-center gap-1.5">
                                             <a href="{{ route('admin.shipments.show', $s) }}" class="text-green-600 hover:text-green-700">
-                                                {{ Str::limit($s->chinese_tracking_code, 12) }}
+                                                {{ \Illuminate\Support\Str::limit($s->chinese_tracking_code, 12) }}
                                             </a>
                                             <button type="button"
                                                     data-copy="{{ e($s->chinese_tracking_code) }}"

@@ -139,7 +139,7 @@
                     @forelse($shipment->orders as $order)
                         @php($eff = $order->effectiveStage())
                         <tr class="hover:bg-gray-50">
-                            <td class="p-3 sm:p-4"><a href="{{ route('admin.orders.show', $order) }}" class="text-green-600 hover:text-green-700 font-medium">{{ Str::limit($order->product_name ?? 'Order #'.$order->id, 20) }}</a></td>
+                            <td class="p-3 sm:p-4"><a href="{{ route('admin.orders.show', $order) }}" class="text-green-600 hover:text-green-700 font-medium">{{ \Illuminate\Support\Str::limit($order->product_name ?? 'Order #'.$order->id, 20) }}</a></td>
                             <td class="p-3 sm:p-4 text-gray-700">
                                 @if($order->user)
                                     <a href="{{ route('admin.customers.show', ['q' => $order->user->email]) }}" class="text-green-600 hover:text-green-700">
