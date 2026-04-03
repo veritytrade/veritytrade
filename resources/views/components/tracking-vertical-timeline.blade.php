@@ -133,8 +133,13 @@
                 'subsection' => $subsection,
                 'items' => $items,
                 'latestDisplay' => $latestTs > 0 ? date('Y-m-d H:i', $latestTs) : '',
+                'sortTs' => $latestTs,
             ];
         }
+        // Newest subsection first (by latest event in that bucket), not fixed airport→customs→warehouse order
+        usort($nigeriaSubsectionBlocks, static function (array $a, array $b): int {
+            return ($b['sortTs'] ?? 0) <=> ($a['sortTs'] ?? 0);
+        });
     }
 @endphp
 

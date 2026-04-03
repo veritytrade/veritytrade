@@ -16,7 +16,7 @@ final class CarrierTrackClassifier
         $posProcessing = (int) ($posByName['Processing'] ?? 1);
         $posSent = (int) ($posByName['Sent to Logistics'] ?? 2);
         $posArrivedLogistics = (int) ($posByName['Arrived Logistics'] ?? 3);
-        $posFlying = (int) ($posByName['Flying to Nigeria'] ?? 4);
+        $posInTransitToNigeria = (int) ($posByName['In Transit to Nigeria'] ?? $posByName['Flying to Nigeria'] ?? 4);
         $posArrivedNigeria = (int) ($posByName['Arrived Nigeria'] ?? 5);
         $posFinalDestination = (int) ($posByName['Sent to Final Destination'] ?? 6);
         $posDelivered = (int) ($posByName['Delivered'] ?? 7);
@@ -28,7 +28,7 @@ final class CarrierTrackClassifier
                     $hint,
                     $posSent,
                     $posArrivedLogistics,
-                    $posFlying,
+                    $posInTransitToNigeria,
                     $posArrivedNigeria,
                     $posFinalDestination,
                     $posDelivered
@@ -60,6 +60,14 @@ final class CarrierTrackClassifier
             str_contains($t, 'ask rate and confirm shipping money')
         ) {
             return ['stage' => $posSent, 'subsection' => null, 'ignore' => true];
+        }
+
+        // Line-haul hub: cargo received at logistics company / loaded for the international leg (sea or air)
+        if (
+            (str_contains($t, 'fish logistics') && (str_contains($t, 'received') || str_contains($t, 'sea cargo') || str_contains($t, 'cargo goods'))) ||
+            (str_contains($t, 'already loaded') && str_contains($t, 'goods'))
+        ) {
+            return ['stage' => $posArrivedLogistics, 'subsection' => null, 'ignore' => false];
         }
 
         // Nigeria: customer picked up at warehouse (not final home delivery)
@@ -127,7 +135,7 @@ final class CarrierTrackClassifier
         }
 
         if (str_contains($t, 'flying') || str_contains($t, 'addis') || str_contains($t, 'hamad international airport')) {
-            return ['stage' => $posFlying, 'subsection' => null, 'ignore' => false];
+            return ['stage' => $posInTransitToNigeria, 'subsection' => null, 'ignore' => false];
         }
 
         return ['stage' => $posSent, 'subsection' => null, 'ignore' => false];
@@ -137,7 +145,7 @@ final class CarrierTrackClassifier
         string $hint,
         int $posSent,
         int $posArrivedLogistics,
-        int $posFlying,
+        int $posInTransitToNigeria,
         int $posArrivedNigeria,
         int $posFinalDestination,
         int $posDelivered
@@ -148,7 +156,7 @@ final class CarrierTrackClassifier
             $hint === 'sent_to_logistics' => $posSent,
             str_contains($hint, 'logistics') && (str_contains($hint, 'arrived') || str_contains($hint, 'warehouse') || str_contains($hint, 'china')) => $posArrivedLogistics,
             $hint === 'arrived_logistics' => $posArrivedLogistics,
-            str_contains($hint, 'flying') || str_contains($hint, 'in_transit') || str_contains($hint, 'transit') => $posFlying,
+            str_contains($hint, 'flying') || str_contains($hint, 'in_transit') || str_contains($hint, 'transit') || $hint === 'in_transit_to_nigeria' => $posInTransitToNigeria,
             str_contains($hint, 'nigeria') || $hint === 'arrived_nigeria' => $posArrivedNigeria,
             str_contains($hint, 'final') || str_contains($hint, 'last_mile') || str_contains($hint, 'dispatch') => $posFinalDestination,
             str_contains($hint, 'delivered') || str_contains($hint, 'complete') => $posDelivered,
