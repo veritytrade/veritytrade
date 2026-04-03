@@ -9,6 +9,8 @@ use App\Services\SkyCargoLogisticsService;
 use App\Support\CarrierTrackTimestamp;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\View\View;
 
 class ShipmentController extends Controller
@@ -96,15 +98,18 @@ class ShipmentController extends Controller
             'current_stage_id' => 'required|exists:tracking_stages,id',
         ]);
 
+        $previousStage = $shipment->currentStage;
         $stage = TrackingStage::find($valid['current_stage_id']);
         $shipment->update([
             'current_stage_id' => $valid['current_stage_id'],
             'updated_by' => auth()->id(),
         ]);
+        $shipment->setRelation('currentStage', $stage);
 
         if ($stage && $stage->name === 'Delivered') {
             $shipment->orders()->whereNull('current_stage_id')->update(['status' => 'delivered']);
         }
+        $this->notifyCustomersOnStageChange($shipment, $previousStage, $stage);
 
         return back()->with('success', 'Shipment stage updated.');
     }
@@ -115,16 +120,19 @@ class ShipmentController extends Controller
             'current_stage_id' => 'required|exists:tracking_stages,id',
         ]);
 
+        $previousStage = $shipment->currentStage;
         $stage = TrackingStage::find($valid['current_stage_id']);
         $shipment->orders()->update(['current_stage_id' => null]);
         $shipment->update([
             'current_stage_id' => $valid['current_stage_id'],
             'updated_by' => auth()->id(),
         ]);
+        $shipment->setRelation('currentStage', $stage);
 
         if ($stage && $stage->name === 'Delivered') {
             $shipment->orders()->update(['status' => 'delivered']);
         }
+        $this->notifyCustomersOnStageChange($shipment, $previousStage, $stage);
 
         return back()->with('success', 'Stage applied to all orders.');
     }
@@ -146,6 +154,12 @@ class ShipmentController extends Controller
             return back()->with('error', 'Could not reach carrier or invalid response. Check the tracking code or try again later.');
         }
 
+        $previousPayload = is_array($shipment->carrier_tracks_json) ? $shipment->carrier_tracks_json : [];
+        $previousTracks = $previousPayload['tracks'] ?? [];
+        if (! is_array($previousTracks)) {
+            $previousTracks = [];
+        }
+
         $tracks = $result['tracks'] ?? [];
         if (! is_array($tracks)) {
             $tracks = [];
@@ -165,6 +179,8 @@ class ShipmentController extends Controller
         $msg = $count > 0
             ? "Carrier tracking refreshed ({$count} updates stored)."
             : 'Carrier responded; no tracking events were returned for this code.';
+
+        $this->notifyCustomersOnCarrierRowsAdded($shipment, $previousTracks, $tracks);
 
         return back()->with('success', $msg);
     }
@@ -219,5 +235,182 @@ class ShipmentController extends Controller
     {
         $tracks = array_values(array_filter($tracks, static fn ($row) => is_array($row)));
         usort($tracks, [CarrierTrackTimestamp::class, 'compareTracksNewestFirst']);
+    }
+
+    /**
+     * Only notify while shipment is still in transit and before "Sent to Final Destination".
+     */
+    private function canSendTransitUpdateEmails(Shipment $shipment): bool
+    {
+        if (strtolower((string) $shipment->status) === 'completed') {
+            return false;
+        }
+
+        $dispatchedPos = (int) (TrackingStage::where('name', 'Sent to Final Destination')->value('position') ?? 6);
+        $sentPos = (int) (TrackingStage::where('name', 'Sent to Logistics')->value('position') ?? 2);
+        $currentPos = (int) optional($shipment->currentStage)->position;
+        if ($currentPos <= 0) {
+            return false;
+        }
+
+        return $currentPos >= $sentPos && $currentPos < $dispatchedPos;
+    }
+
+    /**
+     * @return array<int, \App\Models\User>
+     */
+    private function shipmentEmailRecipients(Shipment $shipment): array
+    {
+        $orders = $shipment->orders()->with('user')->get();
+        $users = [];
+        foreach ($orders as $order) {
+            if (strtolower((string) $order->status) === 'delivered') {
+                continue;
+            }
+            $user = $order->user;
+            if (! $user) {
+                continue;
+            }
+            $email = trim((string) $user->email);
+            if ($email === '') {
+                continue;
+            }
+            $users[$user->id] = $user;
+        }
+
+        return array_values($users);
+    }
+
+    private function notifyCustomersOnStageChange(Shipment $shipment, ?TrackingStage $previousStage, ?TrackingStage $newStage): void
+    {
+        if (! $newStage || ! $this->canSendTransitUpdateEmails($shipment)) {
+            return;
+        }
+        if ((int) ($previousStage?->id ?? 0) === (int) $newStage->id) {
+            return;
+        }
+
+        $recipients = $this->shipmentEmailRecipients($shipment);
+        if ($recipients === []) {
+            return;
+        }
+
+        $from = mail_from();
+        $trackingUrl = route('dashboard.tracking');
+        foreach ($recipients as $user) {
+            try {
+                $name = trim((string) ($user->name ?? 'Customer'));
+                $prevName = $previousStage?->name ? "Previous stage: {$previousStage->name}\n\n" : '';
+                $body = "Hi {$name},\n\n"
+                    ."Your package has a new shipment stage update.\n\n"
+                    ."Current stage: {$newStage->name}\n"
+                    .$prevName
+                    ."View tracking on your dashboard:\n{$trackingUrl}\n\n"
+                    ."Note: Automatic logistics emails stop once your package is dispatched.\n\n"
+                    ."— VerityTrade";
+
+                Mail::raw($body, function ($message) use ($user, $from, $newStage): void {
+                    $message->to($user->email, $user->name)->subject("Shipment update: {$newStage->name}");
+                    $message->from($from['address'], $from['name']);
+                });
+            } catch (\Throwable $e) {
+                Log::error('Failed to send shipment stage update email.', [
+                    'shipment_id' => $shipment->id,
+                    'user_id' => $user->id,
+                    'email' => $user->email,
+                    'error' => $e->getMessage(),
+                ]);
+            }
+        }
+    }
+
+    /**
+     * @param  array<int, mixed>  $oldTracks
+     * @param  array<int, mixed>  $newTracks
+     */
+    private function notifyCustomersOnCarrierRowsAdded(Shipment $shipment, array $oldTracks, array $newTracks): void
+    {
+        if (! $this->canSendTransitUpdateEmails($shipment)) {
+            return;
+        }
+
+        $oldNorm = array_values(array_filter($oldTracks, static fn ($row) => is_array($row)));
+        $newNorm = array_values(array_filter($newTracks, static fn ($row) => is_array($row)));
+        if (! $this->hasNewCarrierRows($oldNorm, $newNorm)) {
+            return;
+        }
+
+        $recipients = $this->shipmentEmailRecipients($shipment);
+        if ($recipients === []) {
+            return;
+        }
+
+        $latest = $newNorm[0] ?? [];
+        $latestLine = trim((string) ($latest['en'] ?? $latest['cn'] ?? ''));
+        if ($latestLine === '') {
+            $latestLine = 'New logistics activity was recorded.';
+        }
+        $latestAt = trim((string) ($latest['at'] ?? ''));
+        $atLine = $latestAt !== '' ? "Time: {$latestAt}\n\n" : '';
+        $trackingUrl = route('dashboard.tracking');
+        $from = mail_from();
+
+        foreach ($recipients as $user) {
+            try {
+                $name = trim((string) ($user->name ?? 'Customer'));
+                $body = "Hi {$name},\n\n"
+                    ."There is a new logistics update on your package.\n\n"
+                    ."Latest update: {$latestLine}\n"
+                    .$atLine
+                    ."View tracking on your dashboard:\n{$trackingUrl}\n\n"
+                    ."Note: Automatic logistics emails stop once your package is dispatched.\n\n"
+                    ."— VerityTrade";
+
+                Mail::raw($body, function ($message) use ($user, $from): void {
+                    $message->to($user->email, $user->name)->subject('New logistics update on your package');
+                    $message->from($from['address'], $from['name']);
+                });
+            } catch (\Throwable $e) {
+                Log::error('Failed to send logistics row update email.', [
+                    'shipment_id' => $shipment->id,
+                    'user_id' => $user->id,
+                    'email' => $user->email,
+                    'error' => $e->getMessage(),
+                ]);
+            }
+        }
+    }
+
+    /**
+     * @param  array<int, array<string, mixed>>  $oldTracks
+     * @param  array<int, array<string, mixed>>  $newTracks
+     */
+    private function hasNewCarrierRows(array $oldTracks, array $newTracks): bool
+    {
+        if (count($newTracks) > count($oldTracks)) {
+            return true;
+        }
+        if ($newTracks === []) {
+            return false;
+        }
+
+        $fingerprint = static function (array $row): string {
+            $at = trim((string) ($row['at'] ?? ''));
+            $en = trim((string) ($row['en'] ?? ''));
+            $cn = trim((string) ($row['cn'] ?? ''));
+            return strtolower($at.'|'.$en.'|'.$cn);
+        };
+
+        $oldSet = [];
+        foreach ($oldTracks as $row) {
+            $oldSet[$fingerprint($row)] = true;
+        }
+        foreach ($newTracks as $row) {
+            if (! isset($oldSet[$fingerprint($row)])) {
+                return true;
+            }
+        }
+
+        return false;
     }
 }
