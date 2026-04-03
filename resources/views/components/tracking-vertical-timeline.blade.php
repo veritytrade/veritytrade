@@ -132,7 +132,6 @@
             $nigeriaSubsectionBlocks[] = [
                 'subsection' => $subsection,
                 'items' => $items,
-                'latestDisplay' => $latestTs > 0 ? date('Y-m-d H:i', $latestTs) : '',
                 'sortTs' => $latestTs,
             ];
         }
@@ -197,13 +196,8 @@
                                     <div class="mt-2 space-y-2.5">
                                         @foreach($nigeriaSubsectionBlocks as $block)
                                             <div class="rounded-lg border border-gray-200 bg-white px-3 py-2.5">
-                                                <div class="flex flex-wrap items-baseline justify-between gap-x-2 gap-y-0.5">
-                                                    <p class="text-[11px] font-semibold uppercase tracking-wide text-gray-600">{{ $block['subsection'] }}</p>
-                                                    @if(($block['latestDisplay'] ?? '') !== '')
-                                                        <p class="text-[11px] font-semibold text-gray-900">[{{ $block['latestDisplay'] }}]</p>
-                                                    @endif
-                                                </div>
-                                                <div class="mt-1.5 space-y-1.5">
+                                                <p class="text-[11px] font-semibold uppercase tracking-wide text-gray-600 mb-1.5">{{ $block['subsection'] }}</p>
+                                                <div class="space-y-1.5">
                                                     @foreach($block['items'] as $item)
                                                         @if(is_array($item))
                                                             <p class="text-xs leading-snug text-gray-700">
