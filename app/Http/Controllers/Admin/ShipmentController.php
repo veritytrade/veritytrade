@@ -56,6 +56,7 @@ class ShipmentController extends Controller
 
     public function show(Shipment $shipment): View
     {
+        $shipment->loadCount('orders');
         $shipment->load(['orders.user', 'orders.invoice', 'orders.currentStageOverride', 'currentStage']);
         foreach ($shipment->orders as $order) {
             $order->setRelation('shipment', $shipment);

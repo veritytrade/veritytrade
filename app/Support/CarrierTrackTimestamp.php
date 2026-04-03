@@ -9,9 +9,6 @@ namespace App\Support;
 final class CarrierTrackTimestamp
 {
     /**
-     * @param  array{at?: string, title?: string, en?: string, cn?: string}  $track
-     */
-    /**
      * @param  mixed  $track  Row from carrier_tracks_json; non-arrays return 0 (avoids TypeError in usort).
      */
     public static function extract(mixed $track): int
@@ -25,6 +22,22 @@ final class CarrierTrackTimestamp
         } catch (\Throwable) {
             return 0;
         }
+    }
+
+    /**
+     * Single datetime string for UI: same basis as sorting (parsed from `at` or leading bracket in text).
+     */
+    public static function formatDisplayForUi(mixed $track): string
+    {
+        if (! is_array($track)) {
+            return '';
+        }
+        $ts = self::extract($track);
+        if ($ts > 0) {
+            return date('Y-m-d H:i', $ts);
+        }
+
+        return trim((string) ($track['at'] ?? ''));
     }
 
     /**
@@ -80,7 +93,7 @@ final class CarrierTrackTimestamp
 
         // First leading bracket only — event time is almost always there.
         if (preg_match('/\[\s*([^\]]+)\s*\]/', $title, $bm)) {
-            $inner = trim((string) ($bm[1]);
+            $inner = trim((string) ($bm[1]));
             if ($inner !== '') {
                 $parsed = self::parseLooseDatetimeFragment($inner);
                 if ($parsed > 0) {
@@ -90,14 +103,14 @@ final class CarrierTrackTimestamp
         }
 
         // First ISO-like date in text (left-to-right), not max of all matches.
-        if (preg_match('/\d{4}[-/]\d{1,2}[-/]\d{1,2}(?:[ T]\d{1,2}:\d{2}(?::\d{2})?)?/', $title, $m)) {
+        if (preg_match('#\d{4}[-/]\d{1,2}[-/]\d{1,2}(?:[ T]\d{1,2}:\d{2}(?::\d{2})?)?#', $title, $m)) {
             $t = strtotime(str_replace('/', '-', $m[0]));
             if ($t !== false && self::isPlausibleUnix($t)) {
                 return $t;
             }
         }
 
-        if (preg_match('/\d{1,2}\/\d{1,2}\/\d{4}(?:[ T]\d{1,2}:\d{2}(?::\d{2})?)?/', $title, $m)) {
+        if (preg_match('#\d{1,2}/\d{1,2}/\d{4}(?:[ T]\d{1,2}:\d{2}(?::\d{2})?)?#', $title, $m)) {
             $t = strtotime($m[0]);
             if ($t !== false && self::isPlausibleUnix($t)) {
                 return $t;
@@ -125,6 +138,18 @@ final class CarrierTrackTimestamp
         // ISO 8601 with T — sometimes strtotime is picky.
         if (preg_match('/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/', $at)) {
             $t = strtotime(str_replace('T', ' ', substr($at, 0, 19)));
+            if ($t !== false && self::isPlausibleUnix($t)) {
+                return $t;
+            }
+        }
+
+        // Common API shapes: 2025-03-15 14:30:00 or 2025/03/15 14:30:00 (# delimiter: avoid / inside pattern ending the literal)
+        if (preg_match('#^(\d{4})[-/](\d{1,2})[-/](\d{1,2})(?:[ T](\d{1,2}:\d{2}(?::\d{2})?))?#', $at, $m)) {
+            $normalized = sprintf('%04d-%02d-%02d', (int) $m[1], (int) $m[2], (int) $m[3]);
+            if (! empty($m[4])) {
+                $normalized .= ' '.$m[4];
+            }
+            $t = strtotime($normalized);
             if ($t !== false && self::isPlausibleUnix($t)) {
                 return $t;
             }

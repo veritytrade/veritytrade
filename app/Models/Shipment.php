@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Casts\SafeArrayCast;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -23,7 +24,7 @@ class Shipment extends Model
 
     protected $casts = [
         'waybill_outstanding_ngn' => 'decimal:2',
-        'carrier_tracks_json' => 'array',
+        'carrier_tracks_json' => SafeArrayCast::class,
         'carrier_tracks_synced_at' => 'datetime',
     ];
 

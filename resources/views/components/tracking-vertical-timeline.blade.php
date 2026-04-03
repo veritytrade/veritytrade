@@ -35,90 +35,12 @@
         ->pluck('position', 'name')
         ->map(fn ($p) => (int) $p)
         ->all();
-    $posSent = (int) ($posByName['Sent to Logistics'] ?? 2);
-    $posArrivedLogistics = (int) ($posByName['Arrived Logistics'] ?? 3);
-    $posFlying = (int) ($posByName['Flying to Nigeria'] ?? 4);
     $posArrivedNigeria = (int) ($posByName['Arrived Nigeria'] ?? 5);
-    $posDelivered = (int) ($posByName['Delivered'] ?? 7);
 
     $groupedTracks = [];
     foreach ($stages as $stage) {
         $groupedTracks[(int) $stage->position] = [];
     }
-
-    $classifyTrackToStage = static function (string $text) use ($posSent, $posArrivedLogistics, $posFlying, $posArrivedNigeria, $posDelivered): array {
-        $t = strtolower(trim($text));
-
-        if ($t === '') {
-            return ['stage' => $posSent, 'subsection' => null, 'ignore' => false];
-        }
-
-        if (
-            str_contains($t, 'dear customer') ||
-            str_contains($t, 'bill information') ||
-            str_contains($t, 'company account') ||
-            str_contains($t, 'warehouse address') ||
-            str_contains($t, 'reserve the right to auction') ||
-            str_contains($t, 'ask rate and confirm shipping money')
-        ) {
-            return ['stage' => $posSent, 'subsection' => null, 'ignore' => true];
-        }
-
-        if (str_contains($t, 'picked up goods') || str_contains($t, 'customer has picked up')) {
-            return ['stage' => $posArrivedNigeria, 'subsection' => 'Agent pickup', 'ignore' => false];
-        }
-
-        if (str_contains($t, 'already signed') || str_contains($t, 'delivered') || str_contains($t, 'signed')) {
-            return ['stage' => $posDelivered, 'subsection' => null, 'ignore' => false];
-        }
-
-        if (str_contains($t, 'to sign for it')) {
-            return ['stage' => $posArrivedNigeria, 'subsection' => 'At logistics warehouse', 'ignore' => false];
-        }
-
-        if (str_contains($t, 'package collected by verity agent') || str_contains($t, 'collected by agent')) {
-            return ['stage' => $posArrivedNigeria, 'subsection' => 'Agent pickup', 'ignore' => false];
-        }
-
-        if (str_contains($t, 'lagos') || str_contains($t, 'nigeria') || str_contains($t, 'clearance') || str_contains($t, 'airport express')) {
-            if (str_contains($t, 'pickup warehouse') || str_contains($t, 'warehouse')) {
-                return ['stage' => $posArrivedNigeria, 'subsection' => 'At logistics warehouse', 'ignore' => false];
-            }
-
-            if (str_contains($t, 'clearance') || str_contains($t, 'clearing') || str_contains($t, 'customs')) {
-                return ['stage' => $posArrivedNigeria, 'subsection' => 'Customs clearance', 'ignore' => false];
-            }
-
-            return ['stage' => $posArrivedNigeria, 'subsection' => 'At Nigeria airport', 'ignore' => false];
-        }
-
-        if (
-            str_contains($t, 'truck') ||
-            str_contains($t, 'guangzhou') ||
-            str_contains($t, 'baiyun') ||
-            str_contains($t, 'hong kong') ||
-            str_contains($t, 'hongkong') ||
-            str_contains($t, 'collected by [') ||
-            str_contains($t, 'received express goods') ||
-            str_contains($t, 'collected') ||
-            str_contains($t, 'custom declaration') ||
-            str_contains($t, 'inspection') ||
-            str_contains($t, 'cannot pass') ||
-            str_contains($t, 'security check') ||
-            str_contains($t, 'contraband') ||
-            str_contains($t, 'returned by the airport') ||
-            str_contains($t, 'transferred to hong kong airport') ||
-            str_contains($t, 'take-off')
-        ) {
-            return ['stage' => $posArrivedLogistics, 'subsection' => null, 'ignore' => false];
-        }
-
-        if (str_contains($t, 'flying') || str_contains($t, 'addis') || str_contains($t, 'hamad international airport')) {
-            return ['stage' => $posFlying, 'subsection' => null, 'ignore' => false];
-        }
-
-        return ['stage' => $posSent, 'subsection' => null, 'ignore' => false];
-    };
 
     // Closure (not [Class, 'method']) avoids rare Blade/opcache issues with callables in @php.
     $sortByNewestAt = static function (mixed $a, mixed $b): int {
@@ -136,22 +58,36 @@
                     continue;
                 }
 
-                $classification = $classifyTrackToStage($title);
+                $meta = is_array($track['meta'] ?? null) ? $track['meta'] : null;
+                $classification = \App\Support\CarrierTrackClassifier::classify(
+                    trim((string) ($track['en'] ?? '')),
+                    trim((string) ($track['cn'] ?? '')),
+                    $meta,
+                    $posByName
+                );
                 if (($classification['ignore'] ?? false) === true) {
                     continue;
                 }
 
-                $mappedPos = (int) ($classification['stage'] ?? $posSent);
+                $defaultSent = (int) ($posByName['Sent to Logistics'] ?? 2);
+                $mappedPos = (int) ($classification['stage'] ?? $defaultSent);
                 if (! array_key_exists($mappedPos, $groupedTracks)) {
-                    $mappedPos = $posSent;
+                    $mappedPos = $defaultSent;
                 }
 
-                $meta = $track['meta'] ?? null;
                 $metaSubsection = (is_array($meta) && array_key_exists('subsection', $meta)) ? $meta['subsection'] : null;
+
+                $rowForSort = [
+                    'at' => trim((string) ($track['at'] ?? '')),
+                    'title' => $title,
+                    'en' => $track['en'] ?? '',
+                    'cn' => $track['cn'] ?? '',
+                ];
 
                 $groupedTracks[$mappedPos][] = [
                     'title' => $title,
-                    'at' => trim((string) ($track['at'] ?? '')),
+                    'at' => $rowForSort['at'],
+                    'at_display' => \App\Support\CarrierTrackTimestamp::formatDisplayForUi($rowForSort),
                     'subsection' => $metaSubsection ?? $classification['subsection'] ?? null,
                 ];
             } catch (\Throwable) {
@@ -264,13 +200,14 @@
                                                 </div>
                                                 <div class="mt-1.5 space-y-1.5">
                                                     @foreach($block['items'] as $item)
-                                                        @continue(! is_array($item))
-                                                        <p class="text-xs leading-snug text-gray-700">
-                                                            @if(($item['at'] ?? '') !== '')
-                                                                <span class="text-[11px] font-semibold text-gray-900">[{{ $item['at'] }}]</span>
-                                                            @endif
-                                                            {{ $item['title'] ?? '' }}
-                                                        </p>
+                                                        @if(is_array($item))
+                                                            <p class="text-xs leading-snug text-gray-700">
+                                                                @if(($item['at_display'] ?? $item['at'] ?? '') !== '')
+                                                                    <span class="text-[11px] font-semibold text-gray-900">[{{ $item['at_display'] ?? $item['at'] }}]</span>
+                                                                @endif
+                                                                {{ $item['title'] ?? '' }}
+                                                            </p>
+                                                        @endif
                                                     @endforeach
                                                 </div>
                                             </div>
@@ -279,15 +216,16 @@
                                 @else
                                     <div class="mt-2 space-y-2">
                                         @foreach($stageTracks as $item)
-                                            @continue(! is_array($item))
-                                            <div class="rounded-lg border border-gray-200 bg-white px-3 py-2.5">
-                                                <p class="text-xs leading-snug text-gray-700">
-                                                    @if(($item['at'] ?? '') !== '')
-                                                        <span class="text-[11px] font-semibold text-gray-900">[{{ $item['at'] }}]</span>
-                                                    @endif
-                                                    {{ $item['title'] ?? '' }}
-                                                </p>
-                                            </div>
+                                            @if(is_array($item))
+                                                <div class="rounded-lg border border-gray-200 bg-white px-3 py-2.5">
+                                                    <p class="text-xs leading-snug text-gray-700">
+                                                        @if(($item['at_display'] ?? $item['at'] ?? '') !== '')
+                                                            <span class="text-[11px] font-semibold text-gray-900">[{{ $item['at_display'] ?? $item['at'] }}]</span>
+                                                        @endif
+                                                        {{ $item['title'] ?? '' }}
+                                                    </p>
+                                                </div>
+                                            @endif
                                         @endforeach
                                     </div>
                                 @endif
