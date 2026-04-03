@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Shipment;
 use App\Models\TrackingStage;
 use App\Services\SkyCargoLogisticsService;
+use App\Support\CarrierTrackTimestamp;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -144,10 +145,16 @@ class ShipmentController extends Controller
             return back()->with('error', 'Could not reach carrier or invalid response. Check the tracking code or try again later.');
         }
 
-        $count = count($result['tracks'] ?? []);
+        $tracks = $result['tracks'] ?? [];
+        if (! is_array($tracks)) {
+            $tracks = [];
+        }
+        self::sortCarrierTracksNewestFirst($tracks);
+
+        $count = count($tracks);
         $shipment->update([
             'carrier_tracks_json' => [
-                'tracks' => $result['tracks'] ?? [],
+                'tracks' => $tracks,
                 'fetched_at' => now()->toIso8601String(),
             ],
             'carrier_tracks_synced_at' => now(),
@@ -190,6 +197,8 @@ class ShipmentController extends Controller
             ];
         }
 
+        self::sortCarrierTracksNewestFirst($tracks);
+
         $payload['tracks'] = $tracks;
         $payload['fetched_at'] = now()->toIso8601String();
 
@@ -200,5 +209,14 @@ class ShipmentController extends Controller
         ]);
 
         return back()->with('success', 'Marked: package collected by agent. Customer timeline updated.');
+    }
+
+    /**
+     * @param  array<int, mixed>  $tracks
+     */
+    private static function sortCarrierTracksNewestFirst(array &$tracks): void
+    {
+        $tracks = array_values(array_filter($tracks, static fn ($row) => is_array($row)));
+        usort($tracks, [CarrierTrackTimestamp::class, 'compareTracksNewestFirst']);
     }
 }
