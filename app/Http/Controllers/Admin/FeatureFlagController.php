@@ -14,6 +14,7 @@ class FeatureFlagController extends Controller
         'require_email_verification',
         'require_admin_approval',
         'enable_customer_address',
+        'enable_logistics_update_emails',
         'mail_from_address',
         'mail_from_name',
         'whatsapp_number',

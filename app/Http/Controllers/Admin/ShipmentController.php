@@ -58,7 +58,6 @@ class ShipmentController extends Controller
 
     public function show(Shipment $shipment): View
     {
-        $shipment->loadCount('orders');
         $shipment->load(['orders.user', 'orders.invoice', 'orders.currentStageOverride', 'currentStage']);
         foreach ($shipment->orders as $order) {
             $order->setRelation('shipment', $shipment);
@@ -242,6 +241,10 @@ class ShipmentController extends Controller
      */
     private function canSendTransitUpdateEmails(Shipment $shipment): bool
     {
+        if (! feature_enabled('enable_logistics_update_emails', true)) {
+            return false;
+        }
+
         if (strtolower((string) $shipment->status) === 'completed') {
             return false;
         }

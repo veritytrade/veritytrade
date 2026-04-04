@@ -15,6 +15,7 @@
                     'require_email_verification' => 'Require Email Verification',
                     'require_admin_approval' => 'Require Admin Approval',
                     'enable_customer_address' => 'Enable Customer Address Field',
+                    'enable_logistics_update_emails' => 'Logistics Update Emails (Customers)',
                     'mail_from_address' => 'Mail From Address',
                     'mail_from_name' => 'Mail From Name',
                     'whatsapp_number' => 'WhatsApp Number',
