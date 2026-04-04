@@ -68,8 +68,8 @@
                                 </tr>
                             </table>
 
-                            <p style="margin:32px 0 0 0;font-size:14px;line-height:1.5;font-weight:600;color:#64748b;text-align:left;">
-                                {{ $brandLegal }}
+                            <p style="margin:36px 0 0 0;padding-top:22px;border-top:1px solid #e2e8f0;text-align:left;line-height:1.55;">
+                                <span style="display:inline-block;font-family:Georgia,'Times New Roman',serif;font-size:17px;font-weight:400;color:#059669;line-height:1;vertical-align:1px;margin-right:5px;">@</span><span style="font-size:14px;font-weight:600;color:#334155;letter-spacing:0.025em;">{{ $brandLegal }}</span>
                             </p>
                         </td>
                     </tr>
