@@ -3,8 +3,10 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Mail\CustomerShipmentLogisticsUpdate;
 use App\Models\Shipment;
 use App\Models\TrackingStage;
+use App\Models\User;
 use App\Services\SkyCargoLogisticsService;
 use App\Support\CarrierTrackTimestamp;
 use Illuminate\Http\RedirectResponse;
@@ -284,6 +286,25 @@ class ShipmentController extends Controller
         return array_values($users);
     }
 
+    private function orderSummaryLine(Shipment $shipment, User $user): ?string
+    {
+        try {
+            $shipment->loadMissing('orders');
+            $order = $shipment->orders->firstWhere('user_id', $user->id);
+            if (! $order) {
+                return null;
+            }
+            $name = trim((string) ($order->product_name ?? ''));
+            if ($name !== '') {
+                return $name;
+            }
+
+            return 'Order #'.$order->id;
+        } catch (\Throwable) {
+            return null;
+        }
+    }
+
     private function notifyCustomersOnStageChange(Shipment $shipment, ?TrackingStage $previousStage, ?TrackingStage $newStage): void
     {
         if (! $newStage || ! $this->canSendTransitUpdateEmails($shipment)) {
@@ -300,22 +321,25 @@ class ShipmentController extends Controller
 
         $from = mail_from();
         $trackingUrl = route('dashboard.tracking');
+        $appName = (string) config('app.name', 'VerityTrade');
         foreach ($recipients as $user) {
             try {
-                $name = trim((string) ($user->name ?? 'Customer'));
-                $prevName = $previousStage?->name ? "Previous stage: {$previousStage->name}\n\n" : '';
-                $body = "Hi {$name},\n\n"
-                    ."Your package has a new shipment stage update.\n\n"
-                    ."Current stage: {$newStage->name}\n"
-                    .$prevName
-                    ."View tracking on your dashboard:\n{$trackingUrl}\n\n"
-                    ."Note: Automatic logistics emails stop once your package is dispatched.\n\n"
-                    ."— VerityTrade";
-
-                Mail::raw($body, function ($message) use ($user, $from, $newStage): void {
-                    $message->to($user->email, $user->name)->subject("Shipment update: {$newStage->name}");
-                    $message->from($from['address'], $from['name']);
-                });
+                $recipientName = trim((string) ($user->name ?? ''));
+                if ($recipientName === '') {
+                    $recipientName = 'Customer';
+                }
+                Mail::to($user->email)->send(new CustomerShipmentLogisticsUpdate(
+                    kind: 'stage',
+                    recipientName: $recipientName,
+                    newStageName: $newStage->name,
+                    previousStageName: $previousStage?->name,
+                    latestLine: null,
+                    latestAt: null,
+                    trackingUrl: $trackingUrl,
+                    appName: $appName,
+                    fromMailbox: $from,
+                    orderSummary: $this->orderSummaryLine($shipment, $user),
+                ));
             } catch (\Throwable $e) {
                 Log::error('Failed to send shipment stage update email.', [
                     'shipment_id' => $shipment->id,
@@ -354,25 +378,28 @@ class ShipmentController extends Controller
             $latestLine = 'New logistics activity was recorded.';
         }
         $latestAt = trim((string) ($latest['at'] ?? ''));
-        $atLine = $latestAt !== '' ? "Time: {$latestAt}\n\n" : '';
         $trackingUrl = route('dashboard.tracking');
         $from = mail_from();
+        $appName = (string) config('app.name', 'VerityTrade');
 
         foreach ($recipients as $user) {
             try {
-                $name = trim((string) ($user->name ?? 'Customer'));
-                $body = "Hi {$name},\n\n"
-                    ."There is a new logistics update on your package.\n\n"
-                    ."Latest update: {$latestLine}\n"
-                    .$atLine
-                    ."View tracking on your dashboard:\n{$trackingUrl}\n\n"
-                    ."Note: Automatic logistics emails stop once your package is dispatched.\n\n"
-                    ."— VerityTrade";
-
-                Mail::raw($body, function ($message) use ($user, $from): void {
-                    $message->to($user->email, $user->name)->subject('New logistics update on your package');
-                    $message->from($from['address'], $from['name']);
-                });
+                $recipientName = trim((string) ($user->name ?? ''));
+                if ($recipientName === '') {
+                    $recipientName = 'Customer';
+                }
+                Mail::to($user->email)->send(new CustomerShipmentLogisticsUpdate(
+                    kind: 'carrier',
+                    recipientName: $recipientName,
+                    newStageName: null,
+                    previousStageName: null,
+                    latestLine: $latestLine,
+                    latestAt: $latestAt !== '' ? $latestAt : null,
+                    trackingUrl: $trackingUrl,
+                    appName: $appName,
+                    fromMailbox: $from,
+                    orderSummary: $this->orderSummaryLine($shipment, $user),
+                ));
             } catch (\Throwable $e) {
                 Log::error('Failed to send logistics row update email.', [
                     'shipment_id' => $shipment->id,

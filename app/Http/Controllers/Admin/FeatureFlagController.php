@@ -43,6 +43,8 @@ class FeatureFlagController extends Controller
 
     public function index()
     {
+        FeatureFlag::ensureKeysExist(self::VISIBLE_KEYS);
+
         $flags = FeatureFlag::whereIn('key', self::VISIBLE_KEYS)
             ->orderBy('group')
             ->orderBy('key')
