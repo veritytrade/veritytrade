@@ -33,9 +33,9 @@ class CustomerShipmentLogisticsUpdate extends Mailable
     public function envelope(): Envelope
     {
         $from = $this->fromMailbox;
-        $subject = $this->kind === 'stage' && $this->newStageName
-            ? 'Your shipment is on the move — '.(string) $this->newStageName
-            : 'Your shipment is on the move';
+        $subject = $this->kind === 'stage'
+            ? 'Your shipment has moved to a new stage'
+            : 'Logistics update on your shipment';
 
         return new Envelope(
             from: new Address($from['address'], $from['name']),
@@ -46,7 +46,7 @@ class CustomerShipmentLogisticsUpdate extends Mailable
     public function content(): Content
     {
         return new Content(
-            html: 'emails.customer.shipment-logistics-update',
+            text: 'emails.customer.shipment-logistics-update',
         );
     }
 }
